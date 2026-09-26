@@ -1,0 +1,8 @@
+name,value,unit
+period,29.61,nm
+spatial_points_per_period,96,1
+basis_states_per_period,5,1
+periods,5,1
+phonon_energy,36.7,meV
+reduced_planck_constant,0.658211956548,meV*ps
+boltzmann_constant,0.0861733326215,meV/K

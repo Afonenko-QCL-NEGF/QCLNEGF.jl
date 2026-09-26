@@ -1,0 +1,5 @@
+check,value,tolerance
+resolvent_basis_invariance,2.25360644837e-14,1e-10
+poisson_residual,4.26804812173e-14,1e-10
+charge_neutrality,0,1e-12
+hartree_mean_dimensionless,7.1376643022e-19,1e-10

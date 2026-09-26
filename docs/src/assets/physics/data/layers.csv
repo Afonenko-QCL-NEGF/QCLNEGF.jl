@@ -1,0 +1,7 @@
+layer,left_nm,right_nm,material,doped
+1,0,3.26,AlGaAs,false
+2,3.26,11.25,GaAs,false
+3,11.25,13.15,AlGaAs,false
+4,13.15,21.55,GaAs,false
+5,21.55,24.45,GaAs,true
+6,24.45,29.61,GaAs,false
