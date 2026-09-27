@@ -296,7 +296,7 @@ end
 Return a flat dictionary suitable for YAML/HDF5 provenance and comparison
 reports. Values use explicit strings instead of Julia implementation types.
 
-See [YAML run configurations](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/configuration.md) and
+See [YAML run configurations](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/configuration.md) and
 [Optimization decision tree](@ref optimization-decision-tree).
 """
 function algorithm_manifest(options::AlgorithmOptions)

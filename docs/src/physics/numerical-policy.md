@@ -40,7 +40,7 @@ Iteration convergence, physical gates, discretization evidence и experimental v
 Численное состояние содержит identity, историю смешивания и использованные
 итерации. Ограничение итераций не является физическим критерием сходимости.
 Файлы контрольных точек и сроки задания принадлежат
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 
 Физические модели описаны в [models.md](models.md); определения исследований
-принадлежат [qcl-negf-research](https://github.com/AfonenkoA/qcl-negf-research).
+принадлежат [qcl-negf-research](https://github.com/Afonenko-QCL-NEGF/qcl-negf-research).

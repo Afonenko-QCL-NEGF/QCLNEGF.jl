@@ -226,4 +226,4 @@ G_\Phi=\Phi\big[(E+i\eta)I-H_\Phi\big]^{-1}\Phi^\dagger.
 Числовые входы рисунков расположены в `docs/src/assets/physics/data`.
 Это учебные иллюстрации координатных операторов, не результат полного
 самосогласованного транспорта. Функции построения графиков предоставляет
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).

@@ -931,7 +931,7 @@ Green functions and self-energies correspond to the stored Hartree field.
 
 See [the closed Poisson–SCBA loop](@ref theory-outer-loop),
 [Production backend](@ref theory-production), and the
-[state persistence contract](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+[state persistence contract](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 function _solve_production(
     problem::NEGFProblem;

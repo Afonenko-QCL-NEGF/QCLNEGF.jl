@@ -19,9 +19,9 @@ kernel is temperature independent and its exact scale is proportional to
 the Bose factor during every SCBA candidate and requires no kernel rebuild.
 No other material or scattering parameter is silently changed.
 
-See [Field-periodic closure](https://github.com/AfonenkoA/QCLNEGF.jl/blob/main/docs/src/theory/06_periodicity.md),
-[Microscopic kernels](https://github.com/AfonenkoA/QCLNEGF.jl/blob/main/docs/src/theory/08_kernels.md), and
-[production sweep construction](https://github.com/AfonenkoA/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
+See [Field-periodic closure](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/06_periodicity.md),
+[Microscopic kernels](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/08_kernels.md), and
+[production sweep construction](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
 """
 function retarget_problem(
     problem::NEGFProblem;
@@ -150,7 +150,7 @@ and rebuild only the four `O(N_E)` shift plans.  This is exact provided
 [`retarget_problem`](@ref) created `problem`, so the normalized six-index
 kernels and all array dimensions are unchanged.
 
-See [Production sweep, warm start, and recovery](https://github.com/AfonenkoA/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
+See [Production sweep, warm start, and recovery](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
 """
 function retarget_production_cache(cache::ProductionCache, problem::NEGFProblem)
     _cache_source_contract(cache, problem)

@@ -83,7 +83,7 @@ per-iteration timing telemetry.
 
 See [Production backend](@ref theory-production),
 [numerical cost and memory](@ref theory-cost), and the
-[state persistence contract](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+[state persistence contract](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 Base.@kwdef struct ProductionOptions
     # The application resource planner replaces this sentinel before every
@@ -385,7 +385,7 @@ end
 Memory-safe sweep result: summaries only, never all full NEGF states.
 
 See [Production sweep, warm start, and recovery](@ref theory-production) and
-the [state persistence contract](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+the [state persistence contract](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 struct ProductionSweepResult
     records::Vector{ProductionSweepRecord}

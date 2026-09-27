@@ -80,7 +80,7 @@ Convert the solver's canonical current-density storage unit (A/m²) to the
 single human-presentation unit used by reports, terminal, HTML, and runtime
 views (A/cm²).
 
-See [Production observability](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+See [Production observability](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 function current_density_A_per_cm2(value_A_per_m2::Real)
     value = Float64(value_A_per_m2)

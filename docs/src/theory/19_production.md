@@ -36,7 +36,7 @@ FTIR-спектр лазера, контактное падение напряж
 `checkpoint_sink` принимает состояния через callback; он не задаёт формат файла.
 
 Планирование серий, выбор ресурса и сохранение результата документированы в
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl/tree/main/docs/src).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/tree/main/docs/src).
 
 ## Две реализации без изменения учебного эталона
 

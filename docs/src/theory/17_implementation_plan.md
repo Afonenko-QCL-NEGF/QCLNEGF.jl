@@ -68,13 +68,13 @@ solution.status
 
 | Критерий | Отладочный рисунок/таблица | Итоговый рисунок |
 |---|---|---|
-| профили/базис | ячейки, сумма доноров, ``s_i(S)``, центры/разбросы | [`plot_band_profile`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
+| профили/базис | ячейки, сумма доноров, ``s_i(S)``, центры/разбросы | [`plot_band_profile`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
 | ядра | срезы модуля/фазы и собственные значения составной матрицы | сравнение механизмов |
-| Дайсон | ошибка лоренциана, ``\kappa_2(D)`` | [`plot_conditioning`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
-| SCBA | каждая невязка, ``\lambda,J,p_a`` по ``\nu`` | [`plot_convergence`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
+| Дайсон | ошибка лоренциана, ``\kappa_2(D)`` | [`plot_conditioning`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
+| SCBA | каждая невязка, ``\lambda,J,p_a`` по ``\nu`` | [`plot_convergence`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
 | Пуассон | ``r_P,r_U,r_n,\zeta,J,p_a`` по ``\mu`` | профиль зон/Хартри |
-| спектр | отрицательные минимумы и доли краёв | [`plot_spectral_map`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
-| перенос | поточечные мнимые следы, два необработанных потока | [`plot_current_spectrum`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
+| спектр | отрицательные минимумы и доли краёв | [`plot_spectral_map`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
+| перенос | поточечные мнимые следы, два необработанных потока | [`plot_current_spectrum`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md) |
 | приёмка | таблица столкновений, энергетического баланса и правила сумм | приложение о валидации |
 
 Логарифмическая шкала всегда дополняется линейной проверкой знака. Комплексные
