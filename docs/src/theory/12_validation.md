@@ -269,5 +269,5 @@ r_{PSD}(E_e,k_m;X)=
 визуального контроля — в [атласе](@ref physical-atlas).
 
 Вывод описанных диагностик в файлы и графики предоставляет
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl);
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl);
 ядро возвращает состояния и метрики в памяти.

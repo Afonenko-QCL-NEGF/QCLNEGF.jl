@@ -6,5 +6,5 @@ The [architecture](@ref developer-architecture) describes package ownership; the
 [API](api/public.md) and [operators](api/operators.md) document the numerical interface.
 
 Persistence, declarative studies, CLI execution and plots are documented in
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
 Scientific chapters are in Russian; setup and package ownership are in English.

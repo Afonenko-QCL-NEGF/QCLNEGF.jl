@@ -112,7 +112,7 @@ W_{\mathrm{FFT}}=
 Полезный параллелизм ограничен числом энергетических блоков и независимых
 матричных задач. `ProductionOptions` задаёт расписание; выбор процессоров и
 проверка cgroup относятся к
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/resources.md).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/resources.md).
 
 `estimate_production_memory` оценивает одновременно живущие научные массивы и
 рабочие области. Это не гарантия RSS: распределитель памяти, сборщик мусора,

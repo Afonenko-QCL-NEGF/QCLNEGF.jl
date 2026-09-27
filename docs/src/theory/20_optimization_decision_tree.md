@@ -18,7 +18,7 @@ CurrentModule = QCLNEGF
 исследуется отдельной серией и не включается в измерение ускорения
 эквивалентного решателя. Такой порядок связан с
 [верификацией](@ref theory-validation) и
-[практическим сравнением](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/comparison.md).
+[практическим сравнением](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/comparison.md).
 
 ## [Классы доказательств](@id optimization-evidence-classes)
 

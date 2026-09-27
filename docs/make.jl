@@ -5,7 +5,7 @@ makedocs(
     remotes = nothing,
     sitename = "QCLNEGF",
     format = Documenter.HTML(prettyurls = false, edit_link = nothing,
-        repolink = "https://github.com/AfonenkoA/QCLNEGF.jl"),
+        repolink = "https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl"),
     pages = [
         "Home" => "index.md",
         "Using the package" => ["user/convergence.md"],

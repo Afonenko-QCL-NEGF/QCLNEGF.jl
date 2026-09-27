@@ -7,7 +7,7 @@ solvers, physical observables, and optical-response calculations.
 
 The library solves an explicitly constructed problem in memory. YAML studies,
 files, checkpoints, reports, plots and command-line execution belong to
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
 
 ## Use
 
@@ -53,7 +53,7 @@ The checked dependency manifest and exact Julia version define the development
 environment. Numerical tests use bounds checking, independent analytic cases,
 conservation identities and comparisons between literal and optimized operators.
 CI runs on trusted local GitHub Actions runners managed by
-[qcl-negf-platform](https://github.com/AfonenkoA/qcl-negf-platform).
+[qcl-negf-platform](https://github.com/Afonenko-QCL-NEGF/qcl-negf-platform).
 
 Start with the [model](docs/src/theory/01_model.md),
 [in-memory workflow](docs/src/theory/17_implementation_plan.md),
@@ -61,8 +61,8 @@ Start with the [model](docs/src/theory/01_model.md),
 [architecture](docs/src/developer/architecture.md). Mathematical reference chapters
 are in Russian. Build the browsable documentation with `deno task docs`.
 
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl) consumes this API.
-[qcl-negf-research](https://github.com/AfonenkoA/qcl-negf-research) owns study definitions;
-[qcl-negf-aiida](https://github.com/AfonenkoA/qcl-negf-aiida) and Slurm schedule them.
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl) consumes this API.
+[qcl-negf-research](https://github.com/Afonenko-QCL-NEGF/qcl-negf-research) owns study definitions;
+[qcl-negf-aiida](https://github.com/Afonenko-QCL-NEGF/qcl-negf-aiida) and Slurm schedule them.
 
 License: MIT.

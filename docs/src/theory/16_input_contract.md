@@ -117,7 +117,7 @@ r_{PSD},r_{caus}<10^{-10},\quad r_{sum}<10^{-3}.
 ``F64`` и ``C64`` означают соответственно `Float64` и `ComplexF64`.
 
 Преобразования выполняют [`scaled_value`](@ref) и [`physical_value`](@ref).
-Контрольная точка [фиксирует оси и единицы явно](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+Контрольная точка [фиксирует оси и единицы явно](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 
 Приближённая полоса качества включается явно через численные опции.
 Она не изменяет строгие критерии и требует отдельного статуса результата.

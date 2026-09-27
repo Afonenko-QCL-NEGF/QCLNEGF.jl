@@ -29,9 +29,9 @@ CurrentModule = QCLNEGF
 | длительности операций | медиана, квартили, хвост распределения | какая операция определяет стоимость? |
 | сгущение сетки | наблюдаемая против шага и границ | отделена ли дискретная ошибка от модельной? |
 
-Основные функции построения графиков: [`plot_band_profile`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md),
-[`plot_spectral_map`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md), [`plot_convergence`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md),
-[`plot_current_spectrum`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md), [`plot_conditioning`](https://github.com/AfonenkoA/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md).
+Основные функции построения графиков: [`plot_band_profile`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md),
+[`plot_spectral_map`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md), [`plot_convergence`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md),
+[`plot_current_spectrum`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md), [`plot_conditioning`](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/api/public.md).
 [Карта скорости и когерентностей](@ref atlas-current) отдельно показывает,
 почему недиагональные элементы плотности необходимы для переноса.
 Они работают с уже полученными физическими данными; физический решатель
@@ -70,5 +70,5 @@ HDF5 нужен для полного восстановления состоя�
 или предупреждения из [политики сходимости](@ref convergence-policy).
 
 Вывод описанных диагностик в файлы и графики предоставляет
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl);
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl);
 ядро возвращает состояния и метрики в памяти.

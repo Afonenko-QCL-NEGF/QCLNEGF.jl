@@ -1,7 +1,7 @@
 # [Architecture](@id developer-architecture)
 
 QCLNEGF owns the in-memory scientific model. Dependencies point from
-[QCLNEGFRunner.jl](https://github.com/AfonenkoA/QCLNEGFRunner.jl) into QCLNEGF;
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl) into QCLNEGF;
 this package does not import its runner.
 
 ## [Source ownership](@id developer-source-map)

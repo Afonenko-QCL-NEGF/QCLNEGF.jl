@@ -13,4 +13,4 @@ Filesystem access, YAML, persistence, resource discovery and presentation belong
 that downstream package. Core numerical routines accept explicit inputs and return
 in-memory results.
 
-Integration CI is defined in the [qcl-negf superproject](https://github.com/AfonenkoA/qcl-negf) and uses its local runner. Update the component gitlink there to check a change with the complete selected source graph.
+Integration CI is defined in the [qcl-negf superproject](https://github.com/Afonenko-QCL-NEGF/qcl-negf) and uses its local runner. Update the component gitlink there to check a change with the complete selected source graph.
