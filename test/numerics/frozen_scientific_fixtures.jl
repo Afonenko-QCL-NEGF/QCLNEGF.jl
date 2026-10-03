@@ -64,12 +64,19 @@ end
         labels=components(transfer .> 0)
         @test length(unique(labels))==expected_sectors
         occupation=collect(range(0.15,0.85;length=17))
-        flux=transfer .* reshape(occupation,1,17) .* reshape(1 .-occupation,17,1)
-        balance=vec(sum(flux;dims=2))-vec(sum(flux;dims=1))
+        lesser=im .* spectral .* reshape(occupation,17,1,1,1)
+        greater=-im .* spectral .* reshape(1 .-occupation,17,1,1,1)
+        remap=phonon.plus+phonon.minus+field.plus+field.minus
+        sigma_lesser=QCLNEGF._static_contraction(kernel,QCLNEGF.apply_energy_shift(remap,lesser),[1.0])
+        sigma_greater=QCLNEGF._static_contraction(kernel,QCLNEGF.apply_energy_shift(remap,greater),[1.0])
+        collision=real.(vec(sigma_lesser).*vec(greater)-vec(sigma_greater).*vec(lesser))
+        balance=weights .* collision
+        scale=sum(weights .* (abs.(vec(sigma_lesser).*vec(greater))+abs.(vec(sigma_greater).*vec(lesser))))
+        @test scale>0
         # The finite-window exterior is excluded explicitly. This balance is
         # for the represented pair transfer, not a claim about missing tails.
         for sector in unique(labels)
-            @test abs(sum(balance[labels .==sector]))<=64eps(Float64)*sum(abs,flux)
+            @test abs(sum(balance[labels .==sector]))<=64eps(Float64)*scale
         end
         println("[frozen-support] bias_shift=",bias," sectors=",expected_sectors,
                 " edges=",count(>(0),transfer)," total_balance=",sum(balance))
@@ -95,7 +102,13 @@ end
         # Literal donor/vertex loops + positive midpoint quadrature are
         # independent of the optimized evaluator and adaptive Simpson rule.
         literal=QCLNEGF.impurity_kernel(p,s,positive_grids,profiles,basis;angular=:legacy_uniform)
-        push!(oracle,QCLNEGF._static_contraction(literal,occupation,g.wᵏ))
+        contraction=zeros(ComplexF64,size(occupation))
+        # Independent occupation contraction, preserving the published
+        # K[m,mp,a,c,d,b] index convention without calling the target routine.
+        for e in 1:n.N_E,m in 1:n.N_k,a in 1:n.N_b,b in 1:n.N_b,mp in 1:n.N_k,c in 1:n.N_b,d in 1:n.N_b
+            contraction[e,m,a,b]+=g.wᵏ[mp]*literal[m,mp,a,c,d,b]*occupation[e,mp,c,d]
+        end
+        push!(oracle,contraction)
     end
     scale=norm(last(oracle))
     @test scale>0
