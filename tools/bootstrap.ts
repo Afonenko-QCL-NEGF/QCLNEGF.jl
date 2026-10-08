@@ -1,3 +1,4 @@
+import { extractArchive } from "./bootstrap_tar.ts";
 // Exact, checksum-verified Julia runtime for a trusted Linux x64 runner.
 if (Deno.build.os !== "linux" || Deno.build.arch !== "x86_64") {
   throw new Error("This pinned runtime supports Linux x86_64");
@@ -17,10 +18,6 @@ if (sha256 !== "8975da61c128a5e5ded3e719e868da8c8781deb7ad7913d37fb99be02a81904b
 await Deno.mkdir(path, { recursive: true });
 const archive = `${root}/.build/julia.tar.gz`;
 await Deno.writeFile(archive, bytes);
-const status = await new Deno.Command("tar", {
-  args: ["-xzf", archive, "-C", path, "--strip-components=1"],
-  stdout: "inherit",
-  stderr: "inherit",
-}).spawn().status;
+const status = await extractArchive(archive, path);
 if (!status.success) throw new Error("Julia extraction failed");
 console.log(`${path}/bin/julia`);
