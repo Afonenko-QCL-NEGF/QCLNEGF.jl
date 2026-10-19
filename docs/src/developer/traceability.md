@@ -51,6 +51,26 @@ physical-atlas).
 | EQ-POISSON-002 | [окаймлённое решение](@ref eq-bordered-poisson) | [`solve_periodic_poisson`](@ref) |
 | EQ-OUTER-001 | [внешнее отображение](@ref eq-outer-map) | [`solve`](@ref) |
 
+## [Как проследить финальный вывод](@id final-assessment-trace)
+
+От [маршрута исследователя](@ref researcher-final-route) переходите к
+вычисляющей функции, затем к её измерению в том же состоянии. Таблица ниже
+показывает owning source; она не создаёт второго evaluator.
+
+| Вопрос | Canonical описание | Вычисляющий source / API |
+| --- | --- | --- |
+| Raw-кандидат или смешанный шаг? | [SCBA](@ref eq-scba-map), [политика сходимости](@ref convergence-policy) | `reference/final_audit.jl::fresh_fixed_point_metrics`, [`production_selfenergy_residual`](@ref) |
+| Одно ли финальное состояние U/G? | [Финальный маршрут](@ref researcher-final-route), [Пуассон](@ref eq-outer-map) | [`validate_solution`](@ref), `reference/validation.jl`; reference `solve` и optimized `solve_production` передают опубликованное состояние в final audit |
+| Что означают веса, floor и missing? | [Паспорт критериев](@ref acceptance-metadata-registry) | [`solution_scientific_assessment`](@ref), `reference/acceptance_metadata.jl::_acceptance_metric_description` |
+| Где заканчивается вывод? | [Верификация](@ref theory-validation), [ограничения модели](@ref theory-limitations) | Отдельные `iterative_converged`, `physical_gates_passed`, `stationary_candidate_accepted`, `discretization_verified`, `scientific_accepted` |
+
+Пути `reference/...` в этой таблице относятся к `src/numerics/reference/`,
+`optimized/...` — к `src/numerics/optimized/`. Полные API signatures находятся
+в [публичном справочнике](../api/public.md). Наличие source-связи или passing
+manufactured oracle не удостоверяет полноту raw artifact и физическую
+приёмку device run. Форматы и сохранение остаются в Runner/Contracts, а
+правила и вычисление научных критериев — в Core.
+
 ## Точные операторы полноразмерного расчёта и параллельное расписание
 
 | Контракт | Формула/семантика | Рабочая реализация |
