@@ -169,7 +169,7 @@ end
     literal_scale = frob(vec(q.*x.sigma.Σˡ))
     @test abs(sigma.rows[2].numerator_F-literal_difference) <= Bmatrix
     @test abs(sigma.rows[2].ratio-literal_difference/(literal_scale+δ)) <= Bmatrix
-    mixed = SelfEnergyFamily(copy(x.sigma.Σᴿ),x.sigma.Σˡ.+2.0^-20.*(candidate.Σˡ.-x.sigma.Σˡ),copy(candidate.Σᵍ))
+    mixed = SelfEnergyFamily(copy(x.sigma.Σᴿ),x.sigma.Σˡ.+2.0^-20 .*(candidate.Σˡ.-x.sigma.Σˡ),copy(candidate.Σᵍ))
     @test abs(QN._selfenergy_residual_evidence(x.sigma,mixed).rows[2].numerator_F-literal_difference) > Bmatrix
 end
 
@@ -300,7 +300,7 @@ end
         @test solve_periodic_poisson(x.profiles,x.grids,x.scales,x.n)==result.solution
         @test length(result.solution)==4
         # Actual observed-path mutants; expected ref is immutable.
-        for badUp in (-result.solution[1],result.solution[1]./4,1.1.*result.solution[1],
+        for badUp in (-result.solution[1],result.solution[1]./4,1.1 .*result.solution[1],
                       result.solution[1].+1/16)
             mutated=(;solution=(badUp,result.solution[2:end]...),diagnostics=result.diagnostics)
             @test !literal_poisson_matches(ref,mutated,published)
@@ -661,7 +661,7 @@ end
         @test pcontains(pbox.numerator,value(record["poisson"]["residual_numerator_F"]))
         @test pcontains(pbox.rhs,value(record["poisson"]["rhs_F"]))
         @test pcontains(pbox.pbox,report.metrics[:r_P])
-        mixed_rU=maximum(abs.(0.125.*(pactual.solution[1].-publishedU)))
+        mixed_rU=maximum(abs.(0.125 .*(pactual.solution[1].-publishedU)))
         @test !pcontains(pbox.rawU,mixed_rU)
         changed_density=density.+(nd/16).*[1.0,-2.0,1.0]
         changed = NEGFSolution(problem,options,publishedU,changed_density,scba,OuterIteration[],
