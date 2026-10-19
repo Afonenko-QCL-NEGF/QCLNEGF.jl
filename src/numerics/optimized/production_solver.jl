@@ -1219,6 +1219,8 @@ function _solve_production(
     observables[:warnings] = warnings
     observables[:acceptance_measurement_context] = Dict{String,Any}(
         "backend"=>"production",
+        "map_kernels_shared_with_solver"=>true,
+        "final_state_alignment"=>"producer_aligned",
         "hilbert_roundoff_measured"=>production_options.verify_fft_roundoff || all(
             ==(:electron_electron),
             problem.kernels.enabled,

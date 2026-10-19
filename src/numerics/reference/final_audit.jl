@@ -35,7 +35,11 @@ algebra is evaluated independently of the production residual pass. In
 particular r_K compares published G< to GR Σ_candidate< GA, without dividing
 the latter by a fitted particle-number eigenvalue.
 """
-function fresh_fixed_point_metrics(
+fresh_fixed_point_metrics(problem::NEGFProblem, scba::SCBAResult,
+                          U::AbstractVector{<:Real}, candidate::FixedPointAuditCandidate) =
+    _fresh_fixed_point_measurements(problem, scba, U, candidate).metrics
+
+function _fresh_fixed_point_measurements(
     problem::NEGFProblem,
     scba::SCBAResult,
     U::AbstractVector{<:Real},
@@ -57,28 +61,26 @@ function fresh_fixed_point_metrics(
         problem.physical.g_s,
     )
     candidate_lambda = candidate_raw_number/target
-    r_sigma = maximum((
-        _selfenergy_residual(scba.embedding, candidate.embedding),
-        _selfenergy_residual(scba.embedding_plus, candidate.plus),
-        _selfenergy_residual(scba.embedding_minus, candidate.minus),
-    ))
+    sigma = Dict{Symbol,Any}(
+        :embedding_total=>_selfenergy_residual_evidence(scba.embedding, candidate.embedding),
+        :embedding_plus=>_selfenergy_residual_evidence(scba.embedding_plus, candidate.plus),
+        :embedding_minus=>_selfenergy_residual_evidence(scba.embedding_minus, candidate.minus),
+    )
+    r_sigma = maximum((sigma[:embedding_total].ratio, sigma[:embedding_plus].ratio,
+                       sigma[:embedding_minus].ratio))
     for name in problem.kernels.enabled
-        r_sigma = max(
-            r_sigma,
-            _selfenergy_residual(scba.scattering[name], candidate.scattering[name]),
-        )
+        sigma[name] = _selfenergy_residual_evidence(scba.scattering[name], candidate.scattering[name])
+        r_sigma = max(r_sigma, sigma[name].ratio)
     end
-    return Dict{Symbol,Float64}(
+    dyson = _dyson_residual_evidence(problem.grids.ε, h, candidate_total.Σᴿ, scba.green.Gᴿ)
+    spectral = _spectral_residual_evidence(scba.green, candidate_total)
+    keldysh = _keldysh_residual_evidence(scba.green, candidate_total)
+    metrics = Dict{Symbol,Float64}(
         :r_D=>_dyson_residual(problem.grids.ε, h, total.Σᴿ, scba.green.Gᴿ),
-        :r_D_candidate=>_dyson_residual(
-            problem.grids.ε,
-            h,
-            candidate_total.Σᴿ,
-            scba.green.Gᴿ,
-        ),
-        :r_A_candidate=>_spectral_residual(scba.green, candidate_total),
+        :r_D_candidate=>dyson.ratio,
+        :r_A_candidate=>spectral.ratio,
         :r_A=>_spectral_residual(scba.green, total),
-        :r_K=>_keldysh_residual(scba.green, candidate_total),
+        :r_K=>keldysh.ratio,
         :r_Σ=>r_sigma,
         :r_λ=>charge.constraint_residual,
         :r_roundoff=>candidate.roundoff,
@@ -92,6 +94,7 @@ function fresh_fixed_point_metrics(
         :candidate_lambda=>candidate_lambda,
         :r_lambda_candidate=>abs(candidate_lambda-1),
     )
+    return (; metrics, evidence=(; dyson, spectral, keldysh, sigma))
 end
 
 """Store exact final constraint values, independent of the neutralized Poisson source."""
@@ -243,6 +246,7 @@ function solution_scientific_assessment(solution::NEGFSolution)
         "scientific_acceptance_reason"=>"campaign-level independent discretization evidence is required",
         "outer_confirmation_count"=>streak,
         "metrics"=>records,
+        "final_fixed_point_audit"=>get(solution.observables, :final_fixed_point_audit, nothing),
         "evaluator"=>"Julia validate_solution / SolverTolerances",
     )
 end
@@ -404,4 +408,246 @@ function _publish_model_diagnostics!(observables, problem::NEGFProblem, scba::SC
         end
     end
     return observables
+end
+
+# SCI05 internal template stage: no execution identity is invented here. Runner
+# binds its six actual state_identity fields before validating/serializing the
+# portable v1 record. This template alone is not a schema-valid final artifact.
+const _FINAL_AUDIT_SCHEMA = "qcl-negf-final-fixed-point-audit-v1"
+const _FINAL_AUDIT_CHANNELS = (:LO, :acoustic, :impurity, :IFR, :alloy, :electron_electron)
+const _FINAL_AUDIT_FLOOR = Float64(1e-14)
+
+function _audit_measure(value::Real; invalid_reason=nothing)
+    x = Float64(value)
+    tag = isnan(x) ? "nan" : x == Inf ? "+inf" : x == -Inf ? "-inf" : nothing
+    return Dict{String,Any}(
+        "status"=>tag !== nothing || invalid_reason !== nothing ? "error" : "measured",
+        "value"=>tag === nothing ? (iszero(x) ? 0.0 : x) : nothing,
+        "nonfinite"=>tag,
+        "reason"=>tag === nothing ? invalid_reason : "nonfinite_measurement",
+    )
+end
+
+_audit_absent(reason="map_unavailable"; status="unavailable") = Dict{String,Any}(
+    "status"=>status, "value"=>nothing, "nonfinite"=>nothing, "reason"=>reason,
+)
+_audit_undefined() = _audit_absent("invalid_prerequisite"; status="error")
+
+function _audit_detail(text::AbstractString)
+    output = IOBuffer()
+    count = 0
+    truncated = false
+    for c in text
+        width = ncodeunits(string(c))
+        if count + width > 512
+            truncated = true
+            break
+        end
+        print(output, c)
+        count += width
+    end
+    return String(take!(output)), truncated
+end
+
+function _audit_norm_record(raw)
+    record = Dict{String,Any}("floor"=>_FINAL_AUDIT_FLOOR)
+    for name in (:numerator_F, :scale_F, :denominator, :ratio)
+        record[String(name)] = raw === nothing ? _audit_absent() : _audit_measure(getfield(raw, name))
+    end
+    return record
+end
+
+# D2 status clarification: preserve the old finite quotient even when its
+# normalization overflowed. Only actual nonfinite fields receive a tag.
+_audit_dyson_ratio_measure(raw, value=raw.ratio) = _audit_measure(value;
+    invalid_reason=!isfinite(raw.denominator) ? "nonfinite_measurement" : nothing)
+
+function _audit_witness_record(raw)
+    names = (:numerator_F, :D_F, :GR_F, :identity_F, :denominator, :ratio)
+    record = Dict{String,Any}(
+        "status"=>raw === nothing ? "unavailable" : "measured",
+        "e_index"=>raw === nothing ? nothing : raw.e_index,
+        "k_index"=>raw === nothing ? nothing : raw.k_index,
+    )
+    for name in names
+        measurement = raw === nothing ? _audit_absent() : name === :ratio ?
+                      _audit_dyson_ratio_measure(raw) : _audit_measure(getfield(raw, name))
+        record[String(name)] = measurement
+        measurement["status"] == "error" && (record["status"] = "error")
+    end
+    return record
+end
+
+function _final_audit_context(solution)
+    problem = solution.problem
+    producer = get(solution.observables, :acceptance_measurement_context, Dict())
+    algorithms = get(get(solution.observables, :restart_contract, Dict()), "algorithms", Dict())
+    # Every nullable selector is supplied by its actual owner, never AlgorithmOptions defaults.
+    context = Dict{String,Any}(
+        "backend"=>get(producer, "backend", nothing),
+        "energy_shift"=>get(algorithms, "energy_shift", nothing),
+        "hilbert"=>get(algorithms, "hilbert", nothing),
+        "contraction"=>get(algorithms, "contraction", nothing),
+        "kernel_build"=>get(algorithms, "kernel_build", nothing),
+        "embedding"=>get(algorithms, "embedding", nothing),
+        "electron_electron_mode"=>String(problem.models.electron_electron.mode),
+        "embedding_periods"=>get(algorithms, "embedding_periods", nothing),
+        "enabled_scattering"=>String.(_final_audit_channels(problem)),
+        "E0_eV"=>problem.scales.E₀_eV,
+        "L0_m"=>problem.scales.L₀_m,
+        "lambda_P"=>problem.scales.λ_P,
+        "map_kernels_shared_with_solver"=>get(producer, "map_kernels_shared_with_solver", nothing),
+        "independent_physics_oracle"=>false,
+        "state_alignment"=>get(producer, "final_state_alignment", "unknown"),
+        "alignment_reason"=>get(producer, "final_state_alignment", "unknown") == "unknown" ?
+                            "producer_precondition_unverified" : nothing,
+        "source_owner_role"=>"physics.full",
+        "source_paths"=>Dict("U"=>"/state_dimensionless/UH", "n"=>"/state_dimensionless/density",
+                             "GR"=>"/state_dimensionless/GR", "GL"=>"/state_dimensionless/GL",
+                             "GG"=>"/state_dimensionless/GG", "A"=>"/state_dimensionless/A"),
+    )
+    for name in ("E0_eV", "L0_m", "lambda_P")
+        value = context[name]
+        (!isfinite(value) || value <= 0) && (context[name] = nothing)
+    end
+    nullable = ("backend", "energy_shift", "hilbert", "contraction", "kernel_build", "embedding",
+                "electron_electron_mode", "embedding_periods", "E0_eV", "L0_m", "lambda_P",
+                "map_kernels_shared_with_solver")
+    unknown = String[name for name in nullable if context[name] === nothing]
+    context["unknown_fields"] = unknown
+    context["status"] = isempty(unknown) ? "known" : "unknown"
+    context["reason"] = isempty(unknown) ? nothing : "missing_executed_context"
+    return context
+end
+
+_final_audit_channels(problem) = [name for name in _FINAL_AUDIT_CHANNELS if name in problem.kernels.enabled]
+
+function _audit_history(solution)
+    inner, outer = solution.scba.history, solution.outer_history
+    previous = length(inner) > 1 ? _audit_measure(inner[end-1].λ) :
+               isempty(inner) ? _audit_absent("history_unavailable") :
+               _audit_absent("no_previous_inner_iteration"; status="not_applicable")
+    return Dict{String,Any}(
+        "inner_last"=>isempty(inner) ? nothing : inner[end].ν,
+        "inner_previous"=>length(inner) > 1 ? inner[end-1].ν : nothing,
+        "outer_last"=>isempty(outer) ? nothing : outer[end].μ,
+        "previous_lambda"=>previous,
+    )
+end
+
+function _audit_charge_record(solution, metrics, available, history)
+    problem = solution.problem
+    if !available
+        # The unavailable path did not measure stored Keldysh numbers. Do not
+        # allocate another total/Graw field or repeat the map to fill that gap.
+        target = _scaled_physics(problem.physical, problem.scales).Nᴰ²ᴰ
+        record = Dict{String,Any}(name=>_audit_absent() for name in (
+            "stored_raw_sheet", "normalized_sheet", "candidate_raw_sheet", "stored_lambda",
+            "candidate_lambda", "stored_constraint", "candidate_constraint", "normalized_residual",
+        ))
+        record["target_sheet"] = _audit_measure(target;
+            invalid_reason=target <= 0 ? "nonpositive_target" : nothing)
+        previous = history["previous_lambda"]
+        record["lambda_change"] = previous["status"] in ("unavailable", "not_applicable") ?
+                                  copy(previous) : _audit_absent()
+        return record
+    end
+    target, raw, normalized = metrics[:target_charge], metrics[:raw_charge], metrics[:normalized_charge]
+    valid_target = isfinite(target) && target > 0
+    valid_raw = isfinite(raw) && raw > 0
+    record = Dict{String,Any}(
+        "target_sheet"=>_audit_measure(target; invalid_reason=target <= 0 ? "nonpositive_target" : nothing),
+        "stored_raw_sheet"=>_audit_measure(raw; invalid_reason=raw <= 0 ? "nonpositive_stored_raw" : nothing),
+        "normalized_sheet"=>_audit_measure(normalized),
+        "stored_lambda"=>valid_target && valid_raw ? _audit_measure(raw/target) : _audit_undefined(),
+        "stored_constraint"=>valid_target && valid_raw ? _audit_measure(abs(raw/target-1)) : _audit_undefined(),
+        "normalized_residual"=>valid_target && isfinite(normalized) ?
+                               _audit_measure(abs(normalized-target)/target) : _audit_undefined(),
+    )
+    if available
+        candidate_raw = metrics[:candidate_raw_charge]
+        record["candidate_raw_sheet"] = _audit_measure(candidate_raw)
+        valid_candidate = valid_target && isfinite(candidate_raw)
+        record["candidate_lambda"] = valid_candidate ? _audit_measure(metrics[:candidate_lambda]) : _audit_undefined()
+        record["candidate_constraint"] = valid_candidate ? _audit_measure(metrics[:r_lambda_candidate]) : _audit_undefined()
+    else
+        for name in ("candidate_raw_sheet", "candidate_lambda", "candidate_constraint")
+            record[name] = _audit_absent()
+        end
+    end
+    previous = history["previous_lambda"]
+    record["lambda_change"] = previous["status"] == "measured" ?
+        (valid_target && valid_raw ? _audit_measure(raw/target-previous["value"]) : _audit_undefined()) :
+        previous["status"] == "error" ? _audit_undefined() : copy(previous)
+    return record
+end
+
+function _audit_has_error(value)
+    value isa AbstractDict || value isa AbstractVector || return false
+    value isa AbstractDict && get(value, "status", nothing) == "error" && return true
+    entries = value isa AbstractDict ? values(value) : value
+    return any(_audit_has_error, entries)
+end
+
+function _final_fixed_point_record(solution, evidence, metrics, poisson; audit_failure=nothing)
+    available = evidence !== nothing
+    NE, Nk, Nb, _ = size(solution.scba.green.Gᴿ)
+    detail, detail_truncated = _audit_detail(audit_failure === nothing ?
+        (available ? "" : String(solution.scba.status)) : String(audit_failure))
+    dyson = Dict{String,Any}()
+    for name in (:ratio, :global_abs_F, :max_abs_F)
+        dyson[String(name)] = !available ? _audit_absent() : name === :ratio ?
+                             _audit_dyson_ratio_measure(evidence.dyson.ratio_witness, evidence.dyson.ratio) :
+                             _audit_measure(getfield(evidence.dyson, name))
+    end
+    for name in (:ratio_witness, :absolute_witness)
+        dyson[String(name)] = _audit_witness_record(available ? getfield(evidence.dyson, name) : nothing)
+    end
+    rows = Dict{String,Any}[]
+    winner, best = nothing, 0.0
+    for family in (_final_audit_channels(solution.problem)..., :embedding_total, :embedding_plus, :embedding_minus)
+        for (index, component) in enumerate(("R", "L", "G"))
+            row = Dict{String,Any}("family"=>String(family), "component"=>component)
+            raw = available ? evidence.sigma[family].rows[index] : nothing
+            for name in (:numerator_F, :scale_F, :denominator, :ratio)
+                row[String(name)] = available ? _audit_measure(getfield(raw, name)) : _audit_absent()
+            end
+            if available && (winner === nothing || raw.ratio > best)
+                winner = Dict("family"=>String(family), "component"=>component)
+            end
+            available && (best = max(best, raw.ratio))
+            push!(rows, row)
+        end
+    end
+    any(_audit_has_error, rows) && (winner = nothing)
+    selfenergy = Dict{String,Any}(
+        "rows"=>rows, "winner"=>winner, "floor"=>_FINAL_AUDIT_FLOOR,
+        "max_ratio"=>available ? _audit_measure(metrics[:r_Σ]) : _audit_absent(),
+    )
+    history = _audit_history(solution)
+    charge = _audit_charge_record(solution, metrics, available, history)
+    poisson_record = Dict{String,Any}(String(name)=>_audit_measure(value) for (name, value) in pairs(poisson))
+    poisson_record["rU_max"] = _audit_measure(metrics[:r_U])
+    if isfinite(poisson.target_sheet) && poisson.target_sheet <= 0
+        poisson_record["target_sheet"] = _audit_measure(poisson.target_sheet; invalid_reason="nonpositive_target")
+    end
+    if !isfinite(poisson.target_sheet) || poisson.target_sheet <= 0
+        poisson_record["neutrality_ratio"] = _audit_undefined()
+    end
+    spectral = _audit_norm_record(available ? evidence.spectral : nothing)
+    keldysh = _audit_norm_record(available ? evidence.keldysh : nothing)
+    # Optional history is excluded from the mandatory measurement status.
+    mandatory_charge = Dict(name=>value for (name,value) in charge if name != "lambda_change")
+    failed = any(_audit_has_error, (dyson, spectral, keldysh, selfenergy, mandatory_charge, poisson_record))
+    return Dict{String,Any}(
+        "schema"=>_FINAL_AUDIT_SCHEMA,
+        "record_status"=>!available ? "unavailable" : failed ? "partial_error" : "measured",
+        "reason"=>!available ? "map_unavailable" : failed ? "measurement_error" : nothing,
+        "detail"=>detail, "detail_truncated"=>detail_truncated,
+        "shape"=>Dict("NE"=>NE, "Nk"=>Nk, "Nb"=>Nb),
+        "units"=>Dict("native"=>"1", "energy_scale"=>"eV", "length_scale"=>"m", "index"=>"1-based"),
+        "context"=>_final_audit_context(solution), "history"=>history,
+        "dyson"=>dyson, "spectral"=>spectral, "keldysh"=>keldysh,
+        "selfenergy"=>selfenergy, "charge"=>charge, "poisson"=>poisson_record,
+    )
 end
