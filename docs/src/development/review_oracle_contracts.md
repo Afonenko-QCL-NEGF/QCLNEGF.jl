@@ -1,9 +1,10 @@
 # DEV02 — паспорта независимых oracle O08-01…06
 
-Статус: **CP-DESIGN PASS для bounded scopes O08-01/02/04/06**
-(2026-10-19, независимый reviewer high). O08-03/O08-05 остаются
-**design_blocked**. Полная готовность шести oracle и полное завершение
-DEV02 acceptance **не установлены**.
+Статус: **CP-DESIGN PASS для bounded scopes O08-01/02/03/04/06**
+(2026-10-19, независимый reviewer high). O08-03 принят как complete coupled
+functional contract; DEV05 I2 source PASS и GREEN-2 925/925 functional
+assertions PASS, independent final CP-CODE/docs CPP pending. O08-05/DEV07 остаются **design_blocked**. Полная готовность шести
+oracle и полное завершение DEV02 acceptance **не установлены**.
 
 Уточнение O08-02/04 на Core `a8d2c0de21dfdce3ed3c7c585c555656443f6d89`
 заменяет неподдерживаемые carrier dimensions штатными checked builders.
@@ -68,7 +69,7 @@ PORTABILITY, RV08 K/S/P/L/J/R09–11/R14/P03, RV09 T01–04,
 | --- | --- | --- |
 | O08-01 | design_accepted | Literal noncommuting Keldysh product, anti-Hermitian/PSD controls |
 | O08-02 | design_accepted, exact-ND precondition frozen | Independent sine anchor + constant incompatible source, checked full carrier; assessment routing явно synthetic |
-| O08-03 | design_blocked | Не завершён complete manufactured final-state oracle с независимыми U/G/n/candidate/history |
+| O08-03 | D2 design_accepted; I2 source PASS, GREEN-2 925/925 functional PASS; independent final CP-CODE/docs CPP pending | Complete coupled literal final U/G/n/candidate/history; healthy global FAIL ровно r_sum; independent negative controls |
 | O08-04 | design_accepted | Actual NE3/Nk2 public carrier, signed SI current, literal coherence и genuine Nb1 truncation |
 | O08-05 | design_blocked | Четыре absolute channel passports ещё не имеют законченной primary→geometry→SI→tolerance цепочки; LO derivation — локальный кандидат |
 | O08-06 | functional/ratio design_accepted, CP-CODE PASS | Literal direct/FFT, center-only continuum/tail и accepted derived ratio interval; targeted GREEN2 passed |
@@ -78,7 +79,7 @@ bounded functional-regression scope. DEV03/04/06/08 имеют текущую
 CP-CODE и targeted runtime evidence в своих envelopes. Runtime acceptance
 не следует из design; ниже приведены exact fixture/raw receipt identities.
 DEV03 ← O08-01; DEV04 ← O08-02; DEV05 ← O08-03
-(blocked); DEV06 ← O08-04; DEV07 ← все четыре O08-05 (blocked, допустим
+(D2 CP-DESIGN PASS, I2 source PASS; GREEN-2 925/925 functional PASS, independent final CP-CODE/docs CPP pending); DEV06 ← O08-04; DEV07 ← все четыре O08-05 (blocked, допустим
 отдельный accepted channel child packet); DEV08 ← O08-06.
 
 Граф независимости: literal arrays/rational sums → API outputs;
@@ -405,55 +406,668 @@ failure при retained `rneutral=1`. Для каждого gate выполни�
 контрпример, где остальные two gates поданы synthetic healthy inputs,
 и явно не называть это independent measurement всей модели.
 
-## O08-03 — complete final U/G: design_blocked
+## O08-03 — complete final U/G: D2 CP-DESIGN PASS
 
-**Существующие seams.**
-`fresh_fixed_point_metrics(problem::NEGFProblem,scba::SCBAResult,
-U::AbstractVector{<:Real},candidate::FixedPointAuditCandidate)` —
-`src/numerics/reference/final_audit.jl:34`;
-`validate_solution(solution::NEGFSolution;candidate=nothing,audit_failure=nothing)`
-— `validation.jl:516`, затем `_validate_solution_metrics`.
-`project_hamiltonians(problem,U)` использует `Φ†diag(U)Φ`;
-fresh rD/rD_candidate именно этот U. Final Poisson rU сравнивает freshly
-solved Up с `solution.Uᴴ` (`validation.jl:636`).
+**Текущий статус (2026-10-19).** Принят complete manufactured general-h
+functional contract, D2 round2/2. Approved D2 SHA256:
+`eb9e1a8c39ad08bafa480970392d844c2c9fffdef02d847397ef87c52111bfc9`;
+independent CP-DESIGN review SHA256:
+`53c3e9b4061a6cdb42239d6d42f5b3f7a09b94eb36315b1ec22bfea103c4f55f`.
+Текущий I2 `test/numerics/final_state_alignment_oracle.jl`, SHA256
+`81fbb258f86c1760ed2ffb7964e189518fd1ec7608921e42080c969c4a55f852`,
+получил source CP-SOURCE PASS, review SHA256
+`bb5b5260487eab19e3c0db01141852c02ebe68ea8c991f68e29e59110db9a4f4`.
+Executor GREEN-2 дал **925/925 targeted functional assertions PASS**;
+подробная observation приведена после frozen D2 body. **Independent final
+CP-CODE и docs review pending**. Healthy global solution report намеренно
+FAIL ровно по r_sum; test PASS подтверждает именно этот ожидаемый отказ,
+а не physical/S1/fullCI/native acceptance.
 
-**Неподменяемый контракт.** Требуется complete `NEGFProblem` с physical,
-numerical, scattering, scales, grids, profiles, basis, kernels, four shift
-maps, discretization, models. `GreenState` содержит GR/G</G>/A/condition/
-Dyson scale. `SCBAResult` содержит все enabled scattering families,
-embedding/+/- и SCBA history/classification; `FixedPointAuditCandidate` —
-fresh same-state enabled families, embedding/+/- и measured roundoff. `NEGFSolution`
-добавляет published U,n, outer history, options и report.
-Все densities/charges/gates должны иметь объяснение из одного состояния;
-unrelated zeros или arbitrary partial state не complete assembly oracle.
+Полный D1 owning document SHA256
+`d51f984c68ac6c5ea9e25ecce21d2f66aca6b635de168f68cc4e711ce9005be3`
+сохранён отдельно до замены этого раздела. Failed I1 SHA6d0db8b1… и
+original GREEN-1 receipt557f60ed…/raw6918099f… сохраняются; failure не
+переписывается successful attempt. D1 original reading doc673bc964…,
+authored D1 docd51f984c… и текущий D2 document — разные identities.
+Production inputs/S1/physical thresholds не менялись.
 
-**Independent RHS/gap.** Нужны одновременно: literal Dyson/Keldysh family,
-independent Poisson n(U), target raw charge, explicitly defined raw-map
-candidate и histories с prescribed applicable gates. Scope manufactured
-limit и его отличие от production baseline надо определить отдельно;
-само требование alignment не доказывает, что все пять каналов обязательно
-должны иметь ненулевой amplitude в test fixture. В данном source/design
-пакете такая complete manufactured coupled state не выведена. Existing
-`fresh_candidate_residual.jl` вызывает только `_dyson_residual`, а causal
-quadratic root/maxiter harness — primitive SCBA components; ни один не
-вызывает complete final assembly. `_reference_audit_candidate` использует
-общие physical kernels и embedding, поэтому сам не independent RHS.
+Ниже D2 technical §§1–10 перенесены побайтно, кроме увеличения heading
+depth на1. Его source-only status/counter/next-step фразы относятся к
+моменту D2 freeze до I2 и GREEN-2; текущее состояние задаёт observation
+после body. Они не дают новых разрешений на execution. Обе L-JL попытки
+теперь использованы2/2; rerun не разрешён. Формулы, strict γ32 cap и
+failure inventories D2 не адаптировались по результату GREEN-2.
 
-**Заданный будущий negative.** Для derived healthy complete state сохранить
-G и изменить U на δU с `Φ†diag(δU)Φ≠0`, либо при fixed U оставить stale G;
-retained independent Dyson denominator/Poisson candidate обязаны нарушить
-fresh designated gate даже при stored small Σ residual. Нормы:
-max-block `||DG-I||F/(||D||F||G||F+sqrt(Nb))`, без weights;
-rK global Frobenius/(||G<||F+1e-14); rU absolute ∞ norm в E0.
-Допуски — действующие rD/rK/rU, но quantitative positive/negative margin
-ещё **не получен**, потому DEV05 не READY.
+D2 references к inherited D1 SI literals означают unchanged общий
+checked-carrier блок выше: eSI/hbar/m0/eps0/E0/L0/mr. Exact public seams
+и unchanged record ABI приведены ниже после D2 body, чтобы passport
+оставался самостоятельным; это source bindings, не новая модель/критерий.
+Raw GREEN-1 не печатает actual h. Его значение в D2 — независимое source
+prediction; GREEN-2 summary вместе с frozen I2 подтверждает прохождение
+reviewed exact unit-chain guards, но не является отдельным dump h.
 
-**Самый дешёвый next design.** Отдельный D packet: derive минимальную
-complete final-audit fixture с field inventory и independent RHS, явно
-зафиксировать manufactured applicability и ограниченный вывод об assembly,
-а перенос на five-channel baseline оставить отдельным утверждением.
-Никакой новый SCBA solve этим
-решением не разрешён. Выключить каналы для зелёного full-state claim нельзя.
+### 1. Что установил GREEN-1 и что он не установил
+
+Core source identity из coordinator brief:
+`f5b73369a96d1225bd96fb34f5262c8dcf965f86`.
+Frozen I test SHA256:
+`6d0db8b15300dce5350bf1bb282cef008da494be57bd96b23780ab1b314049a9`.
+GREEN-1: 46 passed / 0 failed / 1 error, fatal exact predicate в test:662
+`problem.grids.wˣ == [1.0,1.0,1.0]` false. Ни одного coupled audit не достигнуто.
+39.449 s; sampled RSS928108544 B; sampled owned TMP0; raw2183 B complete;
+resource guard_error/stop_reason=null. Exit1 — не scientific failure и не
+доказательство production defect: нарушена исходная D1 unit-spacing premise.
+
+Receipt SHA256
+`557f60ed37c4f325d09d552672730f6ad6db414781a0da84d57946c467b67c95`,
+original log SHA256
+`6918099fc6b8a06bc96b70424d08104915c64ed0eb98900b9c3b3a466ab7252e`.
+Оба файла `/tmp/qcl-DEV05-GREEN-1/{receipt.json,original.log}` read-only.
+Исторический D1 SHA96c2c50a… и review11900d84… не переписываются.
+Один из исходных двух DEV05 L-JL invocations израсходован; остаётся один.
+
+D1 ошибочно приравнял dimensionless spacing к exactly1 после отдельных
+Float64 nm→m преобразований длины слоя и масштаба. Approximate static
+carrier assertions это допускают; subsequent exact premise не следовала
+из них. D2 не заменяет false predicate на isapprox и не меняет input lengths
+ради получения1. Выбирается **тот же public builder с теми же physical и
+numerical arguments**, но независимые литералы выводятся для source-derived h.
+
+### 2. Независимая exact source цепочка единиц и новый fatal guard
+
+Owning chain, без вызова target helpers на expected side:
+
+1. `Layer` (`src/domain/types.jl:1–67`) приводит thickness к metre-valued
+   Float64 через `_length`; повторная `_length` уже metre quantity не меняет
+   coefficient. `_q/_length/_metres` — `domain/constants.jl:63–81`.
+2. `ScaleSystem` (`domain/scaling.jl:10–23`) отдельно приводит `10.0nm` к m.
+3. `period_length` (`domain/presets.jl:236`) суммирует один layer; для одного
+   элемента result — тот же metre coefficient. `scaled_value(:length)`
+   делит его на `L0_m` (`scaling.jl:35–40`); `build_grids` делит ещё на Nz3
+   (`reference/grids.jl:12–25`).
+4. Выбранный locked Unitful1.28.0 (Manifest git-tree
+   `57e1b2c9de4bd6f40ecb9de4ac1797b81970d008`): `src/display.jl:8` задаёт
+   nano=-9; `pkgdefaults.jl:74`, `user.jl:326–355`, `conversion.jl:5–47`
+   задают metre reference / factor `1//1000000000`.
+   `conversion.jl:96–102` умножает Float64 coefficient на factor.
+   Julia1.13 `base/rational.jl:162–165,187–189` продвигает Rational/Float64
+   к Float64; conversion — Float64 numerator/denominator division.
+   Это прочитанные локальные primary source files, не исполнение Unitful.
+
+Пусть RN — IEEE binary64 round-to-nearest-even. Полностью независимые
+expected expressions из исходных literal arguments:
+
+```text
+nm64  = RN(1.0/1000000000.0)
+ell64 = RN(30.0*nm64)
+L064  = RN(10.0*nm64)
+Lp64  = RN(ell64/L064)
+h64   = RN(Lp64/3.0)
+
+nm64  = 0x1.12e0be826d695p-30
+ell64 = 0x1.01b2b29a4692cp-25 = 3.0000000000000004e-8 m
+L064  = 0x1.5798ee2308c3ap-27 = 1e-8 m
+Lp64  = 3.0000000000000004
+h64   = 0x1.0000000000001p+0 = 1.0000000000000002
+```
+
+Python stdlib scalar reproduction подтверждает эту source chain; actual h
+не был напечатан GREEN-1, поэтому последняя строка — **source-derived
+prediction**, а не приписанный raw log measurement. Её отдельно проверит
+новый exact predicate. Дополнительный Julia metadata readout не требуется
+и этим D не запускается.
+
+Expected h не читается из `problem.grids`, `basis`, `_scaled_physics`,
+`build_poisson_matrix` или solver output. В future fixture вычислить цепочку
+выше из literal input arguments **до** public builder, затем потребовать
+exact equality всех трёх actual wZ с h64 и всех actual x с
+`RN((g-.5)*h64)`. Дополнительно exact physical layer coefficient=ell64,
+actual `scales.L0_m=L064`, typed dimensions m, fixed Nz3 и uniform εr1.
+Не использовать `h=actual_wZ[1]` как expected data source.
+
+False predicate остаётся fatal STOP с сохранением нового raw output;
+никакого fallback на approximate equality, принудительного `fill(1)` или
+конструирования unchecked grids. Archived D1 guard и failed test сохраняются;
+новый exact guard проверяет заново выведенный spacing и **всю unit chain**.
+Это замена falsified hypothesis после D2 review, а не removal of a guard.
+
+`h` далее означает **exact real value Float64 h64** — рациональное число,
+точно вкладываемое в BigFloat/Ball. Уравнения выводятся для любого h>0,
+но branch/support assertions ниже заморожены для этого exact h и source inputs.
+
+### 3. Единицы и complete checked carrier
+
+Public builder arguments D1 полностью сохраняются: single doped30nm layer,
+Ec0/masses.067/εr1/xAl0, sheet `(1e16/64)m^-2`, gs2, ionization1, bias0,
+T70K, scales .1eV/10nm; Nz3/Nb1/P1/NE3/Nk2/Nphi4/Nqz3; E-.1…+.1eV,
+margin.05eV; kmax=qzmax1e8m^-1; seed.001eV; channels off/default physical
+models, localization:none, `validate_static=true`. No S1 dose/mesh/model
+or production criterion changes. D2 does not choose a different representation
+of 30nm simply to force unit spacing.
+
+Use D1 independent SI constants (e/hbar/m0/eps0/E0/L0/mr), never CODATA or
+target `_scaled_physics` on RHS. With dimensionless `x=z/L0`, h=Δz/L0:
+
+```text
+t0 = hbar²/(2*m0*mr*E0J*L0²)          # transverse coefficient, E0 units
+tZ = t0/h²                            # finite-difference z hopping
+lambda = e²/(eps0*E0J*L0)
+D = 1/64                              # scaled sheet number, L0^-2
+phi = [1/2,1/sqrt(2),1/2]              # discrete Euclidean normalized
+chi = phi/sqrt(h)                     # continuous dimensionless envelope
+v = [1/4,1/2,1/4] = abs2(phi)
+x = h*[1/2,3/2,5/2],        wZ=[h,h,h],     Lgrid=3h
+NDbar = D/(3h)*[1,1,1]
+nbar* = D/h*v
+sum_g h*abs2(chi_g)=1
+sum_g h*nbar*_g=D=sum_g h*NDbar_g
+```
+
+Physical volume densities are `nbar/L064^3` and `NDbar/L064^3` m^-3;
+physical sheet target is D/L064² m^-2. `nbar` is not sheet density and must
+not keep D1 unit-spacing array `[D/4,D/2,D/4]`. Spatial quadrature h supplies
+the missing length. Physical envelope ψ=χ/sqrt(L0), m^-1/2.
+
+The source target conversion is independently `Nsheet64*(L064*L064)`
+with Float64 arithmetic; here it predicts exactly D. Check that direct
+physical-input chain, never call `scaled_value` as its own oracle. Actual
+ND remains checked uniform positive and close to D/(3h) by the declared
+donor construction error; do not overwrite it with ideal values. `dot(wZ,ND)`
+and the three-term donor sum have their γ-bound, not guessed zeros.
+
+**Не смешивать две округлённые длины.** Source `Lp64=RN(ell64/L064)`
+равен3.0000000000000004. Exact real grid length3h64 и его Float64 sum
+не обязаны ему равняться: `RN(3*h64)=3.000000000000001` в этой цепочке.
+Поэтому не вводить ещё один false guard `3h64==Lp64`. Grids используют h64;
+`_scaled_physics.Lp` / final r_n normalizer используют input Lp64. Последний
+равен `D_actual/sqrt(Lp64)`, а не предполагаемому exact D/sqrt(3h).
+В manufactured constant-density history разность n равна0, но его единицы
+и denominator всё равно должны быть описаны правильно. Это source
+rounding discrepancy внутри одного заданного physical input, не разрешение
+изменить period, weights или target number.
+
+Также `RN(sqrt(h64))` здесь равен1.0: actual source χ может совпасть с Φ
+побайтно, хотя independent real expression есть φ/sqrt(h64). Поэтому
+weighted χ normalization и density comparisons имеют propagated division/
+sqrt/Φ error, а не новый exact `sum(h*abs2(χ))==1` guard. Ideal relations
+в таблице остаются физически выведенными; actual Float64 fields проверяются
+со своими направленными roundoff enclosures.
+
+All remaining grid fields are D1 values: E[-1,0,1], wE[.5,1,.5], trusted
+[false,true,false], k[0,1], wk[1,3]/(16π), qz[-1,0,1], wq[.5,1,.5], phi-angle
+[0,π/2,π,3π/2]; bias maps I3 and LO maps δ=.367. Nodal-linear discretization,
+empty kernel dict/enabled and FLO=zeros(3,1,1) are unchanged explained limits.
+
+### 4. Basis/BDD/kinetic terms: h powers must stay distinct
+
+From the literal 3-node BDD cell matrix `tZ*[2 -1 0;-1 2 -1;0 -1 2]`:
+
+```text
+Phi = phi up to one global unit phase       # not phi/sqrt(h)
+chi = Phi/sqrt(h)
+H0 = (2−sqrt(2))*tZ
+Tplus=Tminus=tau=−tZ/4
+c=2*tau²=tZ²/8
+Z=3h/2; centre=3h/2; spread=h/sqrt(2)
+Mminus1=1/mr
+window_eigenvalue=H0; Egrid0=2tZ
+h_m(U)=H0 + phi†diag(U)phi + t0*k_m²
+```
+
+**Transverse kinetic coefficient stays t0, not tZ.** Only spatial finite
+difference hopping carries h^-2. Changing the k term to tZ would alter the
+projected equation and would be a new shared oracle error. `basis.jl:14–84`
+explicitly sets χ=Φ/sqrt(Δx) and Euclidean Φ orthonormalization; projection
+uses Φ, so no extra h factor multiplies φ†diag(U)φ. `hamiltonian.jl:36–48`
+supplies the BDD h^-2; `basis.jl:288–318` supplies the separate k term.
+
+Static basis expectations must use h-scaled χ/Z/centres/spreads and tZ-scaled
+H0/T/window/Egrid. φ itself, overlap eigenvalue/condition1, Mminus1 and
+translation diagnostics retain D1 meanings. All arrays/types/no-alias and
+full model/problem inventories remain required.
+
+### 5. Independent Poisson/Hartree relation
+
+Write literally, never obtain matrix/RHS from target helpers:
+
+```text
+M=[2 −1 −1;−1 2 −1;−1 −1 2]
+L_h=M/h²
+b=lambda*(nbar*−NDbar)=lambda*D/(12h)*[-1,2,-1]
+U*=lambda*D*h/36*[-1,2,-1]
+sum(U*)=0;  h*sum(U*)=0;  L_h U*=b
+zeta*=0; neutrality*=0
+u*=phi†diag(U*)phi=lambda*D*h/72
+```
+
+This gives one consistent density/target/U/h/Uprojection relation. U is
+dimensionless Hartree energy UH/E0; physical eV is U*.1. There is no
+new Poisson solve or relaxation in this design; this is literal algebra.
+
+Future arrays `n_float` and U_float are nearest-rounded independent literals
+from these high-precision expressions. Once rounded, treat **their Float64
+values as exact inputs** to comparison enclosures; do not silently substitute
+`sum(n_float)=D/h` or ideal U for the measured final inputs.
+
+#### Actual floating stencil and exact tiny bordered-system reference
+
+The source stencil forms Δx² in Float64. Independent input-side expressions:
+
+```text
+h2_64=RN(h64*h64)
+qL_64=RN(1.0/h2_64) = 0x1.ffffffffffffcp-1
+L_api_literal=qL_64*M
+sP_literal=4*qL_64
+```
+
+For this qL, multiplying by2/4 is exact and each row absolute-sum is
+4qL. Verify this scalar arithmetic from the literals before comparing the
+tiny solver; source face εr harmonic mean is exactly1. No call to
+`build_poisson_matrix` is needed. `L_api_literal` is an independently
+derived **floating discrete operator**, distinct from ideal L_h by a known
+roundoff coefficient; it is not a changed physical grid/stencil.
+
+Let `la` and uniform `nd` be **checked actual input coefficients** (bounded
+against independent lambda and D/(3h)), let n_f be the literal rounded
+published n array, `S=sum_j n_f[j]` evaluated exactly in high precision,
+and `P=I−ones(3,3)/3` literal. The exact solution of the actual-coefficient
+bordered discrete system, before its floating solve, is independently
+
+```text
+b_a=la*(n_f−nd*ones3)
+U_a_exact=la/(3*qL_64) * P*n_f
+zeta_a_exact=la*(S−3nd)/(4*qL_64*sqrt(3))
+neutral_a_exact=abs(S−3nd)/(3nd)
+```
+
+Uniform donor errors feed ζ, while U depends on the zero-mean part of n_f.
+The h factors in neutrality cancel only in exact algebra; source dot/sum
+roundoff is still explicitly included. D1 simplification `la*D/36*d` is
+not the D2 actual-coefficient U reference. The ideal `lambda*D*h/36*d`
+remains the independent physical/discrete literal state, with rounding and
+la/nd/qL perturbations kept in the subsequent enclosure.
+
+For actual returned Up, expand the three rows of `qL_64*M*Up−b_a` independently.
+With r this exact residual and measured gauge mean(Up), the forward bound is
+
+```text
+||Up−U_a_exact||inf <= ||P*r||2/(3*qL_64) + abs(mean(Up))
+```
+
+Add the explicit b formation/row-accumulation error divided by3qL. This uses
+the literal positive zero-mean eigenvalue3qL, not guessed LAPACK accuracy.
+Compare returned rP against independently expanded residual /
+`(norm(b_a)+la*1e-14)`, propagating its floating multiplication/norm error.
+Retain unchanged existing rP gate1e-11. For ζ do not assume LAPACK forward
+accuracy from epsilon: the source uses `v64=RN(1/RN(sqrt(3.0)))`. Freeze this
+independent literal and the 4×4 scaled matrix
+
+```text
+Q4=[ M/4, v64*ones3; v64*ones3', 0 ]
+rhs4=[ b_a/(4qL_64);0 ]
+zeta_exact_v64=sum(b_a)/(12qL_64*v64)
+```
+
+Its two zero-mean eigenvalues are3/4 and the other two are±sqrt(3)*v64;
+the literal v64 interval proves `norm(inv(Q4),2)=4/3`. Independently form
+the exact four-row residual `R4=Q4*[Up;zeta]−rhs4` from the returned floats,
+with directed arithmetic, to get `abs(zeta−zeta_exact_v64)≤(4/3)*norm(R4)`.
+This measured residual includes source b/rhs formation/solve error and
+does not use a second solve. It also gives an independent full-vector
+forward enclosure. Reference `zeta_exact_v64` differs from the ideal
+sqrt(3) reference by the explicitly computable reciprocal-v error; either
+retain the exact v64 reference or add that outward difference.
+
+Retain the D1 short-formation comparison as well, now with its h/q units:
+`Bz_short=gamma32*(la*D/(qL_64*h)+abs(zeta_exact_v64))`, outward, including
+the explicit ideal-v versus v64 difference when needed. The new measured
+forward bound must fit this retained roundoff regression budget; it does
+**not** enlarge it. Require `Bz_forward≤Bz_short` and use the smaller enclosure
+for comparison. The γ32 budget alone is not advertised as a universal
+LAPACK forward guarantee; the measured Q4 residual provides that evidence
+for this actual tiny solve. Failure of either retained regression or
+forward check is STOP, not permission to widen γ or a physical tolerance.
+
+Enclose neutrality against its exact ratio plus γ32 times the absolute
+weighted dot/sum terms divided by positive actual donor sheet; near zero
+this is an absolute cancellation budget, not a relative error in zero.
+Require the resulting ζ/neutrality upper bounds to be below unchanged
+rζ/rneutral gates. A wrong output cannot inflate its residual enclosure
+and still receive a functional pass. All exact refs are frozen before the
+tiny public Poisson call; residual measurement follows that call and precedes
+the independent final validation call.
+Enclose rU from `max_j abs(U_a_exact[j]−U_published_float[j])` plus this
+forward bound and final subtraction rounding. No new fitted Poisson tolerance.
+
+### 6. Six-node Green state, same-G raw map and charge
+
+Use the same exact branch inventory as D1, now with
+
+```text
+z_em=E_e−[(2−sqrt(2))*tZ+u*+t0*k_m²]        # healthy
+z0_em=E_e−[(2−sqrt(2))*tZ+t0*k_m²]         # old U=0
+c=tZ²/8
+g=(z−i*sqrt(4c−z²))/(2c)                 if z²<4c
+g=2/(z+sign(z)*sqrt(z²−4c))              otherwise
+```
+
+For both exact source-derived h states only e2,m1 lies inside the band;
+every other node is real and nonsingular. Branch/radicand/denominator/support
+guards stay fatal and are frozen before target calls. With independent
+`B=16π²D` at that node:
+
+```text
+A=−2Im(g); G<=iB; G>=−i(A−B); f=B/A, 0<f<1
+Sigma±X=tau²*X; SigmaTotalX=c*X, X in (GR,G<,G>)
+```
+
+At other nodes A/G</G>=0 follows from real causal roots; their nonzero real
+GR/ΣR enter all Dyson/Σ norms. Arrays shape(3,2,1,1), no aliases; condition1,
+positive Dyson scale `abs(z−c*g)=abs(1/g)`. There is no η-work or imported seed.
+At active node `c|g|²=1`, hence raw Keldysh and spectral identities; outside
+both sides vanish. Actual fresh map uses `_reference_audit_candidate` /
+embedding target on **actual side**; compare every field against independent
+τ²G/cG. Empty channels/empty-roundoff aggregate0 and legacy bulk-feedback
+scope remain explicit. No microscopic model/scattering oracle is manufactured.
+
+Energy/radial/charge normalization **does not acquire an extra h**:
+
+```text
+N(G<)=gs/(2π)*wE2*wk1*B
+     =2/(2π)*1*1/(16π)*16π²D=D
+P_sheet=[D], population=[1]
+nbar_g=D*abs2(chi_g)=D/h*phi_g²
+sum_g h*nbar_g=D
+raw/candidate/normalized charge=D; lambda_raw=lambda_candidate=1
+```
+
+h appears only when reconstructing spatial volume density and integrating
+it back with wZ. Do not insert h into `number_functional`, `wE*wk`, current,
+sheet matrix or spectral sum. Charge/Pauli do not use fitted normalization.
+Predicted numbers for h64 differ from D1 only at last arithmetic digits:
+healthy A≈37.5340379643918,f≈.0657376939463093; old A≈55.7172917139956,
+f≈.0442842971072220. Norms and scalar floors remain unchanged.
+
+### 7. Required complete records and histories
+
+D1 full-field inventory remains binding; D2 changes only their derived
+spatial values. `NEGFProblem` uses the checked builder; every actual field
+is bound to the above independent input expectations. GreenState has full
+GR/G</G>/A/condition/scale; stored embedding/plus/minus follow τ_h² map;
+candidate comes from same published G and is independently checked. All
+typed dictionaries/classifications/mixer/restart optional fields keep the
+same explained manufactured meanings, never arbitrary zeros.
+
+`NEGFSolution.U` uses independently rounded U*, `.n` rounded nbar*=Dφ²/h,
+options unchanged; final/public density and number checks are required.
+For `electron_density` physical conversion use canonical L064³, with the
+short division/conversion/multiplication rounding in its enclosure. Bound
+actual χ²D against intended nbar_g and the rounded literal n_f separately;
+do not keep an old D1 density expected array. Sheet conversion uses L064².
+
+Manufactured inner ν1…4 and outer μ1…3 sequences are still constant algebraic
+states. First-predecessor differences Inf/NaN; later density/current/population
+differences are derived from identical arrays/samples. History chargeD is
+sheet number, so stays1/64. Outer density vectors now n_f(h); old-Hartree
+outer rU uses `max(abs(U*(h)))`. Retain same-field measured SI J in history,
+with independent zero-current cancellation bound (τ now τ_h). This avoids
+false near-zero temporal relative change; no history becomes fake solver
+runtime. Optional witness/markers absent and provisional report unassessed.
+
+No supplied fake pass metric dictionary. For all variants call actual
+`fresh_fixed_point_metrics`, `validate_solution`, and explicit
+`_validate_solution_metrics(...;accept_approximate_scba=false)`. The frozen
+38-base /41-with-candidate gate inventory and source-limit key comparisons
+from accepted inventory delta stay unchanged. Full API outputs supply all
+other gates, including known inadequate spectral quadrature.
+
+### 8. Roundoff contract: exact input spacing, same gates
+
+No `SolverTolerances` or inherited ATOL/RTOL changes. New exact unit-chain
+guards do not use ATOL/RTOL. D1 static tolerances stay only where already
+accepted for eigensystem/constant conversion comparisons, now around the
+correct h-dependent reference.
+
+1. Compute h64 using the stated source-equivalent literal Float64 operations;
+   verify canonical input coefficients and actual grid **exactly**. Embed its
+   exact binary value into 384-bit directed intervals. Do not use decimal
+   parse1 as a surrogate, interval centre from actual wZ or a measured h fit.
+2. All h-dependent ideal arithmetic is outward: h², 1/h, sqrt(h), tZ=t0/h²,
+   U/u=lambda*D*h factors, n=Dφ²/h. Once U/n/g are rounded to Float64, treat
+   their actual literal floats as exact inputs. Independent polynomial defect
+   of g retains actual construction error; active sqrt cancellation factor
+   `(4c+z²)/abs(4c−z²)` stays explicit. No large BLAS/FFT bound is inferred.
+3. Constants/root derivation uses directed 384-bit operations, including the
+   extra h multiplications/divisions; counting them is mandatory in ledger.
+   Float64 target scalar product ceilings remain γ16 per complex triple,
+   γ32 per six-entry norm/charge/projection, γ64 per scalar Dyson metric.
+   h64 itself is exact data after its exact source-chain guard, not an
+   unmeasured perturbation to be absorbed by increasing γ or physical gates.
+4. ηh expected Hamiltonian is now H0_h+φ†Uφ+**t0**k². Include actual checked H0,
+   Φ error and actual kinetic coefficient/k deviation as D1; expected H0 uses
+   tZ, not t0. Input-side actual T coefficients are compared with τ_h and give
+   ηΣ. Triple-product, A/K/Σ/charge quotient enclosures retain D1 formulas
+   with h-correct g/c/τ. Denominators stay positive, all divisions guarded.
+5. Donor construction expectation is D/(3h), with source target unit conversion
+   and dot normalization. At most: source L0² multiply and sheet multiply,
+   three positive h terms and division — ≤8 elementary rounded operations;
+   existing γ16 conversion envelope and γ32 weighted donor-sum envelope
+   suffice. Actual sum includes h explicitly. Uniform/finite/positive ND
+   guards are required. No `ND≈D/3` unit-spacing shortcut remains.
+6. Density/χ expected side is φ/√h and Dφ²/h. Measure actual χ field deviation
+   from this independent expression and propagate six-entry integration plus
+   physical-unit conversion (γ32). This is not changing intended n to target
+   electron-density helper output. Sheet/number measure has no h.
+7. Poisson uses independent floating qL_64 M, exact rounded n_f as input,
+   actual checked la/nd as perturbation coefficients, three-row residual,
+   zero-mean eigenvalue3qL and gauge; formulas in §5 replace all unit-spacing
+   exact simplifications. Actual qL formation is frozen independently of
+   `build_poisson_matrix`. Residual/norm/source error counts retain γ3 b
+   formation and γ32 row/dot/norm envelope, with corresponding 1/(3qL) factor.
+   The independently expanded Q4 residual additionally bounds ζ by4/3,
+   using the exact source-derived v64; no LAPACK accuracy coefficient is
+   guessed and no new physical gate is introduced. Its forward enclosure
+   must fit the retained h-correct γ32 short-formation comparison, never
+   replace it with a looser measured-error allowance.
+8. Current cancellation per side remains
+   `2γ3*τ_h²*B*(A−B)/(16π²)` (plus checked T discrepancy as in D1).
+   rJ bound divides scaled flux by1e-12, temporal history J floor is
+   1e-12 A/m²; they are different units. Bounds remain <1e-6. No exact J0
+   or zero-history shortcut is introduced.
+
+Frozen comparison: for any scalar Dyson reference D0,g, n0=abs(D0g−1),
+d0=abs(D0)*abs(g)+1, propagate ηh+ηΣ and γ64 to bn/bd exactly as D1;
+require d0>bd, bound ratio by
+`[max(0,n0−bn)/(d0+bd),(n0+bn)/(d0−bd)]`. Max six intervals. Healthy upper
+must be below source gate before pass assertion; wrong/stale lower must
+exceed it. A/K/Σ retain full-array Frobenius+1e-14 and their same quotient
+logic. Missing/out-of-bound input remains STOP, never tolerance tuning.
+
+### 9. Healthy and wrong inputs, unchanged exact failure inventory
+
+Healthy: U*(h), n*(h), six g_h/Σ_h and actual same-G candidate. All designated
+raw/alignment gates pass algebraically; global spectral sum deliberately
+fails unchanged1e-3. With only active spectral node,
+`r_sum=max(abs(A_h/(2π)−1),1)`≈4.9737276762. No scientific solution pass.
+
+N1 wrong/predicted U: publish2U*(h), retain G_h, Σ_h, n*(h), candidate and
+old histories. Fresh Σ residual remains near0; maps depend on same G at
+bias0. δh=u*(h), literal rD per node
+`abs(u*g)/(abs((1/g−u)*g)+1)`; rU=max|U*|=lambda*D*h/18.
+
+N2 stale G at fixed healthy final U*: construct G0_h/Σ0_h for Uold0 using
+H0_h+t0k² and the same B; same nbar*=Dφ²/h, target/charge/population. Publish
+healthy U*(h) with this complete old state. rU passes but rD has the same
+formula with g0. Stored and fresh rΣ stay small. Old outer records explicitly
+retain the predicted unsolved U update; no synthetic accepted history.
+
+For both variants at active node |g|=1/sqrt(c_h), put
+`x_h=u*(h)/sqrt(c_h)=lambda*D*sqrt(8)*h³/(72*t0)`.
+Triangle inequality gives `rD>=x_h/(2+x_h)`≈.08897096039.
+Numerical independent scalar expectations: N1 rD≈.08946567246;
+N2≈.09013587908; rU_wrong≈.01570757654490 E0. These are mathematical
+separation margins against existing gates, not new physical thresholds.
+
+| Full input | Exact expected global failed-key set |
+| --- | --- |
+| Healthy U_h*,G_h* | `{r_sum}` |
+| N1:2U_h*,G_h* | `{r_D,r_D_candidate,r_U,r_sum}` |
+| N2:U_h*,G0_h | `{r_D,r_D_candidate,r_sum}` |
+
+Candidate D limit remains t.rK1e-8; stored D t.rD1e-11; rU t.rU1e-7.
+Require fresh and last stored rΣ<unchanged1e-8; exact failed-key sets keep
+r_sum from masking missing coupled gates. No gate drops/zero dictionary.
+D1 optional N3 remains unimplemented; no extra control or runtime scope is
+added in D2. Existing narrow-pole primitive remains separate evidence.
+
+### 10. Exact implementation handoff and stop
+
+D2 supersedes only D1 exact-unit-spacing assumption and all consequences
+enumerated in the accompanying narrow math diff. Other D1 field inventories,
+actual final API calls, source statuses/norms, model/scattering scope, no-alias
+rules, original failure retention and finite resource envelope stay binding.
+
+After independent D2 CP-DESIGN, a medium owner may change only the new
+DEV05 test and associated author receipts to materialize this correction;
+owning docs changes are a separate ultra authoring step. No source operator
+or S1 input changes, no setup/full suite. Preserve I6d0db8…/D1/docd51… and
+GREEN-1 as failed originals. At most **one remaining** DEV05 L-JL invocation
+≤120s,1CPU/2GiB,TMP16MiB/log2MiB, aggregate original two invocations≤4min;
+root dispatch/review owns it. This D uses0. No metadata diagnostic consumes it.
+
+If exact unit-chain guard, branch/support, derived enclosure or final failed
+sets do not hold, preserve that final attempt and report the concrete blocker;
+no third D round, no automatic rerun or tolerance/grid/model adjustment.
+Native/runtime outcome is not inferred from source derivation.
+
+| Утверждение | Свидетельство | Ограничение | Решение |
+| --- | --- | --- | --- |
+| D1 exact-unit-spacing premise неверна | Actual GREEN-1 fatal test662 and frozen raw hashes | Actual h value not printed; audits never reached | изменить |
+| Source-derived h и complete h-dependent contract выведены | Unitful/Julia/core source chain; independent bit arithmetic; χ/n/BDD/Poisson/TGT equations | D2 CP-DESIGN pending; Julia not run | дополнительно измерить |
+| Failed originals и owning files сохранены | I6d0db8…, D196c2…, owning docd51… hashes | Publication halted by coordinator | сохранить |
+| Healthy fixture/S1 научно принят | Spectral gate still fails; no S1 run | Discretization/experiment absent | данных недостаточно |
+
+### Executor observation — DEV05 GREEN-2, 2026-10-19
+
+Чтение сохранённых executor artifacts, без повторного запуска: matching
+fixture81fbb258…; raw summary925/925 PASS, exit0, wall44.636s, sampled peak
+process-tree RSS923983872B, sampled owned TMP0B, raw94B complete. Guard,
+stop reason, overrun отсутствуют;592 completed samples. RSS/TMP sampling
+не доказывает hard quota или transient peak и не покрывает произвольные
+пути вне owned TMPDIR. Receipt SHA256:
+`74b4c571b0d6cd9239cb26e3ef697a4b0a2d3164dd51f6db120d115dd250e49c`;
+original raw log SHA256:
+`918120b36de0f3b3d502d4cc5ba0e21497ba4b8f6ae32e6a895f48de6a35d7aa`.
+
+Это наблюдение targeted manufactured functional run. Source CPP перед
+execution был PASS, но independent **final CP-CODE и docs CPP pending**.
+Healthy report обязан иметь только `{r_sum}` failure, N1 —
+`{r_D,r_D_candidate,r_U,r_sum}`, N2 — `{r_D,r_D_candidate,r_sum}`.
+Все эти expected report failures являются passing assertions fixture;
+scientific acceptance, SCBA physical run, sufficient discretization,
+experiment, S1 и fullCI/native acceptance из925 assertions не следуют.
+GREEN-1 остаётся46pass/0fail/1error до coupled audits. Current counter2/2,
+автоматического третьего D round или runtime rerun нет.
+
+### Narrow D1 → D2 math mapping (frozen accepted artifact)
+
+Следующий текст взят побайтно из approved mathdiff91959685… после его
+верхнего заголовка. Его pre-execution формулировки — историческая стадия
+design; текущие source/runtime statuses приведены выше.
+
+Base D1 SHA256 `96c2c50a104b984c72603fa7066986d9bf6c02a8e59ba1ce0df9f06e321da162`.
+Причина: GREEN-1 source guard exact wZ1 false, ни одного coupled audit.
+D2 не меняет public builder arguments, source operators или S1; предполагается
+только независимый D2 CP-DESIGN. Ни docs, ни test этой запиской не изменены.
+
+| Привязка | D1 unit-spacing formula | D2 actual-spacing formula |
+| --- | --- | --- |
+| Expected spacing | h=1 без exact unit-chain proof | `h=RN(RN(RN(30*RN(1/1e9))/RN(10*RN(1/1e9)))/3)`; source prediction nextfloat1 |
+| Fatal grid guard | `wZ==ones3` | exact `wZ==fill(h_ref,3)` plus exact canonical ell/L0/x chain; no isapprox fallback |
+| x,wZ | `[.5,1.5,2.5]`,ones3 | `h*[.5,1.5,2.5]`,fill(h,3) |
+| Input/grid length | Lp3 and grid3 treated identical | input Lp64 and real3h separate; no exact sum-period equality; r_n denominator uses input Lp64 |
+| Discrete basis Φ | φ | φ unchanged (global phase only) |
+| Continuous basis χ | φ | `φ/sqrt(h)` |
+| Floating χ normalization | unit-spacing identity | source RN(sqrt(h64)) may1; actual Φ/χ and h-weighted normalization have explicit roundoff budget |
+| Centre/Z,spread |1.5,1/√2 | `1.5h`, `h/√2` |
+| FD hopping/H0 | t0,(2−√2)t0 | `tZ=t0/h²`, `(2−√2)tZ` |
+| Embedding τ,c | −t0/4,t0²/8 | `−tZ/4`, `tZ²/8` |
+| k kinetic | t0k² | t0k² **unchanged**, never tZk² |
+| Donor density | D/3 | D/(3h) |
+| Electron volume density | Dφ² | Dφ²/h |
+| Sheet/charge | D | D unchanged; spatial integral uses h |
+| Poisson ideal L,b | M,λD d/12 | M/h²,λD d/(12h) |
+| Poisson floating L | M exact assumed | qL_ref M, `qL_ref=RN(1/RN(h_ref²))`, exact source-derived coefficient |
+| U*,u* | λD d/36,λD/72 | λD h d/36,λD h/72 |
+| Actual-coefficient Up reference | la D d/36 | la/(3qL_ref) P n_float |
+| ζ actual reference | la(D−3nd)/(4√3) | la(sum(n_float)−3nd)/(4qL_ref√3) |
+| ζ solve enclosure | short scalar rounding budget | h/q-corrected sameγ32 regression plus independent Q4 residual forward bound≤that budget, inverse2-norm4/3; no loosening |
+| Neutrality reference | abs(D−3nd)/(3nd) | abs(sum(n_float)−3nd)/(3nd); source h-dot roundoff retained |
+| Forward coefficient | 1/3 | 1/(3qL_ref) |
+| Density SI conversion | nbar/L0³ | same units, but nbar=Dφ²/h; canonical L064 with conversion rounding |
+| Roots z | E−H0−u−t0k² | E−H0_h−u_h−t0k² |
+| Raw/normalized charge measure | gs/(2π)wEwk | **unchanged**, no h inserted |
+| rK/A/Σ normalizers | full-array Frobenius+1e-14 | **unchanged** |
+| rD normalizer | block `|Dg−1|/(|D||g|+1)` | **unchanged** |
+| rP normalizer | norm(b)+la1e-14 | **unchanged** with h-correct b |
+| Wrong-U rU | λD/18 | λD h/18 |
+| Separation x | λD√8/(72t0) | λD√8 h³/(72t0) |
+| rsum | max(abs(A/2π−1),1) | **unchanged** functional formula, h-correct A |
+| Expected failed sets | H{rsum};N1{D,Dc,U,sum};N2{D,Dc,sum} | **unchanged** exact keys in full D2 |
+
+`d=[−1,2,−1]`, `M=[2 −1 −1;−1 2 −1;−1 −1 2]`,
+`P=I−ones3x3/3`, D1 constants/energy/radial grid remain fixed.
+
+Future I delta is confined to: static h-dependent expected fields;
+`independent_literals`; tZ vs t0 uses in `literal_state`/`hamiltonian_budget`;
+actual-stencil/rounded-n Poisson enclosures; h-aware density/basis checks;
+the two exact grid guards and donor/density expectations. Histories keep D
+as sheet charge but carry h-correct density/U and same-field J. No new
+production/formula/tolerance switch, optional N3, retry or scope extension.
+
+γ16 complex products/γ32 six-entry sums/γ64 scalar Dyson remain unchanged;
+the new h factors are exact input-parameter arithmetic evaluated outward,
+with explicit short normalization/stencil formation bounds. Do not widen
+these budgets to hide a wrong h dependency. D1 original artifact remains
+failed evidence; D2 is a new candidate, never a rewrite of GREEN-1.
+
+### Inherited exact API source bindings и ABI
+
+Следующие public seams/source locators перенесены из accepted D1 без
+изменений: D2 меняет h-dependent literals, а не подписи и record types.
+
+* `src/numerics/reference/final_audit.jl:38`:
+  `fresh_fixed_point_metrics(problem::NEGFProblem,scba::SCBAResult,
+  U::AbstractVector{<:Real},candidate::FixedPointAuditCandidate)`.
+  Публично экспортирован `fresh_fixed_point_metrics`; вводить новый API не нужно.
+* `src/numerics/reference/validation.jl:516`:
+  `validate_solution(solution::NEGFSolution;candidate=nothing,audit_failure=nothing)`.
+* Там же `:751`: `QCLNEGF._validate_solution_metrics(solution::NEGFSolution,
+  metrics;accept_approximate_scba=false)`. Это existing package-visible
+  underscore seam, не новый stable public API.
+* Там же `:33/:47/:60/:73`: определения rD/rA/rK/rΣ; `:636` fresh Poisson,
+  `:688` limits. `r_D_candidate` имеет limit `t.r_K`, не `t.r_D`.
+* `src/numerics/reference/basis.jl:14–84`: checked `:none` basis;
+  `:288–318`: `H0+Φ†diag(U)Φ+Cbar*k²*Mminus1`.
+* `src/numerics/reference/periodicity.jl:109–163`: literal target map
+  `Σplus=Tplus*(Wplus G)*Tplus†`, minus аналогично; это **legacy bulk
+  feedback**, не cavity embedding.
+* `src/numerics/reference/poisson.jl:11–76`: cyclic stencil и bordered solve.
+* `src/domain/types.jl:684/:777/:978/:1022/:1048/:1084`: complete records.
+
+Pure record field inventory из frozen I2 source assertions (без численных
+правил и новых defaults). Complete NEGFProblem fields:
+`physical,numerical,scattering,scales,grids,profiles,basis,kernels,W₊ᴱᵖ,W₋ᴱᵖ,W₊ᴸᴼ,W₋ᴸᴼ,energy_shift_discretization,models`.
+
+| Type | Frozen field names |
+| --- | --- |
+| `GreenState` | `Gᴿ,Gˡ,Gᵍ,A,condition_number,dyson_scale` |
+| `SelfEnergyFamily` | `Σᴿ,Σˡ,Σᵍ` |
+| `FixedPointAuditCandidate` | `scattering,embedding,plus,minus,roundoff` |
+| `SCBAResult` | `green,scattering,embedding,embedding_plus,embedding_minus,history,converged,status,quality,restart_contract,mixer_state` |
+| `NEGFSolution` | `problem,options,Uᴴ,n,scba,outer_history,observables,report,converged,status` |
+| `OuterIteration` | `μ,r_P,r_U,r_n,r_neutral,r_J,r_Jchange,r_population,ζ,J,populations,density` |
+| `SCBAIteration` | `ν,r_D,r_A,r_K,r_Σ,r_λ,λ,r_PSD,r_caus,r_roundoff,r_Jchange,r_population,J,raw_charge,target_charge,normalized_charge,lambda_change,witness,physical_markers` |
 
 ## O08-04 — nonzero public current и coherence
 
@@ -834,15 +1448,17 @@ its phonon text extraction is not used as absolute kernel oracle.
 | --- | --- | --- | --- |
 | Keldysh/current/PV получают различающие RHS | Literal matrix/component sums, analytic PV equations, accepted design/code и658 targeted assertions | Bounded manufactured functional scope, не coupled science | сохранить |
 | Poisson incompatibility видна через ζ/rP/rneutral | Constant RHS bordered equations, exact-ND precondition, existing sine derivative anchor | Assessment carrier synthetic, full coupled state не доказан | сохранить |
-| Complete final U/G oracle готов | Exact seams/field inventory есть, coupled independent RHS нет | DEV05 blocked | данных недостаточно |
+| Complete functional final U/G D2 принят | D2eb9e1a8c…/review53c3e9b4…; I2 81fbb258… source CPPbb5b5260… PASS; executor GREEN-2 925/925 targeted assertions | Independent final CP-CODE/docs CPP pending; healthy global report FAIL r_sum; S1/fullCI/native не приняты; GREEN-1 сохранён | дополнительно измерить |
 | Four absolute prefactors сертифицированы | Owning units/formulas и partial primary LO chain | Geometry/tolerance/primary gaps, DEV07 blocked | данных недостаточно |
 | Current PV targeted runtime прошёл | GREEN2 fixture4533b105…,13+198 assertions; historical GREEN1 failure сохранён | FullCI/SCBA/science0 | сохранить |
 | SCBA/science выполнены | Source/design, paper hashes, четыре bounded functional runs | Convergence/discretization/experiment не установлены | данных недостаточно |
 
-Независимый CP-DESIGN принял четыре bounded functional scopes;
-два blocked паспорта сохраняются. Reviewer проверил literal arithmetic,
+Независимый CP-DESIGN принял пять bounded functional scopes;
+O08-05 остаётся design_blocked. Reviewer проверил literal arithmetic,
 shape/units, applicability, fixed RHS mutations и статусы. Автор документа
 не закрывает собственный CP-CODE. Отдельный I medium выполняет только
-accepted scope с envelope соответствующего DEV03/04/06/08; PV ratio
-predicate получил CP-DESIGN/CP-CODE и bounded GREEN2 evidence. DEV05 и DEV07 не READY.
+accepted scope с envelope соответствующего DEV03/04/05/06/08; PV ratio
+predicate получил CP-DESIGN/CP-CODE и bounded GREEN2 evidence. DEV05 I2 source PASS;
+GREEN-2 925/925 functional assertions PASS, independent final CP-CODE/docs
+CPP pending. DEV07 не READY.
 Полная six-oracle readiness этим документом не устанавливается.
