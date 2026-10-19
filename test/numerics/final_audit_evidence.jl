@@ -153,13 +153,33 @@ end
     @test QN._keldysh_residual_evidence(mutated,x.sigma).numerator_F > Bmatrix
     wrong_transpose = zeros(ComplexF64,2,2,2,2)
     wrong_number = 0.0
+    wrong_complex = 0.0 + 0.0im
     for e=1:2,k=1:2
         r = x.green.Gᴿ[e,k,:,:]; l = x.sigma.Σˡ[e,k,:,:]
         wrong = mm(mm(r,l),permutedims(r))
         wrong_transpose[e,k,:,:] .= wrong
         wrong_number += 2/(2π)*x.we[e]*x.wk[k]*real(-im*(wrong[1,1]+wrong[2,2]))
+        wrong_complex += 2/(2π)*x.we[e]*x.wk[k]*(-im*(wrong[1,1]+wrong[2,2]))
     end
-    @test abs(number_functional(wrong_transpose,grids,2)-x.raw_number) > Bmatrix
+    # The same finite weighted 2x2 scalar graph fits the retained Bmatrix
+    # ledger componentwise. Its imaginary defect exceeds the public gate
+    # even after that allowance; real projection is not a valid API return.
+    @test abs(real(wrong_complex)-wrong_number) <= Bmatrix
+    @test abs(imag(wrong_complex))-Bmatrix > 1e-10*(max(abs(real(wrong_complex)),1.0)+Bmatrix)
+    wrong_error = try
+        number_functional(wrong_transpose,grids,2)
+        nothing
+    catch err
+        err isa DomainError || rethrow()
+        err
+    end
+    @test wrong_error isa DomainError
+    if wrong_error isa DomainError
+        @test wrong_error.msg == "number functional is not real"
+        @test abs(real(wrong_error.val)-real(wrong_complex)) <= Bmatrix
+        @test abs(imag(wrong_error.val)-imag(wrong_complex)) <= Bmatrix
+        @test abs(imag(wrong_error.val)) > 1e-10*max(abs(real(wrong_error.val)),1.0)
+    end
     @test abs(wrong_number-x.raw_number) > Bmatrix
     wrong_grids = ModelGrids([0.0],[1.0],x.energy,reverse(x.we),trues(2),[0.0,1.0],x.wk,[0.0],[1.0],[0.0])
     @test abs(number_functional(x.green.Gˡ,wrong_grids,2)-x.raw_number) > Bmatrix
@@ -226,9 +246,13 @@ function literal_poisson_reference(profiles,grids,scales,n)
     q64 = er/(h*h) # independent floating input-side coefficient, no matrix helper
     @assert all(sum(abs,row)==4q64 for row in ([2q64,-q64,-q64],[-q64,2q64,-q64],[-q64,-q64,2q64]))
     q,la,hb,donor = PB(q64),PB(scales.λ_P),PB(h),PB(nd)
-    nf=PB.(n); S=psum(nf); meanN=S/PB(3)
+    nf=PB.(n); S=psum(nf)
     b=[la*(nf[j]-donor) for j=1:3]
-    exactU=[la/(PB(3)*q)*(nf[j]-meanN) for j=1:3]
+    # Same exact solution: la/(3q)*(n-S/3) = la*(3n-S)/(9q).
+    # Directed ledger: exact input points -> sum S -> 3n-S -> la* -> /(9q).
+    # Cancel before the reciprocal so uniform inputs retain point zero.
+    projected_numerator=[PB(3)*nf[j]-S for j=1:3]
+    exactU=[la*projected_numerator[j]/(PB(9)*q) for j=1:3]
     v64=0x1.279a74590331dp-1 # accepted RN(1/RN(sqrt(3)))
     v=PB(v64)
     @assert (sqrt(PB(3))*v).lo>3/4
@@ -240,7 +264,7 @@ function literal_poisson_reference(profiles,grids,scales,n)
     donorSheet=PB(3)*hb*donor
     # Accepted Bz_short=γ32*(la*D/(q*h)+abs(exactZ)); D=actual donor sheet.
     short=pgamma(32)*(la*donorSheet/(q*hb)+abs(exactZ))
-    return (;q,la,hb,donor,nf,S,b,exactU,exactZ,M,Q4,rhs4,short,donorSheet)
+    return (;q,la,hb,donor,nf,S,b,projected_numerator,exactU,exactZ,M,Q4,rhs4,short,donorSheet)
 end
 
 function literal_poisson_enclosure(ref,result,publishedU)
@@ -308,10 +332,14 @@ end
         altered=QR._solve_periodic_poisson_with_diagnostics(x.profiles,x.grids,x.scales,x.n.+[1/16,0,-1/16])
         @test !literal_poisson_matches(ref,altered,published)
         neutralref=literal_poisson_reference(x.profiles,x.grids,x.scales,x.profiles.Nᴰ)
+        @test all(p.lo==p.hi==0 for p in neutralref.projected_numerator)
+        @test all(p.lo==p.hi==0 for p in neutralref.exactU)
         neutral=QR._solve_periodic_poisson_with_diagnostics(x.profiles,x.grids,x.scales,x.profiles.Nᴰ)
         @test literal_poisson_matches(neutralref,neutral,published)
-        @test neutral.diagnostics.denominator==x.scales.λ_P*δ
+        @test all(iszero,neutral.solution[1]) && all(iszero,neutral.solution[2:end])
+        @test neutral.diagnostics.denominator==x.scales.λ_P*δ > 0
         @test neutral.diagnostics.rhs_F==neutral.diagnostics.residual_numerator_F==0
+        @test neutral.diagnostics.neutrality_signed==neutral.diagnostics.neutrality_abs==0
         # Positive raw residual makes factor-two norm/ratio tampering observable
         # beyond the gamma32 cancellation allowance of the neutral branch.
         nonneutral_n=x.n.+1/8
