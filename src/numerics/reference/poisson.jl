@@ -38,7 +38,7 @@ Implements [EQ-POISSON-002](@ref eq-bordered-poisson).
 See [Periodic Poisson and the outer loop](@ref theory-outer-loop) for the
 charge sign, periodic gauge, and neutrality condition.
 """
-function solve_periodic_poisson(
+function _solve_periodic_poisson_with_diagnostics(
     profiles::MaterialProfiles,
     grids::ModelGrids,
     scales::ScaleSystem,
@@ -47,7 +47,9 @@ function solve_periodic_poisson(
     N = length(grids.x)
     length(n̄) == N || throw(DimensionMismatch("density must have N_z entries"))
     Nᴰ²ᴰ = dot(grids.wˣ, profiles.Nᴰ)
-    neutrality = abs(dot(grids.wˣ, profiles.Nᴰ .- n̄)) / Nᴰ²ᴰ
+    signed_charge = dot(grids.wˣ, profiles.Nᴰ .- n̄)
+    absolute_charge = abs(signed_charge)
+    neutrality = absolute_charge / Nᴰ²ᴰ
     L = build_poisson_matrix(profiles, grids)
     b = -scales.λ_P .* (profiles.Nᴰ .- n̄)
     sP = maximum(sum(abs, L; dims = 2))
@@ -60,9 +62,28 @@ function solve_periodic_poisson(
     answer = bordered \ rhs
     Uᴴ = answer[1:N]
     ζ = answer[end]
-    rP = norm(L * Uᴴ - b) / (norm(b) + scales.λ_P * 1e-14)
-    return Uᴴ, ζ, rP, neutrality
+    p_num = norm(L * Uᴴ - b)
+    rhs_F = norm(b)
+    p_floor = scales.λ_P * 1e-14
+    p_den = rhs_F + p_floor
+    rP = p_num / p_den
+    return (;
+        solution=(Uᴴ, ζ, rP, neutrality),
+        diagnostics=(; residual_ratio=rP, residual_numerator_F=p_num, rhs_F,
+                     additive_floor=p_floor, denominator=p_den, border_scale=sP,
+                     zeta_signed=ζ, neutrality_signed=signed_charge,
+                     neutrality_abs=absolute_charge, target_sheet=Nᴰ²ᴰ,
+                     neutrality_ratio=neutrality),
+    )
 end
 
+_solve_periodic_poisson_with_diagnostics(problem::NEGFProblem, n̄::AbstractVector{<:Real}) =
+    _solve_periodic_poisson_with_diagnostics(problem.profiles, problem.grids, problem.scales, n̄)
+
+solve_periodic_poisson(
+    profiles::MaterialProfiles, grids::ModelGrids, scales::ScaleSystem,
+    n̄::AbstractVector{<:Real},
+) = _solve_periodic_poisson_with_diagnostics(profiles, grids, scales, n̄).solution
+
 solve_periodic_poisson(problem::NEGFProblem, n̄::AbstractVector{<:Real}) =
-    solve_periodic_poisson(problem.profiles, problem.grids, problem.scales, n̄)
+    _solve_periodic_poisson_with_diagnostics(problem, n̄).solution

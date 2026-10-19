@@ -591,6 +591,7 @@ import ..QCLReferenceOperators:
     _mix,
     _mix_mechanisms,
     _scattering_candidate,
+    _solve_periodic_poisson_with_diagnostics,
     _static_contraction,
     _sum_selfenergies,
     _thermal_lo_occupation,

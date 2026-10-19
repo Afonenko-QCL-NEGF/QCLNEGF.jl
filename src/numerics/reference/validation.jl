@@ -30,21 +30,52 @@ function _positive_imaginary_part(Σᴿ::AbstractMatrix; floor = 1e-14)
     return max(0.0, eigmax(ImΣ)) / (opnorm(Σᴿ) + floor)
 end
 
-function _dyson_residual(ε, h, Σᴿ, Gᴿ)
+# Ratios retain their public/internal Float64 API. Raw evidence comes from the
+# same arithmetic pass, without another map or residual-array allocation.
+_dyson_residual(ε, h, Σᴿ, Gᴿ) = _dyson_residual_evidence(ε, h, Σᴿ, Gᴿ).ratio
+
+function _dyson_residual_evidence(ε, h, Σᴿ, Gᴿ)
     NE, Nk, Nb, _ = size(Gᴿ)
     I_b = Matrix{ComplexF64}(I, Nb, Nb)
     r = 0.0
+    sum_abs2 = 0.0
+    max_abs = 0.0
+    ratio_witness = absolute_witness = nothing
+    first_invalid = nothing
     for e = 1:NE, m = 1:Nk
         D = ε[e] * I_b - Matrix(view(h, m, :, :)) - _matrix_block(Σᴿ, e, m)
         GR = _matrix_block(Gᴿ, e, m)
         numerator = norm(D * GR - I_b)
-        denominator = norm(D) * norm(GR) + sqrt(Nb)
-        r = max(r, numerator / denominator)
+        D_F, GR_F, identity_F = norm(D), norm(GR), sqrt(Nb)
+        denominator = D_F * GR_F + identity_F
+        ratio = numerator / denominator
+        witness = (; e_index=e, k_index=m, numerator_F=numerator,
+                   D_F, GR_F, identity_F, denominator, ratio)
+        if first_invalid === nothing &&
+           !all(isfinite, (numerator, D_F, GR_F, identity_F, denominator, ratio))
+            first_invalid = witness
+        end
+        if ratio_witness === nothing || ratio > r
+            ratio_witness = witness
+        end
+        if absolute_witness === nothing || numerator > max_abs
+            absolute_witness = witness
+        end
+        r = max(r, ratio)
+        sum_abs2 += numerator^2
+        max_abs = max(max_abs, numerator)
     end
-    return r
+    if first_invalid !== nothing
+        ratio_witness = absolute_witness = first_invalid
+    end
+    return (; ratio=r, global_abs_F=sqrt(sum_abs2), max_abs_F=max_abs,
+            ratio_witness, absolute_witness)
 end
 
-function _spectral_residual(green::GreenState, total::SelfEnergyFamily)
+_spectral_residual(green::GreenState, total::SelfEnergyFamily) =
+    _spectral_residual_evidence(green, total).ratio
+
+function _spectral_residual_evidence(green::GreenState, total::SelfEnergyFamily)
     Γ = im .* (total.Σᵍ .- total.Σˡ)
     numerator = 0.0
     denominator = 0.0
@@ -54,10 +85,16 @@ function _spectral_residual(green::GreenState, total::SelfEnergyFamily)
         numerator += norm(difference)^2
         denominator += norm(_matrix_block(green.A, e, m))^2
     end
-    return sqrt(numerator) / (sqrt(denominator) + 1e-14)
+    numerator_F, scale_F = sqrt(numerator), sqrt(denominator)
+    denominator_F = scale_F + 1e-14
+    return (; numerator_F, scale_F, denominator=denominator_F,
+            ratio=numerator_F/denominator_F)
 end
 
-function _keldysh_residual(green::GreenState, candidate::SelfEnergyFamily)
+_keldysh_residual(green::GreenState, candidate::SelfEnergyFamily) =
+    _keldysh_residual_evidence(green, candidate).ratio
+
+function _keldysh_residual_evidence(green::GreenState, candidate::SelfEnergyFamily)
     numerator = 0.0
     denominator = 0.0
     for e in axes(green.Gᴿ, 1), m in axes(green.Gᴿ, 2)
@@ -67,17 +104,28 @@ function _keldysh_residual(green::GreenState, candidate::SelfEnergyFamily)
         numerator += norm(difference)^2
         denominator += norm(_matrix_block(green.Gˡ, e, m))^2
     end
-    return sqrt(numerator) / (sqrt(denominator) + 1e-14)
+    numerator_F, scale_F = sqrt(numerator), sqrt(denominator)
+    denominator_F = scale_F + 1e-14
+    return (; numerator_F, scale_F, denominator=denominator_F,
+            ratio=numerator_F/denominator_F)
 end
 
-function _selfenergy_residual(old::SelfEnergyFamily, candidate::SelfEnergyFamily)
+_selfenergy_residual(old::SelfEnergyFamily, candidate::SelfEnergyFamily) =
+    _selfenergy_residual_evidence(old, candidate).ratio
+
+function _selfenergy_residual_evidence(old::SelfEnergyFamily, candidate::SelfEnergyFamily)
     result = 0.0
-    for name in (:Σᴿ, :Σˡ, :Σᵍ)
+    rows = []
+    for (name, component) in ((:Σᴿ, "R"), (:Σˡ, "L"), (:Σᵍ, "G"))
         Xold = getfield(old, name)
         Xnew = getfield(candidate, name)
-        result = max(result, norm(Xnew - Xold) / (norm(Xnew) + 1e-14))
+        numerator_F, scale_F = norm(Xnew - Xold), norm(Xnew)
+        denominator = scale_F + 1e-14
+        ratio = numerator_F / denominator
+        result = max(result, ratio)
+        push!(rows, (; component, numerator_F, scale_F, denominator, ratio))
     end
-    return result
+    return (; ratio=result, rows)
 end
 
 function _green_positivity(green::GreenState, total::SelfEnergyFamily)
@@ -544,11 +592,14 @@ function validate_solution(
         metrics[:r_Jchange_scba] = last_inner.r_Jchange
         metrics[:r_population_scba] = last_inner.r_population
     end
+    fresh_evidence = nothing
     # Never certify from stored iteration metrics alone. Production callers
     # supply their explicitly selected map; direct reference calls rebuild it.
     if audit_failure === nothing && scba.quality !== :invalid
         candidate === nothing && (candidate = _audit_candidate_for_solution(solution))
-        merge!(metrics, fresh_fixed_point_metrics(problem, scba, solution.Uᴴ, candidate))
+        fresh = _fresh_fixed_point_measurements(problem, scba, solution.Uᴴ, candidate)
+        merge!(metrics, fresh.metrics)
+        fresh_evidence = fresh.evidence
     else
         # Preserve the aligned state when the selected nonlinear model is
         # undefined on it (e.g. a negative hot-phonon event rate). Missing fresh
@@ -633,7 +684,8 @@ function validate_solution(
     metrics[:r_ImP] = 100 * pbalance.imaginary
     metrics[:r_roundP] = pbalance.roundoff
 
-    Up, ζ, rP, rneutral = solve_periodic_poisson(problem, solution.n)
+    poisson = _solve_periodic_poisson_with_diagnostics(problem, solution.n)
+    Up, ζ, rP, rneutral = poisson.solution
     metrics[:r_P] = rP
     metrics[:r_U] = maximum(abs.(Up .- solution.Uᴴ))
     metrics[:r_neutral] = rneutral
@@ -676,6 +728,9 @@ function validate_solution(
     metrics[:r_tail_k] = edges.tail_k
     metrics[:r_edge_gamma] = edges.edge_gamma
     metrics[:r_edge_spectral] = edges.edge_spectral
+    solution.observables[:final_fixed_point_audit] = _final_fixed_point_record(
+        solution, fresh_evidence, metrics, poisson.diagnostics; audit_failure,
+    )
     report = _validate_solution_metrics(solution, metrics)
     if audit_failure !== nothing || scba.quality === :invalid
         push!(
