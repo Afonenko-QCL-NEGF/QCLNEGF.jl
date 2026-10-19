@@ -1462,3 +1462,89 @@ predicate получил CP-DESIGN/CP-CODE и bounded GREEN2 evidence. DEV05 I2 
 GREEN-2 925/925 functional assertions PASS, independent final CP-CODE/docs
 CPP pending. DEV07 не READY.
 Полная six-oracle readiness этим документом не устанавливается.
+
+### DEV07 — accepted D1 absolute covariance fixture (2026-10-19)
+
+Этот адресный subsection заменяет `design_blocked` **только для описанной
+ниже новой fixture**; исторические candidates выше не являются её inputs.
+`test/physics/absolute_scattering_kernel_oracles.jl` обнаруживается existing
+physics group автоматически. Source authoring не является runtime receipt.
+Production kernels, S1 model и scientific acceptance thresholds не меняются.
+
+Принятый D1: SHA256
+`1d74158042e305c37875ceef25589b08f6ca9256fdd7f65993ee6825c165a07e`;
+независимый CP-DESIGN: SHA256
+`caea42e27026e6bee60d1f59988a4f1a927820c503f50b2c07f8a0803ba52687`.
+Owning source — Core `7324d98c0fccd61b4a1a2756b5cabe2fd0e0e49c`.
+
+Checked builders создают три physical cells длины `ell=1e-8 m`, массы `.067`,
+band edges `[2,5/2,1/2]tau`, где `tau=hbar²/(2m0*.067*ell²)`, и Nb=1,
+localization=:none. Literal central block в units tau равен
+`[4 -1 0;-1 9/2 -1;0 -1 5/2]`, eigenvector `[1,2,4]/sqrt(21)`, eigenvalue2,
+gap3/2. Независимый interval residual и norm certificate обязательны;
+результат eigensolver не подставляется в expected amplitude.
+
+`k*ell=[0,2]`, phi=[0,pi/2,pi,3pi/2], qz*ell=[-pi,0,pi].
+Для любого f(v), v=q²ell², full radial2×2 RHS равен
+`[f(0) f(4);f(4) (f(0)+2f(8)+f(16))/4]`.
+Все четыре положительных raw entries имеют SI units J²m²; каждая scale
+`.1eV/10nm` и `.2eV/20nm` отдельно делит literal RHS на `(E0_J*L0_m)²`.
+Ни actual F, ни CODATA/scales readback, ни normalized K не строят expected.
+
+| Канал | Независимый discrete SI f(v) | Primary normalization и граница |
+| --- | --- | --- |
+| LO | `e²*(.05e)/(32eps0) * ell/2 * [1/(v+1)+(169/441)/(v+1+pi²)]`; literal F=`[-13i/21,1,13i/21]` | [Lee–Wacker v1](https://arxiv.org/abs/cond-mat/0212059v1), B19–B23: bulk Fröhlich/absolute permittivities/dqz/(2pi). Positive screening1/ell — owning EQ-KLO assumption; finite trapezoid, не infinite integral |
+| IFR | `pi*(1e-10)²*tau²*(2329/3136)*exp(-v/4)` | [Huang et al. v2](https://arxiv.org/abs/2205.00365v2), Eq8 covariance convention; direct 2D Gaussian transform. Lee–Wacker B10–11 band-step vertex. Independent interfaces/seam once; midpoint D*ell/tau=`[1/14,3/56,-6/7]`. Carrier screening не добавляется |
+| acoustic | `(4e)²*kB*70/(4000*4000²)*13/(21ell)` | [Archetti–Neophytou v1](https://arxiv.org/abs/2012.12344v1), Eq20/Appendix: elastic equipartition sum of emission+absorption cancels vertex1/2. Planar projection derived independently of nanowire geometry |
+| alloy | `3.125e-29*(.6e)²*13/(112ell)` | Huang Eq9: Bernoulli covariance `Omega*DeltaV²*x(1-x)`; Omega=a³/4 for a=.5nm, x=1/4. Synthetic contrast is independent of band jumps; bare disorder model |
+
+Frozen primary PDF SHA256 respectively:
+`dfabd791bfb2aa4603233e9b545879e07a3bfc63e8906cbc810760726358ea0c`,
+`00297abb84fdc44fc865461b9ba102dfef7ff7cde2924b2999b0deca054f5f5c`,
+`843184eec1632f8f46fde7e3a2492126763487dc99172f0950761239f9ae046e`.
+Source authoring performs no new literature retrieval or device-model validation.
+
+Reference evaluation uses 256-bit decimal-string intervals, with outward
+rounding per primitive (including products, reciprocal, square, sqrt, exp).
+`u=2^-53`, `g=gamma(32)`, `a=gamma(1024)` and the exact D1 §4 propagation
+formulas define per-channel delta; no empirical epsilon is fitted.
+Grid/profile bounds and independent residual/gap bound beta protect shared
+carrier code. Scalar cos/sin/exp are certified against MPFR at each actual
+represented Float64 argument, including the complex LO exponential outputs;
+sqrt assumes correctly rounded IEEE normal arithmetic. Failed certificates
+remain failures and may not be handled by widening delta.
+
+Operation inventory counts real rounded operations (complex multiply6,
+complex add2); libm calls have their own one-ulp certificates. Independent
+CP-CODE supplies conservative ceilings per raw entry: LO744, IFR544,
+acoustic268, alloy280, all <992<1024. The earlier I1 comment understated
+the explicitly counted LO denominator operations; this E1 accounting
+erratum changes no executable expression, gamma_n or tolerance.
+
+| Channel | Independent real-op ceiling | Expansion |
+| --- | --- | --- |
+| LO | 744 | SI128 +9 envelope/phase terms×24 +4 angles×(q12 +3 qz blocks×24 +scale12) +accumulation16 |
+| IFR | 544 | SI128 +3 interfaces×32 +4 angles×(q12 +spectrum16 +3 vertex contractions×12 +scale12) +accumulation16 |
+| acoustic | 268 | SI128 +3 quartic terms×32 +prefactor16 +scale12 +extra accumulation16 |
+| alloy | 280 | SI128 +3 variance/quartic terms×36 +prefactor16 +scale12 +extra accumulation16 |
+
+SI128 includes canonical conversions/literal inputs and conditioned band
+jumps (condition9). A LO qz denominator has three squares and two adds;
+four factor operations and complex products/accumulation10 give19<24.
+The accepted D1 universal ceiling992 and gamma1024 remain unchanged.
+Grid/basis errors are separately certified. LAPACK is excluded from the
+product count because its returned vector must pass the independent
+residual/gap certificate, rather than inheriting an assumed LAPACK bound.
+
+Each retained positive interval [Rlo,Rhi] checks real K in
+`[Rlo*(1-delta),Rhi*(1+delta)]` and `abs(imag K)<=Rhi*delta`.
+`delta<1/8` guarantees rejection of global2; normalize(2K)=normalize(K)
+is only an algebra demonstrator. Per-channel prefactor/Gaussian/seam mutants,
+positive screening2/ell and T35 sentinels, exact-zero IFR Delta0 and alloy
+x0/x1/disabled cases are separate controls. No T0 or zero LO-screening
+constructor is used. The impurity midpoint anchor and exact-kernel-rescaling
+test remain unchanged; their narrower independence is not upgraded.
+
+Runtime, SCBA/Poisson convergence, physical gates, continuum refinement and
+experimental validation each require their own evidence. Nb=1 cannot test
+general four-index orientation or adjoints; no such coverage is claimed.
