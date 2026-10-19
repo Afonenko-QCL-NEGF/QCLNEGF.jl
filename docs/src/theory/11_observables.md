@@ -50,10 +50,24 @@ P_{ab}=-ig_s\sum_{em}w_m^{(k)}\frac{w_e^{(E)}}{2\pi}G^<_{emab},
 ## [EQ-CURRENT-002 — энергетически разрешённый ток и ток через связь](@id eq-resolved-current)
 
 ```math
-j_+(E_e)=\frac{eg_s}{\hbar}\sum_mw_m^{(k)}
+j_+(E_e)=\frac{eg_s}{2\pi\hbar}\sum_mw_m^{(k)}
 \operatorname{Re}\operatorname{Tr}
 [\Sigma^>_{emb,+}G^<-\Sigma^<_{emb,+}G^>],
 ```
+
+`energy_resolved_current` возвращает ``j_+(E_e)`` в A·м⁻²·эВ⁻¹. Множитель
+``1/(2\pi)`` уже включён в эту величину, поэтому физическая энергетическая
+квадратура даёт
+
+```math
+J_{ef,+}=\sum_e w_e^{(E)}j_+(E_e)=e\Phi_{out,+}.
+```
+
+Здесь ``w_e^{(E)}`` выражены в эВ; ``\hbar`` в формуле для ``j_+``
+соответственно выражена в эВ·с. Для API физические веса в этой сумме равны
+`problem.scales.E₀_eV * problem.grids.wᴱ[e]`; сами `problem.grids.wᴱ`
+безразмерны. Соглашение о знаке тока совпадает с
+[исходящим потоком](@ref eq-boundary-flux).
 
 а `bond_current` реконструирует выбранный ``G^<_{g+1,g}`` во всём локальном
 базисе ячейки и вычисляет ``2\operatorname{Re}[H_{g,g+1}G^<_{g+1,g}]``.
