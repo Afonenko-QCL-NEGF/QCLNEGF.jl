@@ -5,11 +5,32 @@
 **design_blocked**. Полная готовность шести oracle и полное завершение
 DEV02 acceptance **не установлены**.
 
+Уточнение O08-02/04 на Core `a8d2c0de21dfdce3ed3c7c585c555656443f6d89`
+заменяет неподдерживаемые carrier dimensions штатными checked builders.
+Carrier design SHA256
+`17c6dda56a2223bde9d20e98928e659d9e60fb7d6615b72ff94dcf190b829ea1`,
+independent review SHA256
+`b5b3f58eb879272ed4be2081f36fa5c21c9f3733e961951d4649b6feb2edc348`:
+O08-04 accepted; для O08-02 coordinator выбрал требуемую exact-ND
+precondition, явно включённую ниже. Это portable owning contract; исходный
+review receipt в integration workspace:
+`docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-oracle-carrier-design-review.md`.
+Text consolidation SHA256
+`61508afc44b57954b2d1c5d843c333aa8fb4a14fb9a1b1ffa811afc0798fece3`
+получила **PASS TEXT/DESIGN**; уточнение conditioning ratio O08-06 получило
+**CP-DESIGN PASS**, independent review SHA256
+`374672b3d4cce86fd8f1272c9464d0c72ddc52a89b5f6272300ebdcd06567238`.
+Final fixture CP-CODE PASS и factual runtime проверены independent review
+SHA256 `2cc83ef336d85cd96d0b9e3dde9b6f677524d8f8dacde8379b4c422f9b459f98`.
+Underlying PV functional budget остаётся прежним. Результаты targeted
+root execution приведены ниже отдельно от design status.
+
 Reviewed candidate SHA256:
 `e3f577a55ca215f4e6c33fdc6883f4f38dfa4413b343c092389aac6e88832cca`.
 Независимый CP-DESIGN receipt SHA256:
 `80d0281721d77ba425a373824f49225c4713683958c2f646bba99cb1c7f4503e`.
-Ни один статус ниже не означает исполненный test или scientific acceptance.
+Design status сам по себе не означает исполненный test или scientific
+acceptance; текущие bounded runtime receipts перечислены отдельно ниже.
 Единственный owning output этого пакета:
 `QCLNEGF.jl/docs/src/development/review_oracle_contracts.md`;
 navigation — отдельный пакет. Этот документ не меняет production code, tests
@@ -23,7 +44,9 @@ Core `4af6e94808c6e60affbf1050a5184dbc12083335` (DEV01 docs-only поверх
 изменены Core gitlink, AiiDA worktree, пять system docs; новые execution
 receipts и requirement dispositions. Это параллельная работа координатора,
 не доказательство нового immutable root. Submodules прочитаны через Git;
-не переключались/не обновлялись. Все Core locators ниже относятся к `4af6e94`.
+не переключались/не обновлялись. Это исходный historical source receipt.
+Carrier locators повторно проверены на `a8d2c0d`; численные операторы не
+изменялись. Новая docs consolidation не выполняет imports/tests/solver/Git.
 
 Этап — source/design, L-SOURCE ≤30 min до первого checkpoint, ≤2 design
 rounds. Imports, tests, build, solver, benchmarks, environment installation
@@ -44,15 +67,16 @@ PORTABILITY, RV08 K/S/P/L/J/R09–11/R14/P03, RV09 T01–04,
 | Паспорт | CP-DESIGN status | Готовый bounded scope / блокирующий остаток |
 | --- | --- | --- |
 | O08-01 | design_accepted | Literal noncommuting Keldysh product, anti-Hermitian/PSD controls |
-| O08-02 | design_accepted | Independent sine anchor + constant incompatible source; assessment routing явно synthetic |
+| O08-02 | design_accepted, exact-ND precondition frozen | Independent sine anchor + constant incompatible source, checked full carrier; assessment routing явно synthetic |
 | O08-03 | design_blocked | Не завершён complete manufactured final-state oracle с независимыми U/G/n/candidate/history |
-| O08-04 | design_accepted | Nonzero signed public current с SI и literal two-state coherence/truncation |
+| O08-04 | design_accepted | Actual NE3/Nk2 public carrier, signed SI current, literal coherence и genuine Nb1 truncation |
 | O08-05 | design_blocked | Четыре absolute channel passports ещё не имеют законченной primary→geometry→SI→tolerance цепочки; LO derivation — локальный кандидат |
-| O08-06 | design_accepted | Literal discrete direct/FFT map и отдельный center-only continuum/tail oracle |
+| O08-06 | functional/ratio design_accepted, CP-CODE PASS | Literal direct/FFT, center-only continuum/tail и accepted derived ratio interval; targeted GREEN2 passed |
 
 `design_accepted` означает только прошедший независимый CP-DESIGN
-bounded functional-regression scope. DEV03/04/06/08 готовы к отдельной
-реализации в соответствующих envelopes; runtime acceptance ещё не установлена.
+bounded functional-regression scope. DEV03/04/06/08 имеют текущую
+CP-CODE и targeted runtime evidence в своих envelopes. Runtime acceptance
+не следует из design; ниже приведены exact fixture/raw receipt identities.
 DEV03 ← O08-01; DEV04 ← O08-02; DEV05 ← O08-03
 (blocked); DEV06 ← O08-04; DEV07 ← все четыре O08-05 (blocked, допустим
 отдельный accepted channel child packet); DEV08 ← O08-06.
@@ -64,6 +88,35 @@ current; finite-support PV integral → exact omitted-cell/tail error.
 `kernel → normalized kernel → same kernel` и `direct helper → FFT` сами
 не являются independent RHS. Shared code/formats/builders допускаются как
 carriers, но их output не вычисляет ожидаемую правую часть.
+
+### Наблюдение: четыре bounded targeted runs
+
+Root execution, Julia1.13.0, threads1/check-bounds=yes, selected prepared
+environment; автор этого status update тесты не повторял. Все четыре
+receipts: exit0, raw_capture_complete=true, stop_reason=null. PASS опирается
+на reviewed assertion contract и raw assertion output с matching fixture
+hash, не только на process exit code.
+
+| Card / owning test file | Current fixture SHA256 | Root attempt / assertions |
+| --- | --- | --- |
+| DEV03 `test/numerics/keldysh_literal_matrix_oracle.jl` | `6adaeea85abf95e21dd0beb763dada3a73d588cae1ed5a5d536eb0e8841a2a1e` | GREEN2,16/16 |
+| DEV04 `test/physics/nonneutral_periodic_poisson_assessment.jl` | `9aab7a4eea3a7fcb93033d2c9f6f3b420f6b1872843168e0deb98461f2602730` | GREEN2,183/183 |
+| DEV06 `test/physics/nonzero_public_current_oracle.jl` | `17fed2fae5b45549c65cec576cc108f68922a04e3830c0246313ccafd4ee8d01` | GREEN1,248/248 |
+| DEV08 `test/numerics/principal_value_independent_oracle.jl` | `4533b1058eb351d5796df18c86ac3b2e2af767078e16bd4cec25588b8e34f70a` | GREEN2,211/211:13 literal+198 continuum/scalar |
+
+Portable raw evidence identities; receipt.json и original.log соответствуют
+указанной card/attempt, original failed attempts сохраняются отдельно:
+
+| Root attempt | Receipt SHA256 | Original log SHA256 |
+| --- | --- | --- |
+| DEV03 GREEN2 | `2c4a574a116d9300fe64bf9da61436d6eb6d8dd24cb3818a40845b61b29a4ab9` | `5c9f677fea9cc2666d80b36c16392a691c971e8d27728ac6e19e972ed92b938a` |
+| DEV04 GREEN2 | `8f69ce737c8fde8797947124797be6fd3c9b65b5a5f2726f322dd48164f986da` | `1c098144d968dd42dd3309324051b5fd10e05fbf841144eb63d031fe8901351b` |
+| DEV06 GREEN1 | `b30b51c860de104f11c63a61f824e3cc5c076be0e4e9d05f7616040e7a8b0fa0` | `f6e13cf676efa11178a0ee7bc063d1d6c0425ea642727593fcc76a03c043daf8` |
+| DEV08 GREEN2 | `96d71dbe946a481cb5b85d6c13f4bd93ae94030794138d88a809699ba92f2811` | `22639e86f27670899583be70b983683fbf374fff0e2df51e1627615912b0c860` |
+
+Всего658 targeted assertions в четырёх выбранных файлах. Это не full suite,
+line/branch coverage, fullCI или scientific acceptance. SCBA/outer scientific
+solve и final CI здесь0; S1 и DEV05/07 не получают приёмку из этих runs.
 
 ## Общее правило допусков
 
@@ -127,6 +180,87 @@ array. Нельзя менять RHS вместе с mutation. PSD alone не о
 остаётся control; direct noncommuting assertion — единственный новый gap.
 Это verification functional relation, не SCBA/Poisson/experimental validation.
 
+## Checked complete carriers O08-02/04
+
+`NumericalParameters` в `src/domain/types.jl:181–284` требует
+`Nz≥3,Nb≥1,P≥1,NE≥3,Nk≥2,Nφ≥4,Nqz≥3`. Нельзя задавать NE2/Nk1 либо
+несогласованные metadata ради маленького public current вызова. Все physical,
+numerical, scales, grids, profiles, basis, kernels, четыре shift matrices,
+discretization и models создаёт `build_problem(validate_static=true)`.
+Нельзя вручную восстанавливать `NEGFProblem`, `ModelGrids`, `MaterialProfiles`,
+`BasisData`, `KernelSet`, менять builder arrays или отключать static validation.
+
+Три carrier configurations: `(Nz,Nb,localization)=(3,2,:none)` для current,
+`(3,1,:none)` для genuine truncation, `(4,4,:real_space)` для Poisson и
+synthetic routing. Helper с этими единственными аргументами:
+
+```julia
+layers = Layer[Layer(d=(Nz*10.0) * u"nm", material=:manufactured_uniform,
+    x_Al=0.0, Eᶜ=0.0u"eV", mᶻᵣ=0.067,
+    m_parallelᵣ=0.067, εᵣ=1.0, doped=true)]
+p = PhysicalParameters(layers,
+    (Nz*1.0e16) * u"m^-2", 1.0, 0.0u"V/m", 0.0u"m", 0.0u"eV",
+    70.0u"K", 70.0u"K", 12.9, 10.89, 0.0367u"eV",
+    2.0e8u"m^-1", 2.0e8u"m^-1", 1.0e-10u"m", 9.0e-9u"m",
+    7.0u"eV", 5317.0u"kg/m^3", 5240.0u"m/s",
+    nothing, nothing, 2, typeof(1.0u"m")[])
+n = NumericalParameters(N_z=Nz, N_b=Nb, P_basis=1,
+    E_min=-0.1u"eV", E_max=0.1u"eV", N_E=3, M_E=0.05u"eV",
+    k_max=1.0e8u"m^-1", N_k=2, N_φ=4,
+    qz_max=1.0e8u"m^-1", N_qz=3, η_seed=0.001u"eV")
+s = ScaleSystem(E₀=0.1u"eV", L₀=10.0u"nm")
+scattering = ScatteringOptions(LO=false, acoustic=false,
+    impurity=false, IFR=false, alloy=false)
+problem = build_problem(physical=p, numerical=n, scattering=scattering,
+    scales=s, localization=localization, validate_static=true,
+    physical_models=PhysicalModelOptions())
+```
+
+Это явно изолированный manufactured functional carrier. Модель S1 сохраняет
+0 mV/70 K и все пять LO/acoustic/impurity/IFR/alloy, e-e none; fixture
+не меняет её frozen plan, scattering или criteria. Uniform layer εr=1,
+whole-cell doping и empty interfaces — заданная manufactured geometry.
+Неактивные material constants сохранены из reference parameters;
+alloy quantities `nothing` согласованы с disabled alloy, не unknown→zero.
+
+Actual builder outputs проверяются независимо:
+
+| Fields | Retained expectation |
+| --- | --- |
+| x,wˣ | `(.5:1:Nz-.5)`, `ones(Nz)`, Δx=1 |
+| ε,wᴱ,trusted_energy | `[-1,0,1]`, `[1/2,1,1/2]`, `[false,true,false]` |
+| κ,wᵏ | `[0,1]`, `[1,3]/(16π)`, annular edges `[0,1/2,1]` |
+| qᶻ,wᑫᶻ,φ | `[-1,0,1]`, `[1/2,1,1/2]`, `[0,π/2,π,3π/2]` |
+| profiles | Ec0, masses.067, εr1, ND1, xAl0, layer_index1; O08-02 requires exact ND guard below |
+| kernels | K/qK/enabled empty; FLO zeros shape `(3,Nb,Nb)` because LO disabled |
+| four shifts | bias pair I3; LO nodal pair below; shape3×3 |
+| discretization,models | `:nodal_linear`; fixed/parabolic/thermal/e-e none |
+| scales | E0=.1eV, L0=1e-8m; J0 and λP independently checked below |
+
+With δ=.0367/.1=.367, LO matrices must match
+`W+=[1-δ δ 0;0 1-δ δ;0 0 0]`,
+`W-=[0 0 0;δ 1-δ 0;0 δ 1-δ]`. Static validation is a carrier property,
+not SCBA convergence or scientific acceptance. Other static fields and
+complete Green/result inventories are specified in the applicable passport.
+
+Expected path uses literals, not actual `scales`, `CODATA`, `_C̄`,
+`_scaled_physics`, BDD/current/Green helpers:
+
+```text
+eSI=1.602176634e-19 C, hbar=1.054571817e-34 J s,
+m0=9.1093837139e-31 kg, eps0=8.8541878128e-12 F/m,
+E0J=.1*eSI J, E0eV=.1, L0m=1e-8 m, mr=.067,
+J0ref=eSI*E0J/(hbar*L0m²), λref=eSI²/(eps0*E0J*L0m),
+t=hbar²/(2*m0*mr*E0J*L0m²).
+```
+
+Public builder is permitted here only as tiny static no-solve assembly:
+maximum Hwin12×12, largest Green array96 complex entries, no microscopic
+kernel tensor and no SCBA/outer loop. Existing L-JL counters are shared:
+per card ≤2 invocations total, each≤120s/1CPU/2GiB, aggregate≤4min,
+16MiB temporary/2MiB logs, one common native slot. No hidden setup, benchmark,
+retry or full suite. Preserve failed receipts; source/design is not runtime.
+
 ## O08-02 — periodic Poisson: совместимость и assessment
 
 **API.** `solve_periodic_poisson(profiles::MaterialProfiles,
@@ -146,8 +280,25 @@ Existing L2 error ratios >3.9 и gauge/ζ/residual/neutrality assertions
 
 **Fixed nonneutral source — новый gap.** N=4; `x=[.5,1.5,2.5,3.5]`,
 `wˣ=ones(4)`, εr=1, ND=ones(4), Eᶜ=0, mass ratios positive constant;
-healthy `n=ones(4)`, incompatible `n=2ones(4)`. Direct internal carrier
-явно manufactured; это не изменение production grid/density. Тогда
+healthy `n=ones(4)`, incompatible `n=2ones(4)`. Использовать полный checked
+`(Nz,Nb,localization)=(4,4,:real_space)` carrier выше. **До любого Poisson
+вызова и synthetic result construction** требуется exact fatal precondition:
+
+```julia
+problem.profiles.Nᴰ == ones(4) ||
+    error("O08-02 fixture requires exact ND=ones(4); stop and return to design")
+```
+
+При false сохранить failed attempt и остановить DEV04; не менять n, RHS,
+нормировку или допуски на лету. `ND≈1` недостаточно: actual
+`ND=(1+δ)ones4`, literal n=ones4 дают `rP=2|δ|/(2|δ|+1e-14)`, то есть
+roundoff δ может стать заметной relative residual. Exact precondition —
+выбранное coordinator условие reviewer correction. Current DEV04 GREEN2
+183/183 на fixture9aab7a4… подтверждает прохождение fatal exact-ND guard
+до двух direct5×5 Poisson вызовов и synthetic construction; это witness
+конкретного carrier, не обещание для иных scaled inputs. Positive uniform
+wX и остальные static assertions обязательны.
+Это не изменение production grid/density. Тогда
 `L=cyclic(2,-1,-1)`, `sP=4`, `v=ones(4)/2`, `b=λP*ones(4)`.
 Из bordered equations и mean-zero gauge независимо следует
 
@@ -180,18 +331,73 @@ LAPACK-specific forward bound — вернуть D.
 accept_approximate_scba=false)`, `validation.jl:751`, принимает полный
 metric dictionary. Direct Poisson diagnostics записать как
 `:r_P,:r_neutral,:r_ζ`, `:r_U=0` только потому, что здесь U=published U=0.
-Для assessment routing нужен отдельный явно synthetic carrier: pattern
-`test/numerics/acceptance_metadata_registry.jl::assessed_fixture` можно
-переиспользовать как **форму**, не запускать его seed/build как oracle.
-У него manufacturing SCBA classification и pass values других gates —
-явные routing inputs, не измеренные scientific values; не сохранять их как
-реальное scientific report. В test assertion label это обозначить.
-На synthetic healthy routing input `ConvergenceReport.passed==true`;
-подстановка **только actual nonneutral Poisson diagnostics** даёт false и
-messages для трёх соответствующих gates. Проверить каждый named failure,
-чтобы отказ по unrelated field не маскировал dropped neutrality gate.
-Если implementation не может выделить carrier без solve, ограничить runtime
-direct Poisson slice и оставить assessment subcase blocked.
+Direct compatible control утверждает только прохождение трёх designated
+измеренных Poisson gates. Для route нужен отдельный synthetic typed carrier;
+seed/SCBA solve не запускается. Φ=χ=I4 получены real-space builder.
+H0=t tridiag4(−1,2,−1), T+=−t e4e1', T−=T+', Z=diag(x), M−1=I4/mr.
+Centres=x, spreads0, overlap eigenvalues1, κ1; window_eigenvalues — все
+eigenvalues H0, Egrid0=2t. Residual zeros этого builder следуют его exact
+identity representation, не приписываются PzP eigenbasis измерениям.
+
+Независимая complete assembly с d=1, `R=2π²d`:
+
+```text
+every e,m: GR=−iR I4, G<=iR I4, G>=−iR I4, A=2R I4,
+hm=t*tridiag4(−1,2,−1)+t*κm² I4,
+ΣR=εe I4−hm−iI4/R, Σ<=iI4/R, Σ>=−iI4/R,
+D=iI4/R, condition_number=ones(3,2), dyson_scale=fill(1/R,3,2).
+```
+
+All four arrays `(3,2,4,4)` и metadata `(3,2)` проверены finite/shape,
+Dyson/Keldysh/Pauli algebra до plain `GreenState`/`SelfEnergyFamily`
+construction. Σ — engineered externally supplied counterterm, не actual
+embedding/kernel output. Плотность из этого же Green состояния:
+`gs/(2π)*(ΣwE=2)*(Σwk=1/(4π))*R=d`, поэтому n=ones4 обоснована;
+U=zeros4 совпадает с direct healthy U. Plus/minus делят **все три** Σ
+компоненты пополам, embedding — их точная сумма, mutable arrays не alias.
+
+| Остальные required result fields | Значение и смысл |
+| --- | --- |
+| SCBAResult.scattering | empty dict согласован с явно disabled manufactured kernels |
+| SCBAResult.history | empty: SCBA iterations не выполнялись |
+| converged/status/quality | `(true,:converged,:strictly_converged)` — synthetic branch input, валидная classification tuple, не measured convergence |
+| restart_contract,mixer_state | `nothing`, default linear empty state: restart/iteration отсутствуют |
+| NEGFSolution.problem/options | complete checked carrier; `SolverOptions()` с неизменёнными tolerances |
+| U,n,outer_history | zeros4,ones4 из algebra выше; empty history, outer iterations не измерены |
+| observables | только явный synthetic label, например fixture_kind=synthetic_acceptance_routing; без scientific quality metadata |
+| initial report | `ConvergenceReport(false,Dict{Symbol,Float64}(),String[])`, не accepted; seam получает metrics отдельно |
+| outer converged/status | false, `:manufactured_routing`; не публиковать/не сохранять как scientific solution |
+
+Other metric values zero — **explicit synthetic pass sentinels**, не
+измерения и не `not_measured=pass`. Frozen keys входного словаря перечислить
+буквально, не генерировать из production `_solution_validation_limits`, иначе
+удаление gate удалит его и из expected input:
+
+```text
+r_D,r_A,r_K,r_Σ,r_λ,r_roundoff,r_Jchange_scba,r_population_scba,
+r_PSD,r_caus,r_caus_sc,r_caus_embedding,
+r_selfenergy_identity,r_selfenergy_identity_sc,r_selfenergy_identity_embedding,
+r_antihermitian_G,r_antihermitian_Σ,r_antihermitian_Σsc,r_antihermitian_Σembedding,
+r_sum,r_J,r_ImJ,r_roundJ,r_power,r_ImP,r_roundP,
+r_P,r_U,r_n,r_neutral,r_ζ,r_Jchange,r_population,
+r_tail_low,r_tail_high,r_tail_k,r_edge_gamma,r_edge_spectral.
+```
+
+Optional channel/candidate/hot-LO/e-e keys не добавляются. Actual direct
+healthy/bad diagnostics override только rP/rneutral/rζ; rU=0 объяснён тем
+же U. Test labels явно говорят synthetic routing. Healthy routing table
+даёт report.passed=true/no messages **только как проверку routing**.
+Вставка actual three bad diagnostics даёт ровно named failures rP/rneutral/rζ,
+без unrelated failures. Затем каждый из трёх isolated cases оставляет только
+один bad diagnostic, остальные два healthy, и требует ровно его failure.
+Valid false SCBA classification control может быть
+`(false,:max_iterations,:unresolved)`, не invalid tuple.
+
+Нельзя передавать sentinels в scientific assessment/persistence или считать
+этот healthy routing report физическим pass. У engineered Green spectral
+sum defect `4π−1`, то есть полный physical validation даже здесь не заявлен.
+Same-state local algebra, route semantics и scientific acceptance — разные
+утверждения. Эта complete assembly не закрывает O08-03/DEV05.
 
 **Mutations.** Forced mean subtraction нарушает expected nonzero ζ/rP;
 dropped neutrality gate обнаруживается по отсутствующему named assessment
@@ -261,64 +467,125 @@ internal bond currents: A m⁻², Nz−1 entries, seam отсутствует.
 Outgoing engineering electron-flow current `J=e Φ`, conventional charge
 current имеет противоположный знак.
 
-**Nonzero literal fixture.** NE=Nk=Nb=2; `wE=[1/4,3/4]`,
-`wk=[1/2,3/2]`, gs=2. E0=.1 eV, L0=10 nm. В каждом (e,m)
+**Complete public carrier.** Checked helper выше с `Nz3,Nb2,:none`,
+`NE3,Nk2,P1,Nφ4,Nqz3`; actual `ε=[−1,0,1]`, `wE=[1/2,1,1/2]`,
+`κ=[0,1]`, `wk=[1,3]/(16π)`, gs2. Ранее предложенные NE2/Nk1 и
+свободные dyadic weights заменены: public constructor их не допускает.
+Трёхузельная uniform Dirichlet цепочка даёт independent basis
 
 ```text
-Q=[2 i;-i 1], B=[1 i;-i 2], F=I/2, D=I,
-a=[1 2;3 4] indexed (e,m),
-G< = i*a*Q, G> = -i*D, GR = -i*(a*Q+D)/2,
-A=a*Q+D, Σ< = i*F, Σ> = -i*B, ΣR=-i*(B+F)/2.
+Hcell=t*[2 -1 0;-1 2 -1;0 -1 2],
+φ1=(1/2,1/√2,1/2), E1=(2−√2)t,
+φ2=(1/√2,0,−1/√2), E2=2t, Φ0=[φ1 φ2], χ0=Φ0.
 ```
 
-Это current functional fixture, не Dyson/SCBA solution. Все correlation
-matrices PSD; Green and family Keldysh identities заданы явно. Offdiagonal
-entries влияют на literal trace: `tr(B*aQ-FD)=6a-1`, то есть
-`S=[5 11;17 23]`. Independent scalar expansion даёт
+Не фиксировать tied-endpoint phase LAPACK для φ2. После independent
+assertion `abs(dot(φa,Φactual[:,a]))≈1`, определить
+`d[a]=dot(φa,Φactual[:,a])/abs(dot(...))`, P=Diagonal(d), проверить
+`Φactual≈Φ0P`, `χactual≈Φ0P`. **Все** literal Green и family matrices
+перевести как `Xactual=P'XliteralP`. Actual Φ используется лишь для
+column-phase transport; expected current не вычисляется из actual Φ/Hgrid.
+
+Полный remaining basis inventory (с phase transform P при необходимости):
+
+| Field | Independent value / объяснение |
+| --- | --- |
+| localization | `:none` |
+| centres,spreads | `[3/2,3/2]`, `[1/√2,1]` |
+| overlap eigenvalues,κ | ones2,1 within arithmetic budget |
+| H0 | diag(E1,E2) |
+| Z | `P'*[3/2 -1/√2;-1/√2 3/2]*P` |
+| M−1 | I2/mr |
+| T+,T− | `−t*P'*[1/4 1/(2√2);−1/(2√2) −1/2]*P`, adjoint |
+| window_eigenvalues,Egrid0 | `[E1,E2]`,2t; :none stores central-cell energies |
+| r_orth,r_eigen | builder-computed, finite and existing static gates; never overwrite0 |
+| three r_translation fields | builder0 for :none, outside PzP translation gates |
+
+**Nonzero literal fixture.** Все arrays shape `(3,2,2,2)`. В analytic basis
+в каждом (e,m):
 
 ```text
-sum_m wk*S = [19,43]
-jE = [19,43]/π * J0/E0_eV
-sum_e (E0_eV*wE[e])*jE[e] = 37/π * J0
-e*boundary_flux = 37/π * J0.
+Q=[2 i;−i 1], B=[1 i;−i 2], F=I2/2, D=I2,
+a=[1 2;3 4;5 6] indexed(e,m),
+G<=iaQ, G>=−iI2, GR=−i(aQ+I2)/2, A=aQ+I2,
+Σ<=iI2/2, Σ>=−iB, ΣR=−i(B+I2/2)/2.
 ```
 
-J0 вычислять в expected path из literals `e=1.602176634e-19 C`,
-`hbar=1.054571817e-34 J s`, `E0_J=.1*e J`, `L0=1e-8 m`:
-`J0=e*E0_J/(hbar*L0²)`; не читать expected из `scales.J0`.
-Сначала отдельно проверить сам scale against this SI expression, затем
-оба public API против retained expected values. Использовать physical
-weights `E0_eV*wE`, не только dimensionless wE. Таким образом ошибка
-общего multiplier/sign/2π у двух API не сокращается в одном agreement.
-
-**Coordinate reconstruction — отдельная fixture.** Nz=3,Nb=2,
-uniform Δx=1, constant mass mr>0; `H(g,g+1)=-t`,
-`t=hbar²/(2*m0*mr*E0_J*L0²)` independently (m0=9.1093837139e-31 kg).
-Literal orthonormal columns
+Все correlation matrices PSD, обе Keldysh identities заданы явно. Это
+current functional input, не Dyson/SCBA solution. Independent scalar sums:
 
 ```text
-φ1=(1,1,0)/sqrt(2), φ2=(1,-1,2)/sqrt(6), Φ=[φ1 φ2],
-G< = i*Q = [2i -1;1 i], NE=Nk=1, wE=wk=1, gs=2.
-Re[(ΦG<Φ†)[2,1]]=-1/sqrt(3)
-Re[(ΦG<Φ†)[3,2]]=+1/sqrt(3)
-expected bonds = [ +2t/sqrt(3), -2t/sqrt(3) ] * J0/π.
+tr(B*aQ−F*I)=a*(2+1+1+2)−(1/2+1/2)=6a−1,
+S=[5 11;17 23;29 35],
+sum_m wk*S=[38,86,134]/(16π)=[19,43,67]/(8π),
+jE=[19,43,67]/(8π²) * J0ref/E0eV,
+sum_e (E0eV*wE[e])*jE[e]=43/(4π²) * J0ref,
+eSI*boundary_flux=43/(4π²) * J0ref.
 ```
 
-χ=Φ for Δx=1. Diagonal-only G< gives both bonds 0; truncation to φ1
-with retained G11=2i also gives 0. Это precisely derived effect данного
-projected manufactured state; uniform J не требуется. Не нормировать
-truncated density повторно и не сравнивать её с исходной как той же моделью.
+J0ref/t используют independent SI literals из carrier section, не actual
+scale readback или CODATA. Сначала отдельно проверить scales against SI,
+затем оба public API против retained expected values и Unitful units.
+Physical dE=`[.05,.1,.05] eV`, не dimensionless wE. Общий ошибочный
+multiplier/sign/2π двух APIs не сокращается в одном agreement.
 
-**Норма/допуск/controls.** Componentwise absolute+relative comparison по
-existing finite-chain current regression budget `atol=2e-14,rtol=2e-13`
-применяется **после деления actual/expected current на независимый J0**,
-а resolved — J0/E0_eV. Это existing small-functional arithmetic budget,
-не 2e-14 A/m². Около нуля absolute branch применяется к scaled value;
-weights перечислены выше. Expected scalar sums — dyadic exact до π/scale;
-radicals и SI conversion ограничены этим regression budget, новый строгий
-roundoff bound не заявлен. Mutations: sign, omitted factor2π, drop one wk,
-drop wE on integration, diagonal-only or truncated reconstruction должны
-нарушать соответствующий retained expected assertion.
+**Complete Green diagnostics.** GR здесь намеренно не решение заданного
+Dyson D; family — externally supplied manufactured current input, не actual
+scattering/embedding map. `condition_number`/`dyson_scale` всё же относятся
+к declared actual D, без unrelated ones/zeros. В analytic basis
+`hjm=Ej+t*κm²`, `ξj=εe−hjm`:
+
+```text
+D_em=[ξ1+3i/4 −1/2;+1/2 ξ2+5i/4],
+τ=ξ1²+ξ2²+21/8,
+d2=(ξ1ξ2−11/16)²+((5ξ1+3ξ2)/4)²,
+q=sqrt(max(0,τ²−4d2)),
+condition_number[e,m]=sqrt((τ+q)/(τ−q)),
+dyson_scale[e,m]=max(sqrt(ξ1²+9/16)+1/2,sqrt(ξ2²+25/16)+1/2).
+```
+
+Imaginary Hermitian part D=(B+F)/2 positive definite, D nonsingular.
+Discriminant below0 beyond inherited arithmetic budget → stop, не PSD
+repair; max0 только для roundoff отрицательного discriminant.
+До required plain `GreenState`/`SelfEnergyFamily` construction test-local
+checking assembly проверяет shape/ComplexF64/finite всех четырёх Green и
+трёх family arrays, metadata `(3,2)` finite/positive по формулам, no-alias,
+phase mapping, A Hermiticity, обе Keldysh identities, PSD signs.
+Это all-field functional check, не сертификат Dyson/SCBA solution.
+Не получать expected arrays через Green/self-energy helpers.
+
+**Coordinate reconstruction — те же actual axes.** Для G<=iaQ и Φ0:
+
+```text
+Re[(Φ0*(iQ)*Φ0')[2,1]]=Re[(Φ0*(iQ)*Φ0')[3,2]]=−1/2,
+sum_em wE[e]wk[m]a[e,m]
+ =((1+6)/2+(3+12)+(5+18)/2)/(16π)=15/(8π),
+H12=H23=−t,
+expected bonds=[1,1] * 15t/(8π²) * J0ref.
+```
+
+Равенство этих двух bonds выведено только для данной sine basis/Gl;
+universal uniform local J не требуется. Periodic seam отсутствует.
+Diagonal-only Gl сохраняет G11=2ia,G22=ia и даёт zero bonds.
+Для truncation отдельный checked builder `(3,1,:none)` с теми же physical
+axes; проверить sole column φ1 up to phase, подать `(3,2,1,1)` Gl=2ia.
+Его reconstructed entries purely imaginary, bonds0. Не оставлять Nb2
+metadata, не мутировать basis, не перенормировать density и не называть
+этот truncated carrier той же физической моделью.
+
+**Норма/допуск/controls.** Existing finite-chain current regression budget
+`atol=2e-14,rtol=2e-13` применяется **после деления actual/expected current
+на independent J0ref**, resolved — J0ref/E0eV. Такой же small arithmetic
+budget применяется к dimensionless analytic basis entries/scale ratios;
+existing static gates сохраняются. Это regression policy, не2e-14 A/m²
+и не LAPACK-specific forward-error theorem. Near zero absolute branch.
+Expected scalar sums dyadic exact до π/scale, radicals/SI conversion
+проверяются тем же budget. Sign/omitted2π/dropwk/dropwE/coherence/truncation
+mutations обязаны отличаться от retained expected values:
+dropping wk1 loses `[5,17,29]/(16π²)` from scaled jE; dropping wk2 loses
+`3[11,23,35]/(16π²)`. Omitting wE gives integral129/(8π²), versus86/(8π²),
+ratio3/2; dimensionless weights as physical dE give ratio10. Dropping family
+coherences changes trace6a−1 to4a−1. RHS не менять вместе с mutation.
 
 **Primary/reuse.** Wacker `0706.4202v1`, Eqs. (3),(5),(6), Fig.1 объясняют
 coherence/finite-basis caveat; независимые numerical RHS выше выведены
@@ -439,6 +706,101 @@ regression policy, не continuum error threshold. По малым discrete sums
 FFT doubled-padding имеет норму `||ΔΛ||F/(||Λ||F+1e-14)` без quadrature;
 это sensitivity diagnostic, не требуемая continuum bound.
 
+**Accepted clarification — propagated ratio budget, CP-DESIGN/CP-CODE PASS.**
+Targeted DEV08 GREEN-1 (fixture SHA256
+`bae8a57957cd9df4da0d7369521a7d7ffa776b4c095859e0d1a9f86a9607eb6e`)
+дал13/13 discrete и107 pass/1 fail continuum: ratio65/33 measured
+`1.969696969698286` против `1.9696969696969697` при2e-13. Original failed
+log SHA256 `495227f26beba7ca0b274de6e8f39bf6ada9e1015afbe21e41a7f000fb250fa7`,
+receipt SHA256 `e0f7a3b5a8b2afb987232333d04cb3ab6a2600de25dc871f388af5836b8ef775`.
+Сохранить original failed evidence в root execution/evidence, не заменять
+успешной повторной попыткой. Этот факт не доказывает defect PV operator.
+Current fixture4533b105… после accepted correction имеет GREEN2
+211/211 assertions (13 literal,198 continuum/scalar), matching raw
+receipt/log identities перечислены выше. Historical GREEN1 остаётся failure.
+
+Принятая correction меняет только propagation для quotient, **все
+underlying functional comparisons и ATOL=RTOL=2e-13 сохраняются**.
+Julia1.13 scalar isapprox (`base/floatfuncs.jl:222–228`) использует
+`abs(x−y)≤max(ATOL,RTOL*max(abs(x),abs(y)))`, не сумму budgets.
+Для `0<x,y<1`, ATOL=RTOL, это абсолютная ветвь A=2e-13.
+
+Пусть independently `a=eA=(2/NA)/(2π)`, `b=eB=(2/NB)/(2π)`,
+measured x,y проверены отдельно этим же scalar gate. Их отношение
+имеет conditioning
+
+```text
+| (a+δa)/(b+δb) − a/b | ≤ (B+(a/b)B)/(b−B),
+|δa|,|δb|≤B, b>B.
+```
+
+`B=nextfloat(A)` включает rounding floating subtraction в isapprox,
+не является новым PV tolerance. При e65≈.0049 деление усиливает absolute
+budget до порядка1e-10; прямой ratio rtol2e-13 не следует из functional
+policy. Для actual predicate использовать outward bounds, без empirically
+chosen tolerance:
+
+```text
+a_lo=prevfloat(a−B), a_hi=nextfloat(a+B),
+b_lo=prevfloat(b−B), b_hi=nextfloat(b+B),
+r_lo=prevfloat(a_lo/b_hi), r_hi=nextfloat(a_hi/b_lo).
+```
+
+Каждый endpoint/result finite; `0<a_lo≤a_hi<1`, `0<b_lo≤b_hi<1`.
+Если denominator lower≤0, stop unresolved ratio; floor не добавлять.
+Outward addition/subtraction/division и monotonic positive Float64 division
+enclose computed x/y. Independent mathematical ratio ρ=NB/NA также должен
+лежать в [r_lo,r_hi]; π/h literals rounding не скрываются в expected actual.
+
+Accepted frozen predicates ниже — псевдокод contract; reviewed implementation
+реализует также требуемые explicit fatal guards перед dependent division:
+
+```julia
+nodes = (17,33,65)
+expected_errors = [(2/N)/(2π) for N in nodes] # independent, not helper output
+for i in eachindex(errors)
+    @test isfinite(errors[i]) && 0 < errors[i] < 1
+    @test 0 < expected_errors[i] < 1
+    @test isapprox(errors[i],expected_errors[i];atol=ATOL,rtol=RTOL)
+end
+@test errors[1] > errors[2] > errors[3] > 0 # retained
+for (i,j) in ((1,2),(2,3))
+    a,b = expected_errors[i],expected_errors[j]
+    B = nextfloat(ATOL)
+    alo,ahi = prevfloat(a-B),nextfloat(a+B)
+    blo,bhi = prevfloat(b-B),nextfloat(b+B)
+    # failed finite/positive precondition must stop before division
+    @test all(isfinite,(alo,ahi,blo,bhi))
+    @test 0 < alo <= ahi < 1 && 0 < blo <= bhi < 1
+    @test bhi < alo
+    lo,hi = prevfloat(alo/bhi),nextfloat(ahi/blo)
+    @test isfinite(lo) && isfinite(hi) && 0 < lo <= hi
+    @test lo <= nodes[j]/nodes[i] <= hi
+    ratio = errors[i]/errors[j]
+    @test isfinite(ratio) && lo <= ratio <= hi
+end
+```
+
+`@test` не short-circuit: reviewed implementation останавливает dependent
+division при failed precondition, не продолжает с invalid endpoints. Три per-error
+assertions относятся к отдельно пересчитанным error-loop values, а не
+предполагают equality с более ранним W3 operator invocation.
+
+Cheap scalar controls без новых operator evaluations: a,b и допустимые
+perturbations `a+A/2,b−A/2` проходят strict functional gates и interval;
+constant ratio1 и second-order ratioρ² лежат вне first-order interval.
+Common factor2 или общий sign reversal сохраняют ratioρ: их отвергают
+отдельные amplitude/positivity gates, а ratio сам их не диагностирует.
+Явно проверить эти accept/reject утверждения при retained RHS. Ratio —
+consistency evidence known omitted-cell refinement, не независимый
+сертификат physical discretization или substitute signed Λ oracle.
+
+После independent high CP-DESIGN medium заменил только две ratio assertions
+и добавил эти same-budget guards/controls; CP-CODE PASS подтверждён receipt
+2cc83ef3…. Captured GREEN-1 bytes сохраняются; GREEN2 потребил оставшуюся
+invocation existing DEV08 L-JL, не новый счётчик. Underlying
+Λ/physical tolerances, operators, windows, meshes и FFT policy не менять.
+
 **Reuse/граница.** Existing direct Gaussian odd-symmetry и FFT/direct
 random-array anchors остаются. `analytic_product_integration.jl` и frozen
 triangle покрывают piecewise-linear integration с exterior taper, иной
@@ -470,15 +832,17 @@ its phonon text extraction is not used as absolute kernel oracle.
 
 | Утверждение | Свидетельство | Ограничение | Решение |
 | --- | --- | --- | --- |
-| Keldysh/current/PV получают различающие RHS | Literal matrix/component sums и analytic PV omitted-cell/tail equations выше | CP-DESIGN PASS для bounded scopes, execution0 | сохранить |
-| Poisson incompatibility видна через ζ/rP/rneutral | Constant RHS bordered equations, existing sine derivative anchor | Assessment carrier synthetic, full coupled state не доказан | сохранить |
+| Keldysh/current/PV получают различающие RHS | Literal matrix/component sums, analytic PV equations, accepted design/code и658 targeted assertions | Bounded manufactured functional scope, не coupled science | сохранить |
+| Poisson incompatibility видна через ζ/rP/rneutral | Constant RHS bordered equations, exact-ND precondition, existing sine derivative anchor | Assessment carrier synthetic, full coupled state не доказан | сохранить |
 | Complete final U/G oracle готов | Exact seams/field inventory есть, coupled independent RHS нет | DEV05 blocked | данных недостаточно |
 | Four absolute prefactors сертифицированы | Owning units/formulas и partial primary LO chain | Geometry/tolerance/primary gaps, DEV07 blocked | данных недостаточно |
-| Тесты/SCBA/science выполнены | Только source/design и paper hashes | Native/runtime/convergence/discretization/experiment not_measured | данных недостаточно |
+| Current PV targeted runtime прошёл | GREEN2 fixture4533b105…,13+198 assertions; historical GREEN1 failure сохранён | FullCI/SCBA/science0 | сохранить |
+| SCBA/science выполнены | Source/design, paper hashes, четыре bounded functional runs | Convergence/discretization/experiment не установлены | данных недостаточно |
 
 Независимый CP-DESIGN принял четыре bounded functional scopes;
 два blocked паспорта сохраняются. Reviewer проверил literal arithmetic,
 shape/units, applicability, fixed RHS mutations и статусы. Автор документа
 не закрывает собственный CP-CODE. Отдельный I medium выполняет только
-accepted scope с envelope соответствующего DEV03/04/06/08; DEV05 и DEV07
-не READY. Полная six-oracle readiness этим документом не устанавливается.
+accepted scope с envelope соответствующего DEV03/04/06/08; PV ratio
+predicate получил CP-DESIGN/CP-CODE и bounded GREEN2 evidence. DEV05 и DEV07 не READY.
+Полная six-oracle readiness этим документом не устанавливается.
