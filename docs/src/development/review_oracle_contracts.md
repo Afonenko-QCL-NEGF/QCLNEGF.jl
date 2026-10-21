@@ -1,10 +1,19 @@
 # DEV02 — паспорта независимых oracle O08-01…06
 
-Статус: **CP-DESIGN PASS для bounded scopes O08-01/02/03/04/06**
-(2026-10-19, независимый reviewer high). O08-03 принят как complete coupled
-functional contract; DEV05 I2 source PASS и GREEN-2 925/925 functional
-assertions PASS, independent final CP-CODE/docs CPP pending. O08-05/DEV07 остаются **design_blocked**. Полная готовность шести
-oracle и полное завершение DEV02 acceptance **не установлены**.
+Текущий статус: **шесть принятых bounded functional scopes O08-01…06**
+с independent design/code reviews и retained runtime evidence:
+**2407 targeted assertions**. [DEV05 final review][dev05-final] закрывает
+CP-CODE и owning-doc CPP complete manufactured D2; [DEV07 final
+assembly][dev07-final] принимает четыре absolute raw covariance passports
+accepted D1 с ABSOLUTE-1 **824/824**. Научная приёмка S1, достаточность
+дискретизации, экспериментальная валидация и fullCI/native **не установлены**.
+
+Статусы сверены по Core `9f4a96d032ad868ec010ce92d915bb81087c8d92`
+и сохранённым integration receipts на root
+`3a84cfe8b90ee5210d581bd252abbeb4924beb5a`. Historical source/design freezes
+и failed attempts ниже сохраняются; их прежние pending/blocked формулировки
+не заменяют поздние final receipts. Этот docs-only reconciliation не является
+новым независимым physics review или повторным исполнением tests.
 
 Уточнение O08-02/04 на Core `a8d2c0de21dfdce3ed3c7c585c555656443f6d89`
 заменяет неподдерживаемые carrier dimensions штатными checked builders.
@@ -65,22 +74,25 @@ PORTABILITY, RV08 K/S/P/L/J/R09–11/R14/P03, RV09 T01–04,
 
 ## Readiness и dependency graph
 
-| Паспорт | CP-DESIGN status | Готовый bounded scope / блокирующий остаток |
+| Паспорт | Текущая bounded приёмка | Принятый scope / ограничение |
 | --- | --- | --- |
-| O08-01 | design_accepted | Literal noncommuting Keldysh product, anti-Hermitian/PSD controls |
-| O08-02 | design_accepted, exact-ND precondition frozen | Independent sine anchor + constant incompatible source, checked full carrier; assessment routing явно synthetic |
-| O08-03 | D2 design_accepted; I2 source PASS, GREEN-2 925/925 functional PASS; independent final CP-CODE/docs CPP pending | Complete coupled literal final U/G/n/candidate/history; healthy global FAIL ровно r_sum; independent negative controls |
-| O08-04 | design_accepted | Actual NE3/Nk2 public carrier, signed SI current, literal coherence и genuine Nb1 truncation |
-| O08-05 | design_blocked | Четыре absolute channel passports ещё не имеют законченной primary→geometry→SI→tolerance цепочки; LO derivation — локальный кандидат |
-| O08-06 | functional/ratio design_accepted, CP-CODE PASS | Literal direct/FFT, center-only continuum/tail и accepted derived ratio interval; targeted GREEN2 passed |
+| O08-01 | design_accepted, CP-CODE PASS; GREEN2 16/16 | Literal noncommuting Keldysh product, anti-Hermitian/PSD controls |
+| O08-02 | design_accepted, CP-CODE PASS; GREEN2 183/183; exact-ND precondition frozen | Independent sine anchor + constant incompatible source, checked full carrier; assessment routing явно synthetic |
+| O08-03 | D2 design_accepted; final CP-CODE/owning-doc CPP PASS; GREEN-2 925/925 | Complete coupled literal final U/G/n/candidate/history; healthy global FAIL ровно r_sum; independent negative controls |
+| O08-04 | design_accepted, CP-CODE PASS; GREEN1 248/248 | Actual NE3/Nk2 public carrier, signed SI current, literal coherence и genuine Nb1 truncation |
+| O08-05 | D1 design_accepted, CP-CODE PASS; ABSOLUTE-1 824/824 | Четыре absolute raw LO/IFR/acoustic/alloy RHS, primary→geometry→SI→arithmetic chain; two scales, full radial2×2, Nb1. Accepted D1 в конце документа; historical blocked candidate не используется |
+| O08-06 | functional/ratio design_accepted, CP-CODE PASS; GREEN2 211/211 | Literal direct/FFT, center-only continuum/tail и accepted derived ratio interval |
 
 `design_accepted` означает только прошедший независимый CP-DESIGN
-bounded functional-regression scope. DEV03/04/06/08 имеют текущую
+bounded functional-regression scope. Все шесть scopes имеют отдельно
 CP-CODE и targeted runtime evidence в своих envelopes. Runtime acceptance
-не следует из design; ниже приведены exact fixture/raw receipt identities.
+не следует из design; ниже приведены exact fixture/raw receipt identities
+и superseding final reviews DEV05/DEV07.
 DEV03 ← O08-01; DEV04 ← O08-02; DEV05 ← O08-03
-(D2 CP-DESIGN PASS, I2 source PASS; GREEN-2 925/925 functional PASS, independent final CP-CODE/docs CPP pending); DEV06 ← O08-04; DEV07 ← все четыре O08-05 (blocked, допустим
-отдельный accepted channel child packet); DEV08 ← O08-06.
+(D2, final CP-CODE/CPP PASS, GREEN-2 925/925); DEV06 ← O08-04;
+DEV07 ← четыре O08-05 accepted D1 (final CP-CODE PASS, ABSOLUTE-1 824/824);
+DEV08 ← O08-06. Общий builder допустим только как carrier с указанными
+независимыми preconditions; это не полная независимость всего code path.
 
 Граф независимости: literal arrays/rational sums → API outputs;
 analytic derivative → Poisson source → solve → measured diagnostics →
@@ -90,10 +102,10 @@ current; finite-support PV integral → exact omitted-cell/tail error.
 не являются independent RHS. Shared code/formats/builders допускаются как
 carriers, но их output не вычисляет ожидаемую правую часть.
 
-### Наблюдение: четыре bounded targeted runs
+### Наблюдение: шесть retained bounded targeted runs
 
 Root execution, Julia1.13.0, threads1/check-bounds=yes, selected prepared
-environment; автор этого status update тесты не повторял. Все четыре
+environment; автор этого status update тесты не повторял. Все шесть
 receipts: exit0, raw_capture_complete=true, stop_reason=null. PASS опирается
 на reviewed assertion contract и raw assertion output с matching fixture
 hash, не только на process exit code.
@@ -102,22 +114,43 @@ hash, не только на process exit code.
 | --- | --- | --- |
 | DEV03 `test/numerics/keldysh_literal_matrix_oracle.jl` | `6adaeea85abf95e21dd0beb763dada3a73d588cae1ed5a5d536eb0e8841a2a1e` | GREEN2,16/16 |
 | DEV04 `test/physics/nonneutral_periodic_poisson_assessment.jl` | `9aab7a4eea3a7fcb93033d2c9f6f3b420f6b1872843168e0deb98461f2602730` | GREEN2,183/183 |
+| DEV05 `test/numerics/final_state_alignment_oracle.jl` | `81fbb258f86c1760ed2ffb7964e189518fd1ec7608921e42080c969c4a55f852` | GREEN-2,925/925 |
 | DEV06 `test/physics/nonzero_public_current_oracle.jl` | `17fed2fae5b45549c65cec576cc108f68922a04e3830c0246313ccafd4ee8d01` | GREEN1,248/248 |
+| DEV07 `test/physics/absolute_scattering_kernel_oracles.jl` | `d3651d095d81a1c02dd02ffc660c906998e8486a4634302ee3e7722bc62678ad` | ABSOLUTE-1,824/824 |
 | DEV08 `test/numerics/principal_value_independent_oracle.jl` | `4533b1058eb351d5796df18c86ac3b2e2af767078e16bd4cec25588b8e34f70a` | GREEN2,211/211:13 literal+198 continuum/scalar |
 
-Portable raw evidence identities; receipt.json и original.log соответствуют
-указанной card/attempt, original failed attempts сохраняются отдельно:
+Portable raw evidence identities; receipt.json и original raw (в integration
+Git сохранён как original.txt) соответствуют указанной card/attempt,
+original failed attempts сохраняются отдельно:
 
 | Root attempt | Receipt SHA256 | Original log SHA256 |
 | --- | --- | --- |
 | DEV03 GREEN2 | `2c4a574a116d9300fe64bf9da61436d6eb6d8dd24cb3818a40845b61b29a4ab9` | `5c9f677fea9cc2666d80b36c16392a691c971e8d27728ac6e19e972ed92b938a` |
 | DEV04 GREEN2 | `8f69ce737c8fde8797947124797be6fd3c9b65b5a5f2726f322dd48164f986da` | `1c098144d968dd42dd3309324051b5fd10e05fbf841144eb63d031fe8901351b` |
+| DEV05 GREEN-2 | `74b4c571b0d6cd9239cb26e3ef697a4b0a2d3164dd51f6db120d115dd250e49c` | `918120b36de0f3b3d502d4cc5ba0e21497ba4b8f6ae32e6a895f48de6a35d7aa` |
 | DEV06 GREEN1 | `b30b51c860de104f11c63a61f824e3cc5c076be0e4e9d05f7616040e7a8b0fa0` | `f6e13cf676efa11178a0ee7bc063d1d6c0425ea642727593fcc76a03c043daf8` |
+| DEV07 ABSOLUTE-1 | `3185a8b6a27a61a64e02f6608b4ff372fb364318d73b8c3fd994b2541afad236` | `35bff4d62770109588eb6d7c93236d979173d2b6ba8e94c6cf18862d0a81cb38` |
 | DEV08 GREEN2 | `96d71dbe946a481cb5b85d6c13f4bd93ae94030794138d88a809699ba92f2811` | `22639e86f27670899583be70b983683fbf374fff0e2df51e1627615912b0c860` |
 
-Всего658 targeted assertions в четырёх выбранных файлах. Это не full suite,
+Всего 2407 targeted assertions в шести выбранных файлах. Это не full suite,
 line/branch coverage, fullCI или scientific acceptance. SCBA/outer scientific
-solve и final CI здесь0; S1 и DEV05/07 не получают приёмку из этих runs.
+solve и final CI здесь0; S1 не получает приёмку из этих runs. DEV05 healthy
+global report намеренно FAIL ровно `{r_sum}`; passing fixture не скрывает
+spectral inadequacy. Общие RSS/TMP observations в receipts sampled, без
+hard quota/transient peak proof; это не новый benchmark.
+
+Superseding [DEV05 final review][dev05-final], SHA256
+`00c38923d3b1ac581b9d0962dcbae7e278acef036f9145c91f2af7e5ecb21182`,
+принимает final CP-CODE и owning-doc CPP только frozen D2. [DEV07 final
+assembly][dev07-final], SHA256
+`60164256c1660a153b3d6180b22e100213b627e84edbb586a13e482e1f45bb08`,
+связывает separate [source/math review][dev07-code], [E1/E2
+acceptance][dev07-errata], exact fixture d3651d09… и complete [ABSOLUTE-1
+receipt][dev07-runtime]/[raw][dev07-raw]. Wall 7.415s, raw 146B, sampled
+RSS 525668352B/TMP 0B, used 1/2: unused call не требует повторения.
+Это final assembly, не новый blind review. Accepted
+[D1][dev07-design] и [CP-DESIGN][dev07-design-review] материализованы
+в subsection DEV07 в конце документа; его equations/thresholds не менялись.
 
 ## Общее правило допусков
 
@@ -419,8 +452,8 @@ independent CP-DESIGN review SHA256:
 `bb5b5260487eab19e3c0db01141852c02ebe68ea8c991f68e29e59110db9a4f4`.
 Executor GREEN-2 дал **925/925 targeted functional assertions PASS**;
 подробная observation приведена после frozen D2 body. **Independent final
-CP-CODE и docs review pending**. Healthy global solution report намеренно
-FAIL ровно по r_sum; test PASS подтверждает именно этот ожидаемый отказ,
+CP-CODE и owning-doc CPP PASS по [final review][dev05-final]**. Healthy
+global solution report намеренно FAIL ровно по r_sum; test PASS подтверждает именно этот ожидаемый отказ,
 а не physical/S1/fullCI/native acceptance.
 
 Полный D1 owning document SHA256
@@ -960,7 +993,8 @@ original raw log SHA256:
 `918120b36de0f3b3d502d4cc5ba0e21497ba4b8f6ae32e6a895f48de6a35d7aa`.
 
 Это наблюдение targeted manufactured functional run. Source CPP перед
-execution был PASS, но independent **final CP-CODE и docs CPP pending**.
+execution был PASS; поздний independent **final CP-CODE и owning-doc CPP
+PASS** сохранён в [final review][dev05-final].
 Healthy report обязан иметь только `{r_sum}` failure, N1 —
 `{r_D,r_D_candidate,r_U,r_sum}`, N2 — `{r_D,r_D_candidate,r_sum}`.
 Все эти expected report failures являются passing assertions fixture;
@@ -1206,7 +1240,15 @@ coherence/finite-basis caveat; независимые numerical RHS выше в�
 непосредственно из stated finite matrices. Existing cavity/Landauer test
 проверяет finite_chain_green, не public bond current; повторять его не нужно.
 
-## O08-05 — absolute scattering scale: design_blocked
+## O08-05 — historical absolute scattering candidate: design_blocked
+
+**Исторический blocked design freeze.** Следующий candidate сохраняет
+gaps и next steps на момент его записи; это не текущий readiness verdict.
+Его superseding accepted D1 приведён в subsection DEV07 в конце документа
+и принят [CP-DESIGN][dev07-design-review], [source/math][dev07-code],
+[E1/E2 acceptance][dev07-errata] и [final assembly с 824/824][dev07-final].
+Historical candidate не является input новой fixture; его формулы и
+непринятые geometry/tolerance предположения ниже не переписываются.
 
 **API/shape.** `lo_phonon_kernel(p::PhysicalParameters,s::ScaleSystem,
 grids::ModelGrids,basis::BasisData) -> (K,FLO)`;
@@ -1446,22 +1488,28 @@ its phonon text extraction is not used as absolute kernel oracle.
 
 | Утверждение | Свидетельство | Ограничение | Решение |
 | --- | --- | --- | --- |
-| Keldysh/current/PV получают различающие RHS | Literal matrix/component sums, analytic PV equations, accepted design/code и658 targeted assertions | Bounded manufactured functional scope, не coupled science | сохранить |
+| Keldysh/Poisson/current/PV получают различающие RHS | Literal matrix/component sums, analytic PV equations, accepted design/code и658 targeted assertions | Bounded manufactured functional scope, не coupled science | сохранить |
 | Poisson incompatibility видна через ζ/rP/rneutral | Constant RHS bordered equations, exact-ND precondition, existing sine derivative anchor | Assessment carrier synthetic, full coupled state не доказан | сохранить |
-| Complete functional final U/G D2 принят | D2eb9e1a8c…/review53c3e9b4…; I2 81fbb258… source CPPbb5b5260… PASS; executor GREEN-2 925/925 targeted assertions | Independent final CP-CODE/docs CPP pending; healthy global report FAIL r_sum; S1/fullCI/native не приняты; GREEN-1 сохранён | дополнительно измерить |
-| Four absolute prefactors сертифицированы | Owning units/formulas и partial primary LO chain | Geometry/tolerance/primary gaps, DEV07 blocked | данных недостаточно |
+| Complete functional final U/G D2 принят | D2eb9e1a8c…/review53c3e9b4…; I2 81fbb258…; GREEN-2 925/925; [final CP-CODE/owning-doc CPP PASS][dev05-final] | Healthy global report FAIL r_sum; S1/fullCI/native не приняты; GREEN-1 сохранён | сохранить |
+| Четыре absolute raw coefficient passports приняты | Accepted D1/CP-DESIGN, separate source/math и errata reviews, fixture d3651d09…; [final assembly][dev07-final], ABSOLUTE-1 824/824 | Nb1 synthetic geometry; impurity microscopic prefactor, Nb>1 orientation, continuum/device applicability не приняты | сохранить |
 | Current PV targeted runtime прошёл | GREEN2 fixture4533b105…,13+198 assertions; historical GREEN1 failure сохранён | FullCI/SCBA/science0 | сохранить |
-| SCBA/science выполнены | Source/design, paper hashes, четыре bounded functional runs | Convergence/discretization/experiment не установлены | данных недостаточно |
+| SCBA/science выполнены | Шесть bounded functional scopes, 2407 targeted assertions; нового scientific solve нет | Convergence/discretization/experiment не установлены | данных недостаточно |
 
-Независимый CP-DESIGN принял пять bounded functional scopes;
-O08-05 остаётся design_blocked. Reviewer проверил literal arithmetic,
-shape/units, applicability, fixed RHS mutations и статусы. Автор документа
-не закрывает собственный CP-CODE. Отдельный I medium выполняет только
-accepted scope с envelope соответствующего DEV03/04/05/06/08; PV ratio
-predicate получил CP-DESIGN/CP-CODE и bounded GREEN2 evidence. DEV05 I2 source PASS;
-GREEN-2 925/925 functional assertions PASS, independent final CP-CODE/docs
-CPP pending. DEV07 не READY.
-Полная six-oracle readiness этим документом не устанавливается.
+Текущая readiness установлена для **шести bounded functional scopes**
+O08-01…06: independent design/code reviews и retained runtime evidence
+дают 2407 targeted assertions. DEV05 final CP-CODE/owning-doc CPP PASS
+заменяет pending только frozen D2 scope; DEV07 accepted D1 и final
+assembly заменяют historical blocked только новой absolute fixture.
+PV GREEN-1 и DEV05 GREEN-1 остаются original failures. Этот reconciliation
+не создаёт новую независимость, runtime или разрешение на rerun.
+
+Impurity anchor сохраняет shared microscopic-prefactor dependence;
+reference/optimized agreement само по себе не microscopic oracle.
+Manufactured constant histories не доказывают iterative convergence.
+S1 all-five/no-e–e/0mV70K, SCBA/Poisson convergence, all physical-gates PASS,
+достаточность E/k/qz/z/basis/window refinement и экспериментальная валидация
+остаются неустановленными. Missing science не становится нулём или PASS;
+новым измерениям нужны отдельные frozen scope и бюджет.
 
 ### DEV07 — accepted D1 absolute covariance fixture (2026-10-19)
 
@@ -1548,3 +1596,12 @@ test remain unchanged; their narrower independence is not upgraded.
 Runtime, SCBA/Poisson convergence, physical gates, continuum refinement and
 experimental validation each require their own evidence. Nb=1 cannot test
 general four-index orientation or adjoints; no such coverage is claimed.
+
+[dev05-final]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-dev05-final-review.md
+[dev07-design]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-dev07-absolute-design.md
+[dev07-design-review]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-dev07-absolute-design-review.md
+[dev07-code]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-dev07-absolute-code-review.md
+[dev07-errata]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-dev07-absolute-errata-code-review.md
+[dev07-runtime]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/tests/DEV07-ABSOLUTE-1/receipt.json
+[dev07-raw]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/tests/DEV07-ABSOLUTE-1/original.txt
+[dev07-final]: https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/3a84cfe8b90ee5210d581bd252abbeb4924beb5a/docs/implementation/review-closure-2026-10-19/execution/evidence/qcl-dev07-final-review.md
