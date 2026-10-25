@@ -98,85 +98,82 @@ function solve_scba_production(
     end
     had_initial = initial !== nothing
     initialization_started = time_ns()
-    initialization_phase = _production_phase_begin(
-        production_options,
-        :initialization,
-        completed_iterations;
-        task_width = _production_thread_worker_count(production_options, n.N_E*n.N_k),
-        memory_burst_bytes = initial === nothing ?
-                             (24+3length(problem.kernels.enabled))*field_bytes :
-                             consume_initial ? 0 :
-                             (9+3length(problem.kernels.enabled))*field_bytes,
-    )
-    initialization_status = :failed
     local green, scattering, embedding, plus, minus
-    try
-        if initial === nothing
-            green, seed_mu_scaled =
-                _seed_green_production(problem, h, initialization_phase.options)
-            seed_number_ratio =
-                _number_functional_production(
-                    green.Gˡ,
-                    problem.grids,
-                    problem.physical.g_s,
+    initialization_outcome = _production_phase_scope(
+        initialization_phase -> begin
+            if initial === nothing
+                green, seed_mu_scaled =
+                    _seed_green_production(problem, h, initialization_phase.options)
+                seed_number_ratio =
+                    _number_functional_production(
+                        green.Gˡ,
+                        problem.grids,
+                        problem.physical.g_s,
+                        initialization_phase.options,
+                    ) / _scaled_physics(problem.physical, problem.scales).Nᴰ²ᴰ
+                scattering = _scattering_candidate_production(
+                    problem,
+                    green,
+                    cache,
                     initialization_phase.options,
-                ) / _scaled_physics(problem.physical, problem.scales).Nᴰ²ᴰ
-            scattering = _scattering_candidate_production(
-                problem,
-                green,
-                cache,
-                initialization_phase.options,
-            )
-            embedding, plus, minus = _embedding_self_energy_selected(
-                problem,
-                green,
-                cache,
-                initialization_phase.options;
-                scattering,
-                h,
-                cavity_plan,
-            )
-        else
-            Set(keys(initial.scattering)) == Set(problem.kernels.enabled) ||
-                throw(ArgumentError("initial SCBA mechanisms do not match problem"))
-            all(
-                size(getfield(family, component)) == shape for
-                family in values(initial.scattering) for component in (:Σᴿ, :Σˡ, :Σᵍ)
-            ) || throw(DimensionMismatch("initial scattering arrays have wrong shape"))
-            all(
-                size(getfield(family, component)) == shape for family in
-                (initial.embedding, initial.embedding_plus, initial.embedding_minus) for
-                component in (:Σᴿ, :Σˡ, :Σᵍ)
-            ) || throw(DimensionMismatch("initial embedding arrays have wrong shape"))
-            all(
-                size(getfield(initial.green, component)) == shape for
-                component in (:Gᴿ, :Gˡ, :Gᵍ, :A)
-            ) || throw(DimensionMismatch("initial Green arrays have wrong shape"))
-            size(initial.green.condition_number) == (n.N_E, n.N_k) &&
-            size(initial.green.dyson_scale) == (n.N_E, n.N_k) ||
-                throw(DimensionMismatch("initial Green diagnostics have wrong shape"))
-            green = initial.green
-            # Freshly loaded private restart buffers may transfer ownership.
-            # Public/warm inputs retain the historical non-mutating contract.
-            scattering =
-                consume_initial ? initial.scattering : _copy_mechanisms(initial.scattering)
-            embedding =
-                consume_initial ? initial.embedding : _copy_family(initial.embedding)
-            plus =
-                consume_initial ? initial.embedding_plus :
-                _copy_family(initial.embedding_plus)
-            minus =
-                consume_initial ? initial.embedding_minus :
-                _copy_family(initial.embedding_minus)
-        end
-        initialization_status = :completed
-    finally
-        _production_phase_end(
+                )
+                embedding, plus, minus = _embedding_self_energy_selected(
+                    problem,
+                    green,
+                    cache,
+                    initialization_phase.options;
+                    scattering,
+                    h,
+                    cavity_plan,
+                )
+            else
+                Set(keys(initial.scattering)) == Set(problem.kernels.enabled) ||
+                    throw(ArgumentError("initial SCBA mechanisms do not match problem"))
+                all(
+                    size(getfield(family, component)) == shape for
+                    family in values(initial.scattering) for component in (:Σᴿ, :Σˡ, :Σᵍ)
+                ) || throw(DimensionMismatch("initial scattering arrays have wrong shape"))
+                all(
+                    size(getfield(family, component)) == shape for family in
+                    (initial.embedding, initial.embedding_plus, initial.embedding_minus) for
+                    component in (:Σᴿ, :Σˡ, :Σᵍ)
+                ) || throw(DimensionMismatch("initial embedding arrays have wrong shape"))
+                all(
+                    size(getfield(initial.green, component)) == shape for
+                    component in (:Gᴿ, :Gˡ, :Gᵍ, :A)
+                ) || throw(DimensionMismatch("initial Green arrays have wrong shape"))
+                size(initial.green.condition_number) == (n.N_E, n.N_k) &&
+                size(initial.green.dyson_scale) == (n.N_E, n.N_k) ||
+                    throw(DimensionMismatch("initial Green diagnostics have wrong shape"))
+                green = initial.green
+                # Freshly loaded private restart buffers may transfer ownership.
+                # Public/warm inputs retain the historical non-mutating contract.
+                scattering =
+                    consume_initial ? initial.scattering : _copy_mechanisms(initial.scattering)
+                embedding =
+                    consume_initial ? initial.embedding : _copy_family(initial.embedding)
+                plus =
+                    consume_initial ? initial.embedding_plus :
+                    _copy_family(initial.embedding_plus)
+                minus =
+                    consume_initial ? initial.embedding_minus :
+                    _copy_family(initial.embedding_minus)
+            end
+            return (green, scattering, embedding, plus, minus)
+        end,
+        () -> _production_phase_begin(
             production_options,
-            initialization_phase;
-            status = initialization_status,
-        )
-    end
+            :initialization,
+            completed_iterations;
+            task_width = _production_thread_worker_count(production_options, n.N_E*n.N_k),
+            memory_burst_bytes = initial === nothing ?
+                                 (24+3length(problem.kernels.enabled))*field_bytes :
+                                 consume_initial ? 0 :
+                                 (9+3length(problem.kernels.enabled))*field_bytes,
+        ),
+        (token, status) -> _production_phase_end(production_options, token; status),
+    )
+    green, scattering, embedding, plus, minus = initialization_outcome.value
     if production_options.phase_timing && owns_scba_stage
         _update_solver_stage(
             production_options,
@@ -432,65 +429,84 @@ function solve_scba_production(
     for ν = (completed_iterations+1):options.max_scba
         iteration_started = time_ns()
         dyson_started = iteration_started
-        phase = _production_phase_begin(
-            production_options,
-            :dyson,
-            ν;
-            task_width = _production_worker_count(production_options, n.N_E*n.N_k),
-            work_units = n.N_E*n.N_k,
-            memory_burst_bytes = 8field_bytes,
-        )
         local green_current, λ, total
         try
-            green_current, λ, total =
-                _current_green_production(problem, h, scattering, embedding, phase.options)
+            dyson_outcome = _production_phase_scope(
+                phase -> _current_green_production(
+                    problem, h, scattering, embedding, phase.options,
+                ),
+                () -> _production_phase_begin(
+                    production_options,
+                    :dyson,
+                    ν;
+                    task_width = _production_worker_count(production_options, n.N_E*n.N_k),
+                    work_units = n.N_E*n.N_k,
+                    memory_burst_bytes = 8field_bytes,
+                ),
+                (token, status) -> _production_phase_end(production_options, token; status),
+            )
+            green_current, λ, total = dyson_outcome.value
             green = green_current
         catch error
-            _production_phase_end(production_options, phase; status = :failed)
-            _end_solver_stage(
-                production_options,
-                :scba,
-                owns_scba_stage;
-                status = :failed,
-                iteration = ν,
-                total = options.max_scba,
-                message = "Dyson/Keldysh failure",
-            )
-            @warn "SCBA stopped during Dyson/Keldysh at iteration $ν" exception=(
-                error,
-                catch_backtrace(),
-            )
+            bt = catch_backtrace()
+            _production_cleanup_preserving_primary(error, bt) do
+                _end_solver_stage(
+                    production_options,
+                    :scba,
+                    owns_scba_stage;
+                    status = :failed,
+                    iteration = ν,
+                    total = options.max_scba,
+                    message = "Dyson/Keldysh failure",
+                )
+            end
+            _production_cleanup_preserving_primary(error, bt) do
+                @warn "SCBA stopped during Dyson/Keldysh at iteration $ν" exception=(error, bt)
+            end
             # No Green state aligned with the requested Hartree field exists;
             # returning the warm state would make a corrupt restart possible.
             rethrow()
         end
-        _production_phase_end(production_options, phase)
         dyson_seconds = (time_ns() - dyson_started) * 1e-9
-        phase = _production_phase_begin(
-            production_options,
-            :candidate_scattering,
-            ν;
-            task_width = _production_worker_count(
+        candidate_outcome = _production_candidate_phases(
+            phase -> begin
+                local candidate_sc, rround
+                candidate_sc, rround = _scattering_candidate_production(
+                    problem,
+                    green,
+                    cache,
+                    phase.options;
+                    return_roundoff = true,
+                )
+                return (candidate_sc, rround)
+            end,
+            (phase, scattering_value) -> begin
+                local candidate_sc, candidate_embedding, candidate_plus, candidate_minus
+                candidate_sc, _ = scattering_value
+                candidate_embedding, candidate_plus, candidate_minus =
+                    _embedding_self_energy_selected(
+                        problem,
+                        green,
+                        cache,
+                        phase.options;
+                        scattering = candidate_sc,
+                        h,
+                        cavity_plan,
+                    )
+                return (candidate_embedding, candidate_plus, candidate_minus)
+            end,
+            () -> _production_phase_begin(
                 production_options,
-                cld(n.N_E, production_options.energy_chunk),
+                :candidate_scattering,
+                ν;
+                task_width = _production_worker_count(
+                    production_options,
+                    cld(n.N_E, production_options.energy_chunk),
+                ),
+                work_units = n.N_E*n.N_k*n.N_b^2,
+                memory_burst_bytes = (3length(problem.kernels.enabled)+6)*field_bytes,
             ),
-            work_units = n.N_E*n.N_k*n.N_b^2,
-            memory_burst_bytes = (3length(problem.kernels.enabled)+6)*field_bytes,
-        )
-        candidate_started = time_ns()
-        local candidate_sc, candidate_embedding, candidate_plus, candidate_minus, rround
-        local candidate_scattering_seconds, candidate_embedding_seconds
-        try
-            candidate_sc, rround = _scattering_candidate_production(
-                problem,
-                green,
-                cache,
-                phase.options;
-                return_roundoff = true,
-            )
-            _production_phase_end(production_options, phase)
-            candidate_scattering_seconds = (time_ns()-candidate_started)*1e-9
-            phase = _production_phase_begin(
+            () -> _production_phase_begin(
                 production_options,
                 :candidate_embedding,
                 ν;
@@ -502,36 +518,26 @@ function solve_scba_production(
                         LinearAlgebra.BlasInt,
                     )
                 )*_production_worker_count(production_options, n.N_E*n.N_k),
-            )
-            embedding_started = time_ns()
-            candidate_embedding, candidate_plus, candidate_minus =
-                _embedding_self_energy_selected(
-                    problem,
-                    green,
-                    cache,
-                    phase.options;
-                    scattering = candidate_sc,
-                    h,
-                    cavity_plan,
+            ),
+            (token, status) -> _production_phase_end(production_options, token; status),
+        )
+        if candidate_outcome isa _ProductionPhaseBodyFailure
+            error = candidate_outcome.error
+            bt = candidate_outcome.backtrace
+            _production_cleanup_preserving_primary(error, bt) do
+                _end_solver_stage(
+                    production_options,
+                    :scba,
+                    owns_scba_stage;
+                    status = :failed,
+                    iteration = ν,
+                    total = options.max_scba,
+                    message = "candidate construction failure",
                 )
-            _production_phase_end(production_options, phase)
-            candidate_embedding_seconds = (time_ns()-embedding_started)*1e-9
-        catch error
-            _production_phase_end(production_options, phase; status = :failed)
-            error isa DomainError || rethrow()
-            _end_solver_stage(
-                production_options,
-                :scba,
-                owns_scba_stage;
-                status = :failed,
-                iteration = ν,
-                total = options.max_scba,
-                message = "candidate construction failure",
-            )
-            @warn "SCBA candidate failed at iteration $ν" exception=(
-                error,
-                catch_backtrace(),
-            )
+            end
+            _production_cleanup_preserving_primary(error, bt) do
+                @warn "SCBA candidate failed at iteration $ν" exception=(error, bt)
+            end
             _record_candidate_failure!(history, problem, h, green, total, plus, ν, λ)
             _ensure_scba_physical_markers!(
                 history,
@@ -556,6 +562,11 @@ function solve_scba_production(
                 :invalid,
             )
         end
+        candidate_sc, rround = candidate_outcome.scattering
+        candidate_embedding, candidate_plus, candidate_minus = candidate_outcome.embedding
+        candidate_started = candidate_outcome.started_ns
+        candidate_scattering_seconds = candidate_outcome.scattering_seconds
+        candidate_embedding_seconds = candidate_outcome.embedding_seconds
         assembly_started = time_ns()
         phase = _production_phase_begin(
             production_options,
@@ -1023,17 +1034,16 @@ function _solve_production(
                 false,
                 :running_scba,
             )
-            publish_phase = _production_phase_begin(
-                production_options,
-                :checkpoint_publish,
-                last(scba_state.history).ν;
-                stage = :checkpoint,
+            _production_phase_scope(
+                token -> checkpoint_sink(running),
+                () -> _production_phase_begin(
+                    production_options,
+                    :checkpoint_publish,
+                    last(scba_state.history).ν;
+                    stage = :checkpoint,
+                ),
+                (token, status) -> _production_phase_end(production_options, token; status),
             )
-            try
-                checkpoint_sink(running)
-            finally
-                _production_phase_end(production_options, publish_phase)
-            end
             return nothing
         end
     end
@@ -1252,47 +1262,49 @@ function _solve_production(
     if audit_failure === nothing
         audit_field_bytes =
             sizeof(ComplexF64)*problem.numerical.N_E*problem.numerical.N_k*problem.numerical.N_b^2
-        audit_phase = _production_phase_begin(
-            production_options,
-            :final_audit,
-            0;
-            stage = :audit,
-            task_width = _production_thread_worker_count(
+        audit_outcome = _production_phase_scope(
+            audit_phase -> begin
+                audit_sc, audit_roundoff = _scattering_candidate_production(
+                    problem,
+                    final_scba.green,
+                    cache,
+                    audit_phase.options;
+                    return_roundoff = true,
+                )
+                audit_embedding, audit_plus, audit_minus = _embedding_self_energy_selected(
+                    problem,
+                    final_scba.green,
+                    cache,
+                    audit_phase.options;
+                    scattering = audit_sc,
+                    h = project_hamiltonians(problem, Uᴴ),
+                )
+                return FixedPointAuditCandidate(
+                    audit_sc,
+                    audit_embedding,
+                    audit_plus,
+                    audit_minus,
+                    audit_roundoff,
+                )
+            end,
+            () -> _production_phase_begin(
                 production_options,
-                problem.numerical.N_E*problem.numerical.N_k,
+                :final_audit,
+                0;
+                stage = :audit,
+                task_width = _production_thread_worker_count(
+                    production_options,
+                    problem.numerical.N_E*problem.numerical.N_k,
+                ),
+                memory_burst_bytes = (18+3length(problem.kernels.enabled))*audit_field_bytes,
             ),
-            memory_burst_bytes = (18+3length(problem.kernels.enabled))*audit_field_bytes,
+            (token, status) -> _production_phase_end(production_options, token; status);
+            capture_domain_error = true,
         )
-        audit_status = :failed
-        try
-            audit_sc, audit_roundoff = _scattering_candidate_production(
-                problem,
-                final_scba.green,
-                cache,
-                audit_phase.options;
-                return_roundoff = true,
-            )
-            audit_embedding, audit_plus, audit_minus = _embedding_self_energy_selected(
-                problem,
-                final_scba.green,
-                cache,
-                audit_phase.options;
-                scattering = audit_sc,
-                h = project_hamiltonians(problem, Uᴴ),
-            )
-            candidate = FixedPointAuditCandidate(
-                audit_sc,
-                audit_embedding,
-                audit_plus,
-                audit_minus,
-                audit_roundoff,
-            )
-            audit_status = :completed
-        catch error
-            error isa DomainError || rethrow()
-            audit_failure = sprint(showerror, error)
-        finally
-            _production_phase_end(production_options, audit_phase; status = audit_status)
+        if audit_outcome isa _ProductionPhaseBodyFailure
+            audit_failure = sprint(showerror, audit_outcome.error)
+        else
+            candidate = audit_outcome.value
         end
     end
     quality_report =
