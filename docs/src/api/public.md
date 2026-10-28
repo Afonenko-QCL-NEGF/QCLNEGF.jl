@@ -4,6 +4,34 @@ CurrentModule = QCLNEGF
 
 # Public API
 
+## In-memory diagnostics and production operators
+
+Сигнатуры, ownership, units, стоимость и границы научных утверждений описаны в
+[контракте diagnostics API](../developer/public_diagnostics_api.md).
+
+```@docs
+validate_options
+validate_result_classification
+solution_metric_diagnostics
+positivity_diagnostics
+basis_validation_diagnostics
+projected_hamiltonian_spectrum
+production_retarded_green
+production_mix_selfenergy!
+production_lo_selfenergies
+sampled_linewidth_diagnostics
+fermi_occupation
+SolutionMetricDiagnostics
+PositivityWitness
+MatrixIntegralDiagnostics
+PositivityDiagnostics
+BasisValidationDiagnostics
+ProjectedHamiltonianSpectrum
+ProductionRetardedGreenEvaluation
+LOCollisionEvaluation
+SampledLinewidthDiagnostics
+```
+
 ## Types and operations
 
 ```@docs
