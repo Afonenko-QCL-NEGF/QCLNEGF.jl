@@ -18,7 +18,7 @@ See [the SCBA fixed point](@ref theory-scba),
 [Microscopic kernels](@ref theory-kernels), and
 [Production backend](@ref theory-production).
 """
-function solve_scba_production(
+function _solve_scba_production(
     problem::NEGFProblem,
     Uᴴ::AbstractVector{<:Real};
     options::SolverOptions = baseline_options(),
@@ -30,6 +30,11 @@ function solve_scba_production(
     history_observer::Union{Nothing,Function} = nothing,
     resume_iterations::Bool = false,
     restart_options::SolverOptions = options,
+    accepted_state_sink = nothing,
+    saved_continuation = nothing,
+    saved_mixer_position = nothing,
+    mixer_position_sink = nothing,
+    scientific_sink = nothing,
 )
     _check_options(options)
     _check_production_options(production_options)
@@ -64,6 +69,10 @@ function solve_scba_production(
                 break
             end
         end
+    end
+    if saved_continuation !== nothing
+        seed_mu_scaled=saved_continuation.seed_mu_scaled===nothing ? NaN : saved_continuation.seed_mu_scaled
+        seed_number_ratio=saved_continuation.seed_number_ratio===nothing ? NaN : saved_continuation.seed_number_ratio
     end
     completed_iterations <= options.max_scba ||
         throw(ArgumentError("checkpoint exceeds the configured SCBA budget"))
@@ -174,6 +183,18 @@ function solve_scba_production(
         (token, status) -> _production_phase_end(production_options, token; status),
     )
     green, scattering, embedding, plus, minus = initialization_outcome.value
+    if saved_continuation !== nothing && saved_continuation.decision.terminal
+        decision=saved_continuation.decision
+        mixer_position_sink===nothing || mixer_position_sink(saved_mixer_position)
+        _end_solver_stage(production_options,:scba,owns_scba_stage;
+            status=decision.converged ? :completed : :incomplete,
+            iteration=completed_iterations,total=options.max_scba,
+            message="restored accepted terminal decision")
+        return SCBAResult(green,scattering,embedding,plus,minus,history,
+            decision.converged,decision.status,decision.quality,
+            _solver_restart_contract(restart_options,production_options.algorithms),
+            initial.mixer_state)
+    end
     if production_options.phase_timing && owns_scba_stage
         _update_solver_stage(
             production_options,
@@ -219,6 +240,7 @@ function solve_scba_production(
         restored_stagnated =
             !restored_strict && !restored_approximate && restored_stop !== nothing
         if restored_strict || restored_approximate || restored_stagnated
+            mixer_position_sink===nothing || mixer_position_sink(saved_mixer_position)
             restored_total = _total_family_production(
                 scattering,
                 embedding,
@@ -266,6 +288,7 @@ function solve_scba_production(
         end
     end
     if completed_iterations == options.max_scba
+        mixer_position_sink===nothing || mixer_position_sink(saved_mixer_position)
         initial === nothing && error("missing SCBA restart state")
         restored_total = _total_family_production(
             scattering,
@@ -313,7 +336,8 @@ function solve_scba_production(
             initial.mixer_state,
         )
     end
-    witness_retention = _SCBAWitnessRetention(history)
+    witness_retention = saved_continuation===nothing ? _SCBAWitnessRetention(history) :
+        _SCBAWitnessRetention(saved_continuation.witness_retention...)
     anderson_workspace = if resume_iterations && initial !== nothing
         initial.mixer_state.method == production_options.algorithms.mixing || throw(
             ArgumentError("checkpoint mixer method differs from the requested algorithm"),
@@ -322,7 +346,8 @@ function solve_scba_production(
             consume_initial ? initial.mixer_state.states :
             deepcopy(initial.mixer_state.states),
             consume_initial ? initial.mixer_state.residuals :
-            deepcopy(initial.mixer_state.residuals),
+            deepcopy(initial.mixer_state.residuals);
+            position=saved_mixer_position,
         )
     else
         _AndersonWorkspace()
@@ -338,6 +363,7 @@ function solve_scba_production(
     # aggregate Green state throughout all subsequent iterations.
     initial = nothing
     if completed_iterations > 0
+      if saved_continuation === nothing
         resume_phase = _production_phase_begin(
             production_options,
             :restart_scattering,
@@ -370,6 +396,13 @@ function solve_scba_production(
         # The summed embedding is not used in this reconstruction.
         next_embedding = nothing
         _production_phase_end(production_options, resume_phase)
+      else
+        pending=saved_continuation.candidate
+        pending===nothing && throw(ArgumentError("continuation.candidate is missing"))
+        next_scattering=deepcopy(pending.scattering)
+        next_plus=deepcopy(pending.plus)
+        next_minus=deepcopy(pending.minus)
+      end
         history_growth =
             production_options.algorithms.mixing === :anderson &&
             length(anderson_workspace.states)+length(anderson_workspace.free_states) <
@@ -416,6 +449,7 @@ function solve_scba_production(
             )
             _mix_family_production!(plus, next_plus, options.α_Σ, resume_phase.options)
             _mix_family_production!(minus, next_minus, options.α_Σ, resume_phase.options)
+            _record_linear_mix!(anderson_workspace)
         end
         _embedding_sum_production!(embedding, plus, minus, resume_phase.options)
         _production_phase_end(production_options, resume_phase)
@@ -426,6 +460,10 @@ function solve_scba_production(
         !had_initial ? nothing :
         real.(diag(_sheet_density_matrix_bar(problem, green.Gˡ))) ./
         _scaled_physics(problem.physical, problem.scales).Nᴰ²ᴰ
+    if saved_continuation !== nothing
+        Jprevious=saved_continuation.next_previous_current
+        populations_previous=copy(saved_continuation.next_previous_populations)
+    end
     for ν = (completed_iterations+1):options.max_scba
         iteration_started = time_ns()
         dyson_started = iteration_started
@@ -550,6 +588,9 @@ function solve_scba_production(
                 terminal = true,
             )
             history_observer === nothing || history_observer(last(history))
+            scientific_sink===nothing || scientific_sink(last(history),
+                SCBAStopDecision(true,false,:invalid_candidate,:invalid,"candidate failed"),0,0,:append)
+            mixer_position_sink===nothing || mixer_position_sink(anderson_workspace.position)
             return SCBAResult(
                 green,
                 scattering,
@@ -560,6 +601,8 @@ function solve_scba_production(
                 false,
                 :invalid_candidate,
                 :invalid,
+                restart_contract,
+                mixer_state(),
             )
         end
         candidate_sc, rround = candidate_outcome.scattering
@@ -664,7 +707,22 @@ function solve_scba_production(
                 nothing,
             ),
         )
+        prior_witnesses=(witness_retention.worst,witness_retention.last)
         _retain_scba_witness_payloads!(history, witness_retention)
+        if scientific_sink!==nothing
+            for index in unique(prior_witnesses)
+                0<index<length(history) || continue
+                prefix=@view history[1:index]
+                strict=_trailing_pass_count(prefix,row->scba_convergence_assessment(
+                    row,options.tolerances,options.convergence).passed)
+                diagnostic=options.convergence.mode===:adaptive_working &&
+                    options.convergence.diagnostic_quality.enabled ?
+                    _trailing_pass_count(prefix,row->scba_diagnostic_quality_assessment(
+                        row,options.tolerances,options.convergence).passed) : 0
+                scientific_sink(history[index],scba_iteration_decision(prefix,options,strict),
+                    strict,diagnostic,:witness_update)
+            end
+        end
         if !all(isfinite, (rD, rA, rK, rΣ, rλ, rPSD, rcaus, rround, J, λ))
             _ensure_scba_physical_markers!(
                 history,
@@ -677,6 +735,8 @@ function solve_scba_production(
                 terminal = true,
             )
             history_observer === nothing || history_observer(last(history))
+            scientific_sink===nothing || scientific_sink(last(history),
+                SCBAStopDecision(true,false,:nonfinite,:invalid,"non-finite metrics"),0,0,:append)
             _end_solver_stage(
                 production_options,
                 :scba,
@@ -686,6 +746,7 @@ function solve_scba_production(
                 total = options.max_scba,
                 message = "non-finite physics metrics",
             )
+            mixer_position_sink===nothing || mixer_position_sink(anderson_workspace.position)
             return SCBAResult(
                 green,
                 scattering,
@@ -696,6 +757,8 @@ function solve_scba_production(
                 false,
                 :nonfinite_metrics,
                 :invalid,
+                restart_contract,
+                mixer_state(),
             )
         end
         assessment = scba_convergence_assessment(
@@ -730,7 +793,7 @@ function solve_scba_production(
             memory_burst_bytes = 0,
         )
         checkpoint_due =
-            iteration_callback !== nothing &&
+            (iteration_callback !== nothing || accepted_state_sink !== nothing) &&
             _production_checkpoint_requested(production_options, :scba, ν)
         _production_phase_end(production_options, phase)
         phase = _production_phase_begin(production_options, :physics_markers, ν)
@@ -755,6 +818,8 @@ function solve_scba_production(
         )
         _production_phase_end(production_options, phase)
         history_observer === nothing || history_observer(last(history))
+        scientific_sink===nothing || scientific_sink(last(history),decision,
+            convergence_streak,diagnostic_quality_streak,:append)
         if checkpoint_due
             aligned = SCBAResult(
                 green,
@@ -769,9 +834,19 @@ function solve_scba_production(
                 restart_contract,
                 mixer_state(),
             )
-            iteration_callback(aligned)
+            iteration_callback===nothing || iteration_callback(aligned)
+            if accepted_state_sink!==nothing
+                pending=decision.terminal ? nothing : FixedPointAuditCandidate(candidate_sc,
+                    candidate_embedding,candidate_plus,candidate_minus,rround)
+                continuation=SCBAContinuation(decision,pending,Float64(J),populations,
+                    Float64(seed_mu_scaled),Float64(seed_number_ratio),
+                    (witness_retention.first,witness_retention.worst,witness_retention.last))
+                accepted_state_sink(aligned,continuation,convergence_streak,diagnostic_quality_streak,
+                    anderson_workspace.position)
+            end
         end
         if decision.terminal
+            mixer_position_sink===nothing || mixer_position_sink(anderson_workspace.position)
             _emit_scba_progress(
                 production_options,
                 ν,
@@ -887,6 +962,7 @@ function solve_scba_production(
             )
             _mix_family_production!(plus, candidate_plus, options.α_Σ, phase.options)
             _mix_family_production!(minus, candidate_minus, options.α_Σ, phase.options)
+            _record_linear_mix!(anderson_workspace)
         end
         _embedding_sum_production!(embedding, plus, minus, phase.options)
         _production_phase_end(production_options, phase)
@@ -958,6 +1034,13 @@ function _solve_production(
     resume_scba::Bool = false,
     state_observer::Union{Nothing,Function} = nothing,
     history_observer::Union{Nothing,Function} = nothing,
+    exact_capture = nothing,
+    scientific_sink = nothing,
+    saved_continuation = nothing,
+    saved_mixer_position = nothing,
+    initial_published_U = nothing,
+    initial_outer_streak = nothing,
+    initial_policy_evaluations = Dict{String,Any}[],
 )
     _check_options(options)
     _check_production_options(production_options)
@@ -966,7 +1049,7 @@ function _solve_production(
     cache = _validated_production_cache(cache, problem, production_options)
     Nz = problem.numerical.N_z
     Uᴴ = initial_Uᴴ === nothing ? zeros(Float64, Nz) : Float64.(initial_Uᴴ)
-    published_U = copy(Uᴴ)
+    published_U = initial_published_U===nothing ? copy(Uᴴ) : copy(initial_published_U)
     length(Uᴴ) == Nz || throw(DimensionMismatch("initial Hartree field differs"))
     nprevious = nothing
     previous_scba = initial_scba
@@ -983,7 +1066,7 @@ function _solve_production(
         populations_previous = copy(last(outer_history).populations)
     end
     warnings = deepcopy(initial_warnings)
-    inner_policy_history = Dict{String,Any}[]
+    inner_policy_history = deepcopy(initial_policy_evaluations)
     restart_contract = _solver_restart_contract(options, production_options.algorithms)
     outer_tolerances = options.tolerances
     convergence_streak = _trailing_pass_count(
@@ -991,6 +1074,7 @@ function _solve_production(
         row ->
             poisson_convergence_assessment(row, outer_tolerances, options.convergence).passed,
     )
+    initial_outer_streak===nothing || (convergence_streak=initial_outer_streak)
     outer_converged =
         convergence_streak >= options.convergence.required_consecutive_poisson_passes &&
         previous_scba !== nothing &&
@@ -1051,7 +1135,8 @@ function _solve_production(
     for μ = (completed_outer+1):(outer_converged ? completed_outer : options.max_poisson)
         Uaccepted = copy(Uᴴ)
         inner_policy = inner_working_policy(options, outer_history)
-        push!(
+        if isempty(inner_policy_history) || get(last(inner_policy_history),"outer_iteration",nothing)!=μ
+          push!(
             inner_policy_history,
             Dict{String,Any}(
                 "scope"=>"inner_scba",
@@ -1063,8 +1148,9 @@ function _solve_production(
                 "approximate_enabled"=>inner_policy.options.convergence.diagnostic_quality.enabled,
                 "strict_final_required"=>true,
             ),
-        )
-        scba = solve_scba_production(
+          )
+        end
+        scba = _solve_scba_production(
             problem,
             Uaccepted;
             options = inner_policy.options,
@@ -1086,6 +1172,17 @@ function _solve_production(
             history_observer = history_observer===nothing ? nothing :
                                (row->history_observer(:scba, μ, row, problem)),
             resume_iterations = resume_scba && μ == completed_outer + 1,
+            saved_continuation = μ==completed_outer+1 ? saved_continuation : nothing,
+            saved_mixer_position = μ==completed_outer+1 ? saved_mixer_position : nothing,
+            mixer_position_sink = exact_capture===nothing ? nothing :
+                (position->(exact_capture.last_mixer_position=position)),
+            accepted_state_sink = exact_capture===nothing ? nothing :
+                ((scba,continuation,strict,diagnostic,position)->_capture_inner(exact_capture,problem,
+                    Uaccepted,scba,outer_history,warnings,inner_policy_history,μ,
+                    convergence_streak,continuation,strict,diagnostic,position)),
+            scientific_sink = scientific_sink===nothing ? nothing :
+                ((row,decision,strict,diagnostic,action)->scientific_sink(:scba,μ,row,
+                    decision,strict,diagnostic,action)),
         )
         published_U = copy(Uaccepted)
         if options.convergence.mode === :research_continue && !scba.converged
@@ -1145,6 +1242,12 @@ function _solve_production(
         )
         convergence_streak =
             assessment.passed && scba.converged ? convergence_streak + 1 : 0
+        if scientific_sink!==nothing
+            done=convergence_streak>=options.convergence.required_consecutive_poisson_passes
+            scientific_sink(:outer,μ,last(outer_history),
+                SCBAStopDecision(done,done,done ? :converged : :running,scba.quality,"accepted outer row"),
+                convergence_streak,0,:append)
+        end
         poisson_metrics = SolverMetric[
             SolverMetric(:J, _solver_current_density(J), "A/cm^2"),
             SolverMetric(:r_J, rJ),
@@ -1171,8 +1274,9 @@ function _solve_production(
             )
         end
 
-        if checkpoint_sink !== nothing &&
-           _production_checkpoint_requested(production_options, :outer, μ)
+        outer_checkpoint_due=(checkpoint_sink!==nothing || exact_capture!==nothing) &&
+            _production_checkpoint_requested(production_options,:outer,μ)
+        if checkpoint_sink !== nothing && outer_checkpoint_due
             dummy = ConvergenceReport(false, Dict{Symbol,Float64}(), String[])
             checkpoint_solution = NEGFSolution(
                 problem,
@@ -1207,6 +1311,8 @@ function _solve_production(
                 ),
             )
         end
+        exact_capture===nothing || !outer_checkpoint_due || _capture_outer(exact_capture,problem,Uaccepted,Unew,n̄,scba,
+            outer_history,warnings,inner_policy_history,μ,convergence_streak,inner_policy.options)
         Uᴴ = Unew
         nprevious = n̄
         previous_scba = scba
@@ -1346,6 +1452,7 @@ function _solve_production(
     observables[:termination_reason] = String(final_status)
     state_observer === nothing || state_observer(result)
     checkpoint_sink === nothing || checkpoint_sink(result)
+    exact_capture===nothing || _capture_final(exact_capture,result,convergence_streak,inner_policy_history)
     _end_solver_stage(
         production_options,
         :poisson,

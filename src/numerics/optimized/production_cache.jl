@@ -1,3 +1,10 @@
+function _contextual_solver_event(options,action,stage,label,status,iteration,total,metrics,message)
+    outer=options.outer_iteration>0 ? options.outer_iteration :
+        stage===:poisson && iteration!==nothing && iteration>0 ? iteration : nothing
+    inner=stage===:scba && iteration!==nothing && iteration>0 ? iteration : nothing
+    return SolverEvent(action,stage,label,status,iteration,total,Tuple(metrics),message,0,outer,inner)
+end
+
 function _begin_solver_stage(
     options::ProductionOptions,
     stage::Symbol;
@@ -10,7 +17,7 @@ function _begin_solver_stage(
     sink === nothing && return false
     values = _solver_metrics(metrics)
     return sink(
-        SolverEvent(:begin, stage, String(label), :running, iteration, total, values, ""),
+        _contextual_solver_event(options,:begin,stage,String(label),:running,iteration,total,values,""),
     ) === true
 end
 
@@ -29,7 +36,7 @@ function _end_solver_stage(
     sink === nothing && return nothing
     values = _solver_metrics(metrics)
     return sink(
-        SolverEvent(:end, stage, "", status, iteration, total, values, String(message)),
+        _contextual_solver_event(options,:end,stage,"",status,iteration,total,values,String(message)),
     )
 end
 
@@ -45,7 +52,8 @@ function _update_solver_stage(
     sink === nothing && return false
     values = _solver_metrics(metrics)
     return sink(
-        SolverEvent(
+        _contextual_solver_event(
+            options,
             :progress,
             stage,
             "",

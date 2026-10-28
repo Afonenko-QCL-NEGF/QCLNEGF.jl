@@ -37,7 +37,7 @@ Stored states are sent to `state_observer` before deciding whether to expand.
 The latest result contains every domain's metrics, identities and actual cost.
 Unmet momentum/basis resolution is reported; this policy adapts energy only.
 """
-function solve_adaptive_production(
+function _solve_adaptive_production(
     problem::NEGFProblem;
     domain_adaptation::DomainAdaptationPolicy = DomainAdaptationPolicy(),
     options::SolverOptions = reference_production_solver_options(),
@@ -54,6 +54,16 @@ function solve_adaptive_production(
     initial_warnings::Vector{Dict{String,Any}} = Dict{String,Any}[],
     resume_scba::Bool = false,
     initial_adaptation = nothing,
+    initial_domain_solution = nothing,
+    initial_elapsed_domain_seconds::Float64 = 0.0,
+    initial_published_U = nothing,
+    initial_outer_streak = nothing,
+    initial_policy_evaluations = Dict{String,Any}[],
+    saved_continuation = nothing,
+    saved_mixer_position = nothing,
+    scientific_sink_factory = nothing,
+    exact_capture_factory = nothing,
+    adaptive_transition_sink = nothing,
 )
     domain_adaptation.mode === :none && return _solve_production(
         problem;
@@ -72,6 +82,7 @@ function solve_adaptive_production(
         initial_warnings,
         resume_scba,
         history_observer,
+        scientific_sink=scientific_sink_factory===nothing ? nothing : scientific_sink_factory(problem,0),
     )
     revisions =
         initial_adaptation===nothing ? Dict{String,Any}[] :
@@ -101,7 +112,7 @@ function solve_adaptive_production(
         # as subsequent measured-tail expansion, without an unnecessary solve.
         if !estimate.covered &&
            expansions < domain_adaptation.maximum_expansions &&
-           !(initial_scba!==nothing && expansions==first_resumed_domain)
+           !((initial_scba!==nothing || initial_domain_solution!==nothing) && expansions==first_resumed_domain)
             numerical = _adapted_energy_parameters(current, estimate, domain_adaptation)
             push!(
                 revisions,
@@ -113,6 +124,8 @@ function solve_adaptive_production(
                     "E_min_eV"=>_electronvolts(current.numerical.E_min),
                     "E_max_eV"=>_electronvolts(current.numerical.E_max),
                     "NE"=>current.numerical.N_E,
+                    "energy_min_scaled"=>estimate.energy_min,
+                    "energy_max_scaled"=>estimate.energy_max,
                     "required_min_scaled"=>estimate.required_min,
                     "required_max_scaled"=>estimate.required_max,
                     "reason"=>"Hamiltonian spectrum and shift margin exceed current domain",
@@ -121,7 +134,16 @@ function solve_adaptive_production(
             )
         else
             started = time_ns()
-            latest = _solve_production(
+            elapsed_prior=expansions==first_resumed_domain ? initial_elapsed_domain_seconds : 0.0
+            exact_capture=exact_capture_factory===nothing ? nothing :
+                exact_capture_factory(current,revisions,expansions,started,elapsed_prior)
+            if initial_domain_solution!==nothing && expansions==first_resumed_domain
+                latest=initial_domain_solution
+                initial_domain_solution=nothing
+            else
+              scientific=scientific_sink_factory===nothing ? nothing :
+                  scientific_sink_factory(current,expansions)
+              latest = _solve_production(
                 current;
                 options,
                 production_options,
@@ -141,7 +163,15 @@ function solve_adaptive_production(
                 initial_warnings = expansions==first_resumed_domain ? initial_warnings :
                                    Dict{String,Any}[],
                 resume_scba = expansions==first_resumed_domain && resume_scba,
+                saved_continuation = expansions==first_resumed_domain ? saved_continuation : nothing,
+                saved_mixer_position = expansions==first_resumed_domain ? saved_mixer_position : nothing,
+                initial_published_U = expansions==first_resumed_domain ? initial_published_U : nothing,
+                initial_outer_streak = expansions==first_resumed_domain ? initial_outer_streak : nothing,
+                initial_policy_evaluations = expansions==first_resumed_domain ? initial_policy_evaluations : Dict{String,Any}[],
+                scientific_sink=scientific,
+                exact_capture,
             )
+            end
             initial_scba = nothing
             measured = measured_representation_coverage(current, latest.scba, latest.Uᴴ)
             estimate = measured.estimate
@@ -164,7 +194,16 @@ function solve_adaptive_production(
                     "E_min_eV"=>_electronvolts(current.numerical.E_min),
                     "E_max_eV"=>_electronvolts(current.numerical.E_max),
                     "NE"=>current.numerical.N_E,
-                    "seconds"=>(time_ns()-started)/1e9,
+                    "energy_min_scaled"=>estimate.energy_min,
+                    "energy_max_scaled"=>estimate.energy_max,
+                    "required_min_scaled"=>estimate.required_min,
+                    "required_max_scaled"=>estimate.required_max,
+                    "tail_low"=>measured.tails.tail_low,
+                    "tail_high"=>measured.tails.tail_high,
+                    "edge_gamma"=>measured.tails.edge_gamma,
+                    "edge_spectral"=>measured.tails.edge_spectral,
+                    "scba_quality"=>latest.scba.quality,
+                    "seconds"=>elapsed_prior+(time_ns()-started)/1e9,
                     "status"=>String(latest.status),
                     "strict_accepted"=>latest.converged,
                     "metrics"=>copy(latest.report.metrics),
@@ -200,6 +239,8 @@ function solve_adaptive_production(
                         ),
                     )
                 end
+                adaptive_transition_sink===nothing || adaptive_transition_sink(
+                    latest,current,revisions,expansions,:finished,nothing)
                 return latest
             end
             numerical = _adapted_energy_parameters(
@@ -209,16 +250,13 @@ function solve_adaptive_production(
                 measured_failure = energy_bad,
             )
         end
-        built = build_configured_scattering_problem(
-            physical = current.physical,
-            numerical = numerical,
-            scales = current.scales,
-            scattering = current.scattering,
-            algorithms = production_options.algorithms,
-            kernel_options = kernel_options,
-            physical_models = current.models,
-        )
-        current = built.problem
+        recipe=ProblemRebuildRecipe(physical=current.physical,numerical=numerical,
+            scales=current.scales,scattering=current.scattering,models=current.models,
+            algorithms=production_options.algorithms,kernel_options=kernel_options)
+        if adaptive_transition_sink!==nothing && latest!==nothing && latest.problem===current
+            adaptive_transition_sink(latest,current,revisions,expansions,:cold_rebuild,recipe)
+        end
+        current = _rebuild_from_recipe(recipe)
         expansions += 1
     end
 end
