@@ -6,7 +6,8 @@
 [production_contracts.jl](../../../src/numerics/optimized/production_contracts.jl) и
 [public_state_completed.jl](../../../src/numerics/optimized/public_state_completed.jl). Consumer
 должен использовать опубликованные Julia definitions. Ручная копия field/schema map в этом документе
-не является вторым источником истины. P01/P04/P05 ждут owning review и публикации P02.
+не является вторым источником истины. Совместимость consumers проверяется отдельно по опубликованным
+owning definitions и их integration evidence.
 
 Core принимает и возвращает значения в памяти. Формат envelope, I/O, committed history cutoff и
 execution/attempt/branch provenance принадлежат Contracts/Runner. `CoreDatum` — ограниченный value
@@ -33,15 +34,18 @@ restore_exact_state(problem::NEGFProblem, state::ExactSolverState;
     kernel_options::Union{Nothing,ProductionKernelOptions})::RestoredSolverState
 
 solve_production(problem; options, production_options, execution,
-    checkpoint_sink=nothing, observation_sink=nothing, history_observer=nothing)
+    checkpoint_sink=nothing, checkpoint_context_sink=nothing,
+    observation_sink=nothing, history_observer=nothing)
 solve_production(problem; restart::RestoredSolverState,
-    checkpoint_sink=nothing, observation_sink=nothing, history_observer=nothing)
+    checkpoint_sink=nothing, checkpoint_context_sink=nothing,
+    observation_sink=nothing, history_observer=nothing)
 
 solve_adaptive_production(problem; options, production_options, execution,
-    domain_adaptation, kernel_options, checkpoint_sink=nothing,
+    domain_adaptation, kernel_options, checkpoint_sink=nothing, checkpoint_context_sink=nothing,
     observation_sink=nothing, history_observer=nothing)
 solve_adaptive_production(problem; restart::RestoredSolverState,
-    checkpoint_sink=nothing, observation_sink=nothing, history_observer=nothing)
+    checkpoint_sink=nothing, checkpoint_context_sink=nothing,
+    observation_sink=nothing, history_observer=nothing)
 
 restore_completed_solution(restart::RestoredSolverState;
     revalidation::Symbol, independent_oracle::Symbol)::NEGFSolution
@@ -57,8 +61,39 @@ read-only на время solve и restore; их изменение требуе
 через него недоступны.
 
 `checkpoint_sink(state::ExactSolverState)` получает detached owning snapshot. Это новый public
-payload; legacy consumer, ожидающий `NEGFSolution`, должен перейти на P02 definitions. Scientific
-callback в этих двух full-solve entry points имеет signature
+payload; legacy consumer, ожидающий `NEGFSolution`, должен перейти на P02 definitions. Альтернатива
+— explicit keyword `checkpoint_context_sink::Union{Nothing,Function}=nothing`:
+
+```julia
+checkpoint_context_sink(actual_problem::NEGFProblem, state::ExactSolverState)
+```
+
+Два non-null checkpoint callbacks одновременно отвергаются до restore/copy/hash/compute. Arity не
+угадывается; old callback адаптируется один раз к внутреннему двухаргументному вызову. Оба варианта
+требуют explicit execution identity для exact capture; при активной адаптации нужен также explicit
+kernel policy. Callback синхронный и обязательный: return value игнорируется, exceptions
+распространяются и прерывают solve, не попадают в dropped-observation counter.
+
+`actual_problem` — borrowed actual instance, read-only вместе со всеми вложенными arrays только на
+время callback. Он не копируется, не становится owned snapshot и не должен удерживаться или
+изменяться consumer. `state` независимо владеет detached arrays; его можно удержать после callback.
+Fixed/domain-none и adaptive fresh/restart paths передают problem того домена, которому принадлежат
+state/identity. Cold-rebuild barrier относится ещё к старому domain; accepted checkpoints после
+rebuild получают новый problem, а не initial input. Domain-final и global-final boundaries не
+смешиваются. У global final `actual_problem === returned_solution.problem`; deferred final writer
+удерживает только detached state и использует `returned_solution.problem` после возврата того же
+solve. Reconstruct/registry lookup или completed-state revalidation для получения context не нужны.
+
+Fresh invocations также поддерживают существующие in-memory seed kwargs `initial_Uᴴ`,
+`initial_scba`, optional `cache::ProductionCache` и `consume_initial=false`. Это warm starts для
+nearby points; они не обещают exact continuation или сохранение counters/history/mixer trajectory.
+По умолчанию caller сохраняет seed buffers; `consume_initial=true` передаёт exclusive ownership.
+Cache проверяется на соответствие current problem и не разделяется между активными solves; adaptive
+cold rebuild использует fresh cache. Validated `restart=handle` по-прежнему отвергает все input
+overrides и legacy `initial_*`, включая overrides cache/consume policy. Callback kwargs не меняют
+validated numerical policy. Private saved/resume controls не являются warm-start API.
+
+Scientific callback в этих двух full-solve entry points имеет signature
 `history_observer(snapshot::ScientificHistorySnapshot)`, technical callback —
 `observation_sink(event::SolverEvent)`. Старые низкоуровневые iteration callbacks не приобретают
 гарантию detached ownership автоматически.
@@ -261,19 +296,21 @@ technical collector failure увеличивает `dropped_observations` и и�
 
 Missing reasons различают `:no_previous_iteration`, `:non_finite`, `:not_sampled`, `:not_measured`,
 `:measurement_failed`, `:not_retained_by_policy`. Они не заменяют metric acceptance registry. При
-`checkpoint_sink=nothing` нет exact identity/state copy/hash на technical events. Полная snapshot
-стоимость возникает только на requested checkpoint и учитывается как nonelastic
-`:exact_state_snapshot` memory burst; это консервативная dimension estimate, не измеренная RAM.
+обоих checkpoint callbacks `nothing` нет exact identity/state copy/hash на technical events.
+Передача borrowed problem в context callback не добавляет его copy/hash. Полная snapshot стоимость
+возникает только на requested checkpoint и учитывается как nonelastic `:exact_state_snapshot` memory
+burst; это консервативная dimension estimate, не измеренная RAM.
 
 ## Проверки и пределы свидетельств
 
-| Утверждение                                                             | Свидетельство                                                                                                                                                                                                   | Ограничение                                                                   | Решение                |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------- |
-| Saved scalar/Anderson state продолжает ту же finite fixture trajectory  | [linear restart](../../../test/numerics/public_exact_restart.jl), [literal Anderson oracle и restart](../../../test/numerics/public_anderson_restart.jl)                                                        | Явные synthetic branch-control tolerances; не физическая точность/сходимость  | сохранить              |
-| Domain terminal и global final различаются, cold receipt не повторяется | [pending decision](../../../test/numerics/public_adaptive_restart.jl), [rebuild barrier](../../../test/numerics/public_adaptive_cold_barrier.jl)                                                                | Малый engineering fixture; инфраструктурный crash/durable commit — Runner     | сохранить              |
-| Ownership и invalid state rejection явны                                | [types/metadata](../../../test/domain/public_state_contract.jl), [snapshot lifetime](../../../test/domain/public_state_snapshot_lifetime.jl), [missing groups](../../../test/domain/public_state_rejections.jl) | Не доказательство authenticity внешнего payload                               | сохранить              |
-| Completed selected map отделён от independent oracle                    | [readonly/map/postmortem fixtures](../../../test/numerics/public_completed_restore.jl)                                                                                                                          | Independent map capability ограничена перечисленными combinations             | сохранить              |
-| Technical collector/mode не меняет fixture trajectory                   | [observer equivalence](../../../test/numerics/public_observation_equivalence.jl)                                                                                                                                | Performance overhead не измерен; scientific callback failure остаётся видимым | дополнительно измерить |
+| Утверждение                                                                       | Свидетельство                                                                                                                                                                                                   | Ограничение                                                                            | Решение                |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------- |
+| Saved scalar/Anderson state продолжает ту же finite fixture trajectory            | [linear restart](../../../test/numerics/public_exact_restart.jl), [literal Anderson oracle и restart](../../../test/numerics/public_anderson_restart.jl)                                                        | Явные synthetic branch-control tolerances; не физическая точность/сходимость           | сохранить              |
+| Domain terminal и global final различаются, cold receipt не повторяется           | [pending decision](../../../test/numerics/public_adaptive_restart.jl), [rebuild barrier](../../../test/numerics/public_adaptive_cold_barrier.jl)                                                                | Малый engineering fixture; инфраструктурный crash/durable commit — Runner              | сохранить              |
+| Checkpoint получает actual problem fixed/adaptive/restart, legacy arity сохранена | [context port](../../../test/numerics/public_checkpoint_context.jl)                                                                                                                                             | Borrowed readonly problem живёт только в callback; durable final join проверяет Runner | сохранить              |
+| Ownership и invalid state rejection явны                                          | [types/metadata](../../../test/domain/public_state_contract.jl), [snapshot lifetime](../../../test/domain/public_state_snapshot_lifetime.jl), [missing groups](../../../test/domain/public_state_rejections.jl) | Не доказательство authenticity внешнего payload                                        | сохранить              |
+| Completed selected map отделён от independent oracle                              | [readonly/map/postmortem fixtures](../../../test/numerics/public_completed_restore.jl)                                                                                                                          | Independent map capability ограничена перечисленными combinations                      | сохранить              |
+| Technical collector/mode не меняет fixture trajectory                             | [observer equivalence](../../../test/numerics/public_observation_equivalence.jl)                                                                                                                                | Performance overhead не измерен; scientific callback failure остаётся видимым          | дополнительно измерить |
 
 Новые fixtures не меняют production model/default tolerances и не являются научным опытом. Existing
 independent mathematical oracles остаются отдельным источником свидетельств.

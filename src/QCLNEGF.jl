@@ -1019,13 +1019,16 @@ export retarget_problem, retarget_production_cache
 include("application/algorithm_registry.jl")
 include("application/model_capabilities.jl")
 """
-    solve_production(problem; checkpoint_sink=nothing, kwargs...)
+    solve_production(problem; checkpoint_sink=nothing, checkpoint_context_sink=nothing, kwargs...)
 
-Solve one transport problem in memory. A `checkpoint_sink` callback can consume
-accepted states; durable storage and file paths belong to QCLNEGFRunner.
+Solve one transport problem in memory. Mutually exclusive callbacks receive either
+`checkpoint_sink(state)` or `checkpoint_context_sink(actual_problem, state)`. The
+problem is borrowed read-only during the callback; the exact state is detached and
+may be retained. Durable storage and file paths belong to QCLNEGFRunner.
 """
-solve_production(problem::NEGFProblem; checkpoint_sink::Union{Nothing,Function}=nothing, kwargs...) =
-    QCLNumerics._public_solve_production(problem; checkpoint_sink, kwargs...)
+solve_production(problem::NEGFProblem; checkpoint_sink::Union{Nothing,Function}=nothing,
+    checkpoint_context_sink::Union{Nothing,Function}=nothing,kwargs...) =
+    QCLNumerics._public_solve_production(problem;checkpoint_sink,checkpoint_context_sink,kwargs...)
 
 export AbstractProductionKernel,
     AbstractScatteringKernelBackend,

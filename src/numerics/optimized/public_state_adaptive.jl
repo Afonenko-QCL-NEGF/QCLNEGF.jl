@@ -59,8 +59,10 @@ end
 """Continue a declared adaptive execution, including a completed domain's pending decision."""
 function solve_adaptive_production(problem::NEGFProblem;restart=nothing,options=nothing,
     production_options=nothing,execution=nothing,checkpoint_sink=nothing,
+    checkpoint_context_sink::Union{Nothing,Function}=nothing,
     observation_sink=nothing,history_observer=nothing,domain_adaptation=nothing,
     kernel_options=nothing,kwargs...)
+    sink=_checkpoint_callback(checkpoint_sink,checkpoint_context_sink)
     state=nothing
     if restart!==nothing
         isempty(kwargs) && options===nothing && production_options===nothing && execution===nothing &&
@@ -77,12 +79,12 @@ function solve_adaptive_production(problem::NEGFProblem;restart=nothing,options=
         domain_adaptation===nothing && (domain_adaptation=DomainAdaptationPolicy())
     end
     if domain_adaptation.mode===:none
-        state===nothing || return _public_solve_production(problem;restart,checkpoint_sink,
+        state===nothing || return _public_solve_production(problem;restart,checkpoint_context_sink=sink,
             observation_sink,history_observer)
         return _public_solve_production(problem;options,production_options,execution,
-            checkpoint_sink,observation_sink,history_observer,kwargs...)
+            checkpoint_context_sink=sink,observation_sink,history_observer,kwargs...)
     end
-    exact=state!==nothing || checkpoint_sink!==nothing
+    exact=state!==nothing || sink!==nothing
     exact && state===nothing && get(kwargs,:resume_scba,false) &&
         throw(ArgumentError("exact continuation requires a validated handle with mixer position"))
     exact && execution===nothing && throw(ArgumentError("execution identity is required for adaptive snapshots"))
@@ -90,8 +92,8 @@ function solve_adaptive_production(problem::NEGFProblem;restart=nothing,options=
     kernel_options===nothing && (kernel_options=ProductionKernelOptions())
     production,scientific,dropped=_public_observers(production_options,observation_sink,history_observer;exact)
     contexts=Ref{Union{Nothing,_ExactCaptureContext}}(nothing)
-    factory=checkpoint_sink===nothing ? nothing : function(current,revisions,expansions,started,elapsed_prior)
-        ctx=_exact_context(current,options,production,execution,domain_adaptation,kernel_options,checkpoint_sink)
+    factory=sink===nothing ? nothing : function(current,revisions,expansions,started,elapsed_prior)
+        ctx=_exact_context(current,options,production,execution,domain_adaptation,kernel_options,sink)
         ctx.domain_started_ns=started
         ctx.domain_elapsed_prior=elapsed_prior
         ctx.adaptation=_adaptation_snapshot(domain_adaptation,kernel_options,ctx.identity,current,production.algorithms,
@@ -103,7 +105,7 @@ function solve_adaptive_production(problem::NEGFProblem;restart=nothing,options=
         contexts[]=ctx
         return ctx
     end
-    transition=checkpoint_sink===nothing ? nothing : function(latest,current,revisions,expansions,action,recipe)
+    transition=sink===nothing ? nothing : function(latest,current,revisions,expansions,action,recipe)
         ctx=contexts[]
         ctx===nothing && throw(ArgumentError("adaptive transition has no bound capture context"))
         ctx.adaptation=_adaptation_snapshot(domain_adaptation,kernel_options,ctx.identity,current,production.algorithms,
