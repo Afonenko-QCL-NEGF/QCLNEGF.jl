@@ -719,23 +719,9 @@ function _preflight_production_memory(
     scattering::ScatteringOptions,
     production_options::ProductionOptions,
 )
-    requested = count(
-        identity,
-        (
-            scattering.LO,
-            scattering.acoustic,
-            scattering.impurity,
-            scattering.IFR,
-            scattering.alloy,
-        ),
-    )
-    dense = count(identity, (scattering.LO, scattering.impurity, scattering.IFR))
-    lo_kernel = scattering.LO ? :dense : :absent
     estimate = estimate_production_memory(
         numerical,
-        requested;
-        dense_mechanism_count = dense,
-        lo_kernel,
+        scattering;
         options = production_options,
     )
     estimate.peak_bytes <= production_options.memory_budget_bytes || throw(

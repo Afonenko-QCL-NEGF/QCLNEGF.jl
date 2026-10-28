@@ -648,6 +648,28 @@ function estimate_production_memory(
 end
 
 """
+    estimate_production_memory(numerical, scattering; options=ProductionOptions(), worker_capacity=nothing)
+
+Estimate the prebuild mechanism mix using the same conservative classification
+as production admission: LO/impurity/IFR are dense, acoustic/alloy are reduced.
+This only estimates; the caller must compare the peak with its resolved budget.
+No grids, kernels or problem are built and no budget is granted by this call.
+"""
+function estimate_production_memory(
+    n::NumericalParameters,
+    scattering::ScatteringOptions;
+    options::ProductionOptions = ProductionOptions(),
+    worker_capacity::Union{Nothing,Integer} = nothing,
+)
+    requested = count(identity, (scattering.LO, scattering.acoustic, scattering.impurity,
+        scattering.IFR, scattering.alloy))
+    dense = count(identity, (scattering.LO, scattering.impurity, scattering.IFR))
+    lo_kernel = scattering.LO ? :dense : :absent
+    return estimate_production_memory(n, requested; dense_mechanism_count = dense,
+        lo_kernel, options, worker_capacity)
+end
+
+"""
 Estimate the actual enabled mechanism mix of a built problem.
 
 See [Numerical scales and cost](@ref theory-cost) and the

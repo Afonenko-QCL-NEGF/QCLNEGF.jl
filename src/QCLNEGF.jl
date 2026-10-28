@@ -22,6 +22,7 @@ include("domain/constants.jl")
 include("domain/electron_electron.jl")
 include("domain/numerical_invariants.jl")
 include("domain/types.jl")
+include("domain/diagnostic_types.jl")
 include("domain/numerical_convergence.jl")
 include("domain/research_policy.jl")
 include("domain/presets.jl")
@@ -498,6 +499,10 @@ using FFTW
 using SHA
 using Roots: Bisection, find_zero
 import ..QCLDomain: SCBAStopDecision
+import ..QCLDomain: SolutionMetricDiagnostics, PositivityWitness, MatrixIntegralDiagnostics,
+    PositivityDiagnostics, BasisValidationDiagnostics, ProjectedHamiltonianSpectrum,
+    ProductionRetardedGreenEvaluation, LOCollisionEvaluation, SampledLinewidthDiagnostics,
+    _EFFECTIVE_HAMILTONIAN_NORM_FLOOR, _EFFECTIVE_HAMILTONIAN_HERMITICITY_LIMIT
 import ..QCLDomain:
     AbstractScatteringPhysicalModel,
     AlgorithmOptions,
@@ -672,6 +677,8 @@ include("numerics/optimized/public_state_validation.jl")
 include("numerics/optimized/public_state_capture.jl")
 include("numerics/optimized/public_state_completed.jl")
 include("numerics/optimized/public_state_adaptive.jl")
+include("numerics/reference/diagnostic_observations.jl")
+include("numerics/optimized/public_operator_api.jl")
 
 export AbstractProductionKernel,
     AbstractScatteringKernelBackend,
@@ -983,6 +990,21 @@ import .QCLNumerics:
 
 
 include("composition/operating_point.jl")
+import .QCLDomain: SolutionMetricDiagnostics, PositivityWitness, MatrixIntegralDiagnostics,
+    PositivityDiagnostics, BasisValidationDiagnostics, ProjectedHamiltonianSpectrum,
+    ProductionRetardedGreenEvaluation, LOCollisionEvaluation, SampledLinewidthDiagnostics
+import .QCLNumerics: solution_metric_diagnostics, positivity_diagnostics,
+    basis_validation_diagnostics, projected_hamiltonian_spectrum, production_retarded_green,
+    production_mix_selfenergy!, production_lo_selfenergies, sampled_linewidth_diagnostics,
+    fermi_occupation
+include("composition/public_options.jl")
+export SolutionMetricDiagnostics, PositivityWitness, MatrixIntegralDiagnostics,
+    PositivityDiagnostics, BasisValidationDiagnostics, ProjectedHamiltonianSpectrum,
+    ProductionRetardedGreenEvaluation, LOCollisionEvaluation, SampledLinewidthDiagnostics,
+    validate_options, validate_result_classification, solution_metric_diagnostics,
+    positivity_diagnostics, basis_validation_diagnostics, projected_hamiltonian_spectrum,
+    production_retarded_green, production_mix_selfenergy!, production_lo_selfenergies,
+    sampled_linewidth_diagnostics, fermi_occupation
 for name in (:ExactExecutionIdentity,:ExactRestartIdentity,:ExactSolverState,:RestoredSolverState,
     :MixerPosition,:SolverProgress,:SCBAContinuation,:OuterContinuation,:AcceptanceContext,:ProblemRebuildRecipe,
     :DomainPreflightEvidence,:DomainMeasuredEvidence,:DomainRevision,:DomainAdaptationState,
