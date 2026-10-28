@@ -12,7 +12,7 @@ include("../support/public_state_fixture.jl")
     end)
     N=QCLNEGF.QCLNumerics
     ctx=N._exact_context(f.problem,f.options,production,f.execution,f.policy,nothing,
-        state->push!(snapshots,state))
+        (problem,state)->push!(snapshots,state))
     N._capture_inner(ctx,f.problem,f.state.published_U,f.state.scba,f.state.outer_history,
         Dict{String,Any}[],Dict{String,Any}[],1,0,f.state.continuation,0,0,f.state.mixer_position)
     @test length(phases)==1

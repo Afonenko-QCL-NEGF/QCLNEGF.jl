@@ -10,6 +10,13 @@ mutable struct _ExactCaptureContext
     domain_started_ns::Union{Nothing,UInt64}
     domain_elapsed_prior::Float64
 end
+function _checkpoint_callback(checkpoint_sink,checkpoint_context_sink)
+    checkpoint_sink!==nothing && checkpoint_context_sink!==nothing &&
+        throw(ArgumentError("checkpoint_sink and checkpoint_context_sink are mutually exclusive"))
+    checkpoint_context_sink!==nothing && return checkpoint_context_sink
+    checkpoint_sink===nothing && return nothing
+    return (problem,state)->checkpoint_sink(state)
+end
 
 """Fixed-Hartree production solve. Exact continuation control is available only through a validated handle."""
 function solve_scba_production(problem::NEGFProblem,Uᴴ::AbstractVector{<:Real};
@@ -62,7 +69,7 @@ function _capture_state(ctx,problem,boundary,U,density,scba,outer,warnings,evalu
                 policy_evaluations=_records(evaluations),adaptation,
                 measurement_context=context,final_evidence)
             ctx.last_progress=progress
-            ctx.sink(state)
+            ctx.sink(problem,state)
             nothing
         end,
         ()->_production_phase_begin(ctx.production,:exact_state_snapshot,progress.accepted_scba;
@@ -191,7 +198,9 @@ function _restart_numerical_keywords(state)
 end
 function _public_solve_production(problem::NEGFProblem;restart=nothing,options=nothing,
     production_options=nothing,execution=nothing,checkpoint_sink=nothing,
+    checkpoint_context_sink::Union{Nothing,Function}=nothing,
     observation_sink=nothing,history_observer=nothing,kwargs...)
+    sink=_checkpoint_callback(checkpoint_sink,checkpoint_context_sink)
     state=nothing
     if restart!==nothing
         isempty(kwargs) && options===nothing && production_options===nothing && execution===nothing ||
@@ -204,13 +213,13 @@ function _public_solve_production(problem::NEGFProblem;restart=nothing,options=n
         options===nothing && (options=baseline_options())
         production_options===nothing && (production_options=ProductionOptions())
     end
-    exact=state!==nothing || checkpoint_sink!==nothing
+    exact=state!==nothing || sink!==nothing
     exact && state===nothing && get(kwargs,:resume_scba,false) &&
         throw(ArgumentError("exact continuation requires a validated handle with mixer position"))
     exact && execution===nothing && throw(ArgumentError("execution identity is required for exact snapshots"))
     production,scientific,dropped=_public_observers(production_options,observation_sink,history_observer;exact)
-    ctx=checkpoint_sink===nothing ? nothing : _exact_context(problem,options,production,
-        execution,DomainAdaptationPolicy(),nothing,checkpoint_sink)
+    ctx=sink===nothing ? nothing : _exact_context(problem,options,production,
+        execution,DomainAdaptationPolicy(),nothing,sink)
     ctx===nothing || state===nothing || (ctx.last_mixer_position=state.mixer_position)
     initial=state===nothing ? (;kwargs...) : _restart_numerical_keywords(state)
     result=_solve_production(problem;options,production_options=production,exact_capture=ctx,
