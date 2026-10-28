@@ -497,6 +497,7 @@ using Unitful
 using FFTW
 using SHA
 using Roots: Bisection, find_zero
+import ..QCLDomain: SCBAStopDecision
 import ..QCLDomain:
     AbstractScatteringPhysicalModel,
     AlgorithmOptions,
@@ -535,6 +536,7 @@ import ..QCLDomain:
     _FERMI_EXPONENT_SATURATION,
     _NUMBER_FUNCTIONAL_REALNESS_LIMIT,
     _SCATTERING_MECHANISM_ORDER,
+    _SCBA_RESULT_QUALITIES,
     _approximate_options,
     _approximate_warning,
     _check_algorithm_options,
@@ -664,6 +666,12 @@ include("numerics/optimized/kernels.jl")
 include("numerics/optimized/scattering_backend.jl")
 include("numerics/optimized/domain_adaptation.jl")
 include("numerics/optimized/certification.jl")
+include("numerics/optimized/public_state_types.jl")
+include("numerics/optimized/public_state_identity.jl")
+include("numerics/optimized/public_state_validation.jl")
+include("numerics/optimized/public_state_capture.jl")
+include("numerics/optimized/public_state_completed.jl")
+include("numerics/optimized/public_state_adaptive.jl")
 
 export AbstractProductionKernel,
     AbstractScatteringKernelBackend,
@@ -975,6 +983,16 @@ import .QCLNumerics:
 
 
 include("composition/operating_point.jl")
+for name in (:ExactExecutionIdentity,:ExactRestartIdentity,:ExactSolverState,:RestoredSolverState,
+    :MixerPosition,:SolverProgress,:SCBAContinuation,:OuterContinuation,:AcceptanceContext,:ProblemRebuildRecipe,
+    :DomainPreflightEvidence,:DomainMeasuredEvidence,:DomainRevision,:DomainAdaptationState,
+    :FinalEvidenceSnapshot,:ScientificHistorySnapshot,
+    :CoreDatum,:CoreScalar,:CoreArray,:CoreList,:CoreRecord,:exact_restart_identity,
+    :validate_exact_state,:restore_exact_state,:restore_completed_solution,
+    :RevalidationReceipt,:IndependentOracleReceipt,:CompletedStateEvidence)
+    @eval import .QCLNumerics: $name
+    @eval export $name
+end
 export retarget_problem, retarget_production_cache
 include("application/algorithm_registry.jl")
 include("application/model_capabilities.jl")
@@ -985,7 +1003,7 @@ Solve one transport problem in memory. A `checkpoint_sink` callback can consume
 accepted states; durable storage and file paths belong to QCLNEGFRunner.
 """
 solve_production(problem::NEGFProblem; checkpoint_sink::Union{Nothing,Function}=nothing, kwargs...) =
-    _solve_production(problem; checkpoint_sink, kwargs...)
+    QCLNumerics._public_solve_production(problem; checkpoint_sink, kwargs...)
 
 export AbstractProductionKernel,
     AbstractScatteringKernelBackend,

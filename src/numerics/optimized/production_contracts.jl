@@ -19,11 +19,46 @@ struct EnergyShiftPlan <: AbstractMatrix{Float64}
     δ::Float64
 end
 
+"""Algorithm-owned position of the completed mixing steps of one inner stage.
+
+Retained indices name the mix that created each ordered state/residual row.
+Residual-increase reset clears before append; causality-guard reset clears after
+the current step. Coefficient fallback does not clear history.
+"""
+struct MixerPosition
+    applied_mixes::Int
+    retained_mix_indices::Tuple{Vararg{Int}}
+    last_reset_mix::Int
+    last_reset_reason::Symbol
+    last_coefficient_fallback::Symbol
+end
+MixerPosition(;applied_mixes,retained_mix_indices,last_reset_mix,last_reset_reason,
+    last_coefficient_fallback)=MixerPosition(applied_mixes,Tuple(retained_mix_indices),
+    last_reset_mix,last_reset_reason,last_coefficient_fallback)
+_initial_mixer_position()=MixerPosition(0,(),0,:none,:none)
+
 """One serialization-neutral scalar attached to a [`SolverEvent`](@ref)."""
 struct SolverMetric
     name::Symbol
-    value::Union{Float64,Int64,Bool,String}
+    value::Union{Nothing,Float64,Int64,Bool,String}
     unit::String
+    measurement_status::Symbol
+    reason::Union{Nothing,Symbol}
+    function SolverMetric(name::Symbol, value::Union{Nothing,Float64,Int64,Bool,String},
+                          unit::String; measurement_status::Symbol=:measured,
+                          reason::Union{Nothing,Symbol}=nothing)
+        if measurement_status===:measured && value isa Float64 && !isfinite(value)
+            measurement_status=:error
+            reason=:non_finite
+        end
+        measurement_status in (:measured,:not_measured,:not_applicable,:error) ||
+            throw(ArgumentError("metric.measurement_status is unknown"))
+        measurement_status === :measured && value === nothing &&
+            throw(ArgumentError("metric.value is missing for measured scalar"))
+        measurement_status !== :measured && reason === nothing &&
+            throw(ArgumentError("metric.reason is required for unavailable scalar"))
+        new(name,value,unit,measurement_status,reason)
+    end
 end
 
 # The generated union-field constructor and the abstract convenience methods
@@ -31,24 +66,13 @@ end
 # more specific in the value argument and the other in the unit argument.
 # Exact forwarding methods make every supported scalar type unambiguous while
 # preserving the serialization-neutral event contract.
-for T in (Float64, Int64, Bool, String)
-    @eval SolverMetric(name::Symbol, value::$T, unit::String) = invoke(
-        SolverMetric,
-        Tuple{Symbol,Union{Float64,Int64,Bool,String},String},
-        name,
-        value,
-        unit,
-    )
+function SolverMetric(name::Symbol,value,unit::AbstractString="";kwargs...)
+    normalized=value isa Bool ? value : value isa Integer ? Int64(value) :
+        value isa AbstractFloat ? Float64(value) : value isa AbstractString ? String(value) : value
+    normalized isa Union{Nothing,Float64,Int64,Bool,String} ||
+        throw(ArgumentError("metric.value must be scalar"))
+    return SolverMetric(name,normalized,String(unit);kwargs...)
 end
-
-SolverMetric(name::Symbol, value::AbstractFloat, unit::AbstractString = "") =
-    SolverMetric(name, Float64(value), String(unit))
-SolverMetric(name::Symbol, value::Integer, unit::AbstractString = "") =
-    SolverMetric(name, Int64(value), String(unit))
-SolverMetric(name::Symbol, value::Bool, unit::AbstractString = "") =
-    SolverMetric(name, value, String(unit))
-SolverMetric(name::Symbol, value::AbstractString, unit::AbstractString = "") =
-    SolverMetric(name, String(value), String(unit))
 
 """Neutral numerical event consumed by an application-supplied callback."""
 struct SolverEvent
@@ -58,9 +82,15 @@ struct SolverEvent
     status::Symbol
     iteration::Union{Nothing,Int}
     total::Union{Nothing,Int}
-    metrics::Vector{SolverMetric}
+    metrics::Tuple{Vararg{SolverMetric}}
     message::String
+    sequence::Int
+    outer_iteration::Union{Nothing,Int}
+    inner_iteration::Union{Nothing,Int}
 end
+SolverEvent(action::Symbol,stage::Symbol,label::String,status::Symbol,iteration,total,
+            metrics,message::String) = SolverEvent(action,stage,label,status,iteration,total,
+    Tuple(metrics),message,0,nothing,stage===:scba ? iteration : nothing)
 
 _solver_metrics(::Nothing) = SolverMetric[]
 _solver_metrics(metric::SolverMetric) = SolverMetric[metric]

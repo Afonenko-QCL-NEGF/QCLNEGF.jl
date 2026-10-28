@@ -4,11 +4,13 @@ mutable struct _AndersonWorkspace
     gram::Matrix{Float64}
     free_states::Vector{Vector{SelfEnergyFamily}}
     free_residuals::Vector{Vector{SelfEnergyFamily}}
+    position::Union{Nothing,MixerPosition}
 end
 
 function _AndersonWorkspace(
     states = Vector{SelfEnergyFamily}[],
-    residuals = Vector{SelfEnergyFamily}[],
+    residuals = Vector{SelfEnergyFamily}[];
+    position = isempty(states) && isempty(residuals) ? _initial_mixer_position() : nothing,
 )
     length(states) == length(residuals) ||
         throw(DimensionMismatch("Anderson history differs"))
@@ -23,7 +25,15 @@ function _AndersonWorkspace(
         gram,
         Vector{SelfEnergyFamily}[],
         Vector{SelfEnergyFamily}[],
+        position,
     )
+end
+
+function _record_linear_mix!(workspace::_AndersonWorkspace)
+    previous=workspace.position
+    previous===nothing && return nothing
+    workspace.position=MixerPosition(previous.applied_mixes+1,(),0,:none,:none)
+    return nothing
 end
 
 struct _AndersonGuardWorkspace
@@ -248,16 +258,19 @@ function _anderson_mix!(
         _anderson_append!(workspace, state, candidate, algorithms.anderson_history_depth)
     history_seconds = (time_ns()-copy_started)*1e-9
     reset_reason = reset ? "residual_increase" : "none"
+    coefficient_fallback=:none
     coefficient_started = time_ns()
     coefficients = try
         _anderson_coefficients(workspace.gram, algorithms.anderson_regularization)
     catch error
         error isa InterruptException && rethrow()
         reset_reason = "coefficient_solve"
+        coefficient_fallback=:coefficient_solve
         [zeros(Float64, length(workspace.residuals)-1); 1.0]
     end
     if sum(abs, coefficients) > 10 || !all(isfinite, coefficients)
         reset_reason = "coefficient_bound"
+        coefficient_fallback=:coefficient_bound
         coefficients = [zeros(Float64, length(workspace.residuals)-1); 1.0]
     end
     coefficient_seconds = (time_ns()-coefficient_started)*1e-9
@@ -295,6 +308,14 @@ function _anderson_mix!(
                 "convex Anderson fallback is not admissible; inspect raw self-energies",
             ),
         )
+    end
+    if workspace.position!==nothing
+        previous=workspace.position
+        applied=previous.applied_mixes+1
+        reset_at=!guard.passed || reset ? applied : previous.last_reset_mix
+        reset_kind=!guard.passed ? :causality_guard : reset ? :residual_increase : previous.last_reset_reason
+        indices=Tuple((applied-length(workspace.states)+1):applied)
+        workspace.position=MixerPosition(applied,indices,reset_at,reset_kind,coefficient_fallback)
     end
     _update_solver_stage(
         options,
