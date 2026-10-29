@@ -197,9 +197,9 @@ O_{\mathrm{loc}}=U^\dagger O_{\mathrm{energy}}U.
 ``\eta=2`` мэВ. Резольвента вычисляется двумя способами:
 
 ```math
-G_C=C\big[(E+i\eta)I-E_S\big]^{-1}C^\dagger,
+G_C=C\left[(E+i\eta)I-E_S\right]^{-1}C^\dagger,
 \qquad
-G_\Phi=\Phi\big[(E+i\eta)I-H_\Phi\big]^{-1}\Phi^\dagger.
+G_\Phi=\Phi\left[(E+i\eta)I-H_\Phi\right]^{-1}\Phi^\dagger.
 ```
 
 Относительное различие ``\|G_C-G_\Phi\|/\|G_C\|`` в воспроизводимом опыте
