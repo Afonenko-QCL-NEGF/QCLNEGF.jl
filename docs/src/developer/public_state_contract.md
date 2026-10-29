@@ -331,17 +331,17 @@ consumer READY. S00 review закрывает semantic design; ни оно, ни
 
 ## Source anchors и необходимая проверка P02
 
-Primary Core locators: [domain types](../../../src/domain/types.jl) (`GreenState`, `SCBAResult`,
-`OuterIteration`, `NEGFSolution`), [restart policy](../../../src/domain/algorithm_options.jl)
+Primary Core locators: [domain types](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/domain/types.jl) (`GreenState`, `SCBAResult`,
+`OuterIteration`, `NEGFSolution`), [restart policy](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/domain/algorithm_options.jl)
 (`_solver_restart_contract`),
-[actual boundaries](../../../src/numerics/optimized/production_solver.jl) (`solve_scba_production`,
-`_solve_production`), [witness retention](../../../src/numerics/optimized/production_iteration.jl),
-[adaptation](../../../src/numerics/optimized/domain_adaptation.jl),
-[kernel construction policy](../../../src/numerics/optimized/kernels.jl)
-(`ProductionKernelOptions`), [selected-map audit](../../../src/numerics/optimized/certification.jl)
+[actual boundaries](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/production_solver.jl) (`solve_scba_production`,
+`_solve_production`), [witness retention](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/production_iteration.jl),
+[adaptation](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/domain_adaptation.jl),
+[kernel construction policy](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/kernels.jl)
+(`ProductionKernelOptions`), [selected-map audit](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/certification.jl)
 (`_audit_candidate_for_solution`),
-[selected embedding](../../../src/numerics/optimized/production_operators.jl)
-(`_embedding_self_energy_selected`), [assessment](../../../src/numerics/reference/final_audit.jl)
+[selected embedding](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/production_operators.jl)
+(`_embedding_self_energy_selected`), [assessment](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/reference/final_audit.jl)
 (`solution_scientific_assessment`). Runner baseline consumers:
 [loader/metadata](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/8264f48c01ccc524548036d4b3f44552a76f19b5/src/infrastructure/persistence/production_state.jl)
 (`_load_production_restart`, `_validate_restart_metadata`) и
@@ -369,9 +369,9 @@ Hilbert measurement flags проверяются раздельно; original mi
 Независимый oracle не вызывает новый writer/reader или общий production helper как единственное
 доказательство: literal scalar recurrence проверяет следующий linear/Anderson step и counters;
 manufactured Poisson map проверяет published/next U. Existing
-[final alignment oracle](../../../test/numerics/final_state_alignment_oracle.jl) и
-[literal matrix oracle](../../../test/numerics/keldysh_literal_matrix_oracle.jl) остаются
-отдельными. [Existing restart fixture](../../../test/numerics/inexact_inner_restart_contract.jl)
+[final alignment oracle](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/final_state_alignment_oracle.jl) и
+[literal matrix oracle](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/keldysh_literal_matrix_oracle.jl) остаются
+отдельными. [Existing restart fixture](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/inexact_inner_restart_contract.jl)
 использует `≈` и общий solver: это supplementary evidence, не bitwise proof и не научная приёмка.
 
 | Утверждение                                                       | Свидетельство                                                               | Ограничение                                                          | Решение                |

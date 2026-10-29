@@ -2,9 +2,9 @@
 
 Эта страница описывает реализацию [семантического контракта S00](public_state_contract.md).
 Нормативные имена, обязательность и типы полей определены в
-[public_state_types.jl](../../../src/numerics/optimized/public_state_types.jl),
-[production_contracts.jl](../../../src/numerics/optimized/production_contracts.jl) и
-[public_state_completed.jl](../../../src/numerics/optimized/public_state_completed.jl). Consumer
+[public_state_types.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/public_state_types.jl),
+[production_contracts.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/production_contracts.jl) и
+[public_state_completed.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/public_state_completed.jl). Consumer
 должен использовать опубликованные Julia definitions. Ручная копия field/schema map в этом документе
 не является вторым источником истины. Совместимость consumers проверяется отдельно по опубликованным
 owning definitions и их integration evidence.
@@ -100,7 +100,7 @@ Scientific callback в этих двух full-solve entry points имеет sign
 
 ## Identity и обязательность state
 
-[Canonical encoder](../../../src/numerics/optimized/public_state_identity.jl) использует tagged
+[Canonical encoder](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/public_state_identity.jl) использует tagged
 binary values с network byte order и SHA-256. Он сохраняет Float64/Float32 bits, complex components,
 array element type, dimensions и logical column-major entries; record fields идут в порядке Julia
 definition, dictionary/set values сортируются по canonical key bytes. Unitful quantity содержит unit
@@ -109,7 +109,7 @@ string и исходное значение. Нет tolerance, Julia `hash` ил
 
 Golden primitive: `Float64(1)` кодируется bytes `663ff0000000000000`; SHA-256 —
 `e2ac13292d1245bac0ce7b682e9b0efef04e53d29a40be9d72eb2b6bc21b3533`.
-[Fixture](../../../test/domain/public_state_contract.jl) содержит literal bytes и hash, проверки
+[Fixture](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/domain/public_state_contract.jl) содержит literal bytes и hash, проверки
 порядка keys, shape, signed zero и one-bit mismatch.
 
 `ExactRestartIdentity` разделяет full actual problem, numerical policy и execution fingerprints.
@@ -129,7 +129,7 @@ history отделены от producer. Consumer может менять сво�
 не проходит validation. Параметры нового keyword constructor создают новый unchecked payload;
 наличие digest не является научной валидацией или доказательством подлинности.
 
-[Validation](../../../src/numerics/optimized/public_state_validation.jl) сначала сравнивает exact
+[Validation](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/public_state_validation.jl) сначала сравнивает exact
 binding, затем integrity, shapes, mechanism/family order, mixer/history/counter/decision coherence и
 rebuild receipt. Missing/unknown/mismatch даёт `ArgumentError` с field path; неверная shape —
 `DimensionMismatch`. До rejection нет cache build, numerical map или callbacks. Все mandatory
@@ -154,7 +154,7 @@ original result unconverged или approximate. Эта проверка historic
 другую оценку и хранится своим receipt.
 
 Обязательный `ExactSolverState.mixer_position::MixerPosition` создаёт owning
-[mixer](../../../src/numerics/optimized/production_mixing.jl). Он фиксирует число применённых mixing
+[mixer](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/production_mixing.jl). Он фиксирует число применённых mixing
 steps, ordered retained mix indices, последнюю history-clearing reset position/reason и последний
 coefficient fallback. Payload обязан покрывать ровно эти indices. Residual-increase reset очищает
 историю **до** append текущего mix; causality-guard reset — **после** текущего mix, поэтому пустая
@@ -242,7 +242,7 @@ estimate выполняется до solved state и не создаёт отд�
 SCBA/Poisson. Committed rebuild передаёт exact recipe builder, увеличивает logical expansion один
 раз и начинает cold domain. Pure rebuild до следующего checkpoint может повториться после crash;
 transfer старых Green arrays на новую сетку отсутствует. См.
-[adaptive implementation](../../../src/numerics/optimized/public_state_adaptive.jl).
+[adaptive implementation](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/public_state_adaptive.jl).
 
 ## Completed result и scientific assessment
 
@@ -305,12 +305,12 @@ burst; это консервативная dimension estimate, не измере
 
 | Утверждение                                                                       | Свидетельство                                                                                                                                                                                                   | Ограничение                                                                            | Решение                |
 | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------- |
-| Saved scalar/Anderson state продолжает ту же finite fixture trajectory            | [linear restart](../../../test/numerics/public_exact_restart.jl), [literal Anderson oracle и restart](../../../test/numerics/public_anderson_restart.jl)                                                        | Явные synthetic branch-control tolerances; не физическая точность/сходимость           | сохранить              |
-| Domain terminal и global final различаются, cold receipt не повторяется           | [pending decision](../../../test/numerics/public_adaptive_restart.jl), [rebuild barrier](../../../test/numerics/public_adaptive_cold_barrier.jl)                                                                | Малый engineering fixture; инфраструктурный crash/durable commit — Runner              | сохранить              |
-| Checkpoint получает actual problem fixed/adaptive/restart, legacy arity сохранена | [context port](../../../test/numerics/public_checkpoint_context.jl)                                                                                                                                             | Borrowed readonly problem живёт только в callback; durable final join проверяет Runner | сохранить              |
-| Ownership и invalid state rejection явны                                          | [types/metadata](../../../test/domain/public_state_contract.jl), [snapshot lifetime](../../../test/domain/public_state_snapshot_lifetime.jl), [missing groups](../../../test/domain/public_state_rejections.jl) | Не доказательство authenticity внешнего payload                                        | сохранить              |
-| Completed selected map отделён от independent oracle                              | [readonly/map/postmortem fixtures](../../../test/numerics/public_completed_restore.jl)                                                                                                                          | Independent map capability ограничена перечисленными combinations                      | сохранить              |
-| Technical collector/mode не меняет fixture trajectory                             | [observer equivalence](../../../test/numerics/public_observation_equivalence.jl)                                                                                                                                | Performance overhead не измерен; scientific callback failure остаётся видимым          | дополнительно измерить |
+| Saved scalar/Anderson state продолжает ту же finite fixture trajectory            | [linear restart](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_exact_restart.jl), [literal Anderson oracle и restart](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_anderson_restart.jl)                                                        | Явные synthetic branch-control tolerances; не физическая точность/сходимость           | сохранить              |
+| Domain terminal и global final различаются, cold receipt не повторяется           | [pending decision](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_adaptive_restart.jl), [rebuild barrier](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_adaptive_cold_barrier.jl)                                                                | Малый engineering fixture; инфраструктурный crash/durable commit — Runner              | сохранить              |
+| Checkpoint получает actual problem fixed/adaptive/restart, legacy arity сохранена | [context port](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_checkpoint_context.jl)                                                                                                                                             | Borrowed readonly problem живёт только в callback; durable final join проверяет Runner | сохранить              |
+| Ownership и invalid state rejection явны                                          | [types/metadata](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/domain/public_state_contract.jl), [snapshot lifetime](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/domain/public_state_snapshot_lifetime.jl), [missing groups](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/domain/public_state_rejections.jl) | Не доказательство authenticity внешнего payload                                        | сохранить              |
+| Completed selected map отделён от independent oracle                              | [readonly/map/postmortem fixtures](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_completed_restore.jl)                                                                                                                          | Independent map capability ограничена перечисленными combinations                      | сохранить              |
+| Technical collector/mode не меняет fixture trajectory                             | [observer equivalence](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/public_observation_equivalence.jl)                                                                                                                                | Performance overhead не измерен; scientific callback failure остаётся видимым          | дополнительно измерить |
 
 Новые fixtures не меняют production model/default tolerances и не являются научным опытом. Existing
 independent mathematical oracles остаются отдельным источником свидетельств.
@@ -319,8 +319,8 @@ independent mathematical oracles остаются отдельным источ�
 
 `final_observation_snapshot` — отдельный in-memory port для явного финального postprocessing. Он не
 входит в exact-state graph и не задаёт файловый формат. Определения восьми return types находятся в
-[final_observation_types.jl](../../../src/numerics/optimized/final_observation_types.jl), выполнение
-— в [final_observations.jl](../../../src/numerics/optimized/final_observations.jl). Contracts и
+[final_observation_types.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/final_observation_types.jl), выполнение
+— в [final_observations.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/src/numerics/optimized/final_observations.jl). Contracts и
 Runner владеют declaration, FileRefs, записью и publication.
 
 ```julia
@@ -437,8 +437,8 @@ reserves учитывает вызывающий resource owner. Core не probe
 добавляет собственную wire metadata и bounded serialization slab; файловый commit здесь не
 выполняется.
 
-[Constructor/binding/budget controls](../../../test/domain/final_observation_contract.jl) и
-[literal full-coherence/units/IEEE/receipts/context controls](../../../test/numerics/final_observation_snapshot.jl)
+[Constructor/binding/budget controls](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/domain/final_observation_contract.jl) и
+[literal full-coherence/units/IEEE/receipts/context controls](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/8d3b4c8f60df6e4fa08a93f979c1c5e81ad1c2c9/test/numerics/final_observation_snapshot.jl)
 проверяют этот port без SCBA/Poisson и без completed selected-map evaluation. Искусственные
 strict/approximate reports проверяют classification только; они не numerical accuracy evidence.
 Publication и downstream native interoperability требуют отдельной owning проверки.

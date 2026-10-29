@@ -27,17 +27,6 @@ function build_poisson_matrix(profiles::MaterialProfiles, grids::ModelGrids)
     return L
 end
 
-"""
-    solve_periodic_poisson(problem, n̄)
-
-Solve the dimensionless bordered periodic Poisson system for the electronic
-Hartree energy `Uᴴ/E₀=-φᴴ/φ₀`.  `n̄=L₀³n` must have `N_z` entries.  Returns
-`(Uᴴ, ζ, r_P, r_neutral)`.
-
-Implements [EQ-POISSON-002](@ref eq-bordered-poisson).
-See [Periodic Poisson and the outer loop](@ref theory-outer-loop) for the
-charge sign, periodic gauge, and neutrality condition.
-"""
 function _solve_periodic_poisson_with_diagnostics(
     profiles::MaterialProfiles,
     grids::ModelGrids,
@@ -80,6 +69,17 @@ end
 _solve_periodic_poisson_with_diagnostics(problem::NEGFProblem, n̄::AbstractVector{<:Real}) =
     _solve_periodic_poisson_with_diagnostics(problem.profiles, problem.grids, problem.scales, n̄)
 
+"""
+    solve_periodic_poisson(problem, n̄)
+
+Solve the dimensionless bordered periodic Poisson system for the electronic
+Hartree energy `Uᴴ/E₀=-φᴴ/φ₀`.  `n̄=L₀³n` must have `N_z` entries.  Returns
+`(Uᴴ, ζ, r_P, r_neutral)`.
+
+Implements [EQ-POISSON-002](@ref eq-bordered-poisson).
+See [Periodic Poisson and the outer loop](@ref theory-outer-loop) for the
+charge sign, periodic gauge, and neutrality condition.
+"""
 solve_periodic_poisson(
     profiles::MaterialProfiles, grids::ModelGrids, scales::ScaleSystem,
     n̄::AbstractVector{<:Real},
