@@ -495,7 +495,8 @@ Receipt SHA256
 `557f60ed37c4f325d09d552672730f6ad6db414781a0da84d57946c467b67c95`,
 original log SHA256
 `6918099fc6b8a06bc96b70424d08104915c64ed0eb98900b9c3b3a466ab7252e`.
-Оба файла `/tmp/qcl-DEV05-GREEN-1/{receipt.json,original.log}` read-only.
+Оба файла `receipt.json` и `original.log` находились в историческом временном
+каталоге `qcl-DEV05-GREEN-1` и рассматривались read-only.
 Исторический D1 SHA96c2c50a… и review11900d84… не переписываются.
 Один из исходных двух DEV05 L-JL invocations израсходован; остаётся один.
 
