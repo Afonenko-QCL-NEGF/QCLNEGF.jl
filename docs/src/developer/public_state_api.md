@@ -314,3 +314,131 @@ burst; это консервативная dimension estimate, не измере
 
 Новые fixtures не меняют production model/default tolerances и не являются научным опытом. Existing
 independent mathematical oracles остаются отдельным источником свидетельств.
+
+## Финальные physical context и stored observations
+
+`final_observation_snapshot` — отдельный in-memory port для явного финального postprocessing. Он не
+входит в exact-state graph и не задаёт файловый формат. Определения восьми return types находятся в
+[final_observation_types.jl](../../../src/numerics/optimized/final_observation_types.jl), выполнение
+— в [final_observations.jl](../../../src/numerics/optimized/final_observations.jl). Contracts и
+Runner владеют declaration, FileRefs, записью и publication.
+
+```julia
+final_observation_memory_estimate(solution::NEGFSolution, terminal::ExactSolverState;
+    maximum_metadata_bytes::Int)::FinalObservationMemoryEstimate
+
+final_observation_snapshot(solution::NEGFSolution, terminal::ExactSolverState;
+    options::SolverOptions, production_options::ProductionOptions,
+    execution::ExactExecutionIdentity, domain_adaptation::DomainAdaptationPolicy,
+    kernel_options::Union{Nothing,ProductionKernelOptions}, source_mode::Symbol,
+    maximum_bytes::Int, maximum_metadata_bytes::Int)::FinalObservationSnapshot
+```
+
+Все keywords обязательны. Estimate проверяет shapes и checked sizes; scalar LAPACK workspace query
+не вычисляет eigensystem и не выделяет matrix. Snapshot принимает только global `:final`, выполняет
+один `validate_exact_state`, затем сравнивает `solution.options`, U/n, полный SCBA (Green
+condition/scale, все scattering/embedding R/L/G, history/mixer) и outer history побитно с terminal.
+Float64/ComplexF64 сравниваются через исходные bits: NaN payload и ±0 различаются. Нет tolerance,
+gauge alignment, fresh map, reconstruction missing state или solver iteration.
+
+`source_mode=:produced` связывает report/status/converged, warnings и выбранные original
+observations с `final_evidence`. `:completed_restore` требует existing `CompletedStateEvidence`:
+original точно равен terminal evidence, current report равен revalidation report. Scalar quality
+bands и history проверяются существующим evaluator без нового map; approximate passed report не
+становится strict convergence. Original report не заменяется. Error receipt с unknown Hilbert
+measurement сохраняет его отличие от display `false`. Measured independent receipt требует
+context/report independent reference path; unsupported/error/not_measured не дают научный pass.
+
+Inputs borrowed readonly на весь вызов. Snapshot, все его arrays, metric maps и nested audit/receipt
+metadata можно удерживать и изменять: они не alias входы. Immutable options/scalars могут безопасно
+разделять storage. Positional typed constructors проверяют structural shapes/links, но сами по себе
+не удостоверяют producer, подлинность receipt или физическую корректность состояния. Checked capture
+port не заменяет независимый scientific oracle.
+
+`FinalObservationSnapshot` содержит context, views, metrics, positivity, summary, assessment,
+nullable revalidation/independent_oracle и explicit issues, а также исходные identity/integrity.
+`assessment` — detached existing `solution_scientific_assessment`, пригодный для прежнего display;
+его lossy projection не заменяет raw metrics/IEEE/status. Научные gates, итерационная сходимость,
+дискретизация и эксперимент остаются разными свидетельствами.
+
+### Physical context, axes и units
+
+| Поля                                                    | Семантика                                                                                                                                                                                                                                    |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dimensions`, revision, IDs                             | `(Nz,NE,Nk,Nb)` actual problem; fixed revision0 или actual expansion count. Adaptive IDs берутся из receipt, уже проверенного existing validator; fixed IDs вычисляются один раз. Для IDs нет дополнительного Hamiltonian/coverage solve     |
+| `x_scaled,wX`; `energy_scaled,wE`; `momentum_scaled,wk` | Exact actual vectors, включая nonuniform weights. Measures: dx, dε, κdκ/(2π); physical multipliers L0 m, E0 eV, L0^-2 m^-2. Spin не входит в wk                                                                                              |
+| `z_nm,energy_eV,k_per_nm`                               | Actual scaled coordinates переводятся соответственно x·L0·1e9, ε·E0+Eref, κ/L0·1e-9. Exact scaled arrays сохраняются отдельно; обратный roundtrip не используется                                                                            |
+| `state_index,trusted_energy`                            | Int64 zero-based state coordinates и detached Bool mask[E]                                                                                                                                                                                   |
+| `scales,inputs`                                         | Field names задают SI/eV units: E0, L0, J0, field/Vperiod, T_L/T_LO, Eref, donor/fion, z0, period length; `g_s::Int`. Actual Core facts, без восстановления из digest                                                                        |
+| `problem_scattering`                                    | Все пять construction flags LO/acoustic/impurity/IFR/alloy. Это не доказательство первоначальных Runner requested flags                                                                                                                      |
+| `enabled_scattering,selfenergy_families`                | Первая tuple — ordered five-family projection; вторая — full actual scattering order, включая отдельный :electron_electron. Zero requested kernel может отсутствовать; EE не шестой request flag. Embedding остаётся отдельным state payload |
+| `physical_models,algorithms`                            | Existing public options сохраняются целиком, включая LO population, EE applicability и выбранную embedding closure                                                                                                                           |
+| Boundary/basis/gauge                                    | Stationary field periodic embedding, finite orthonormal projected basis; localization, energy-shift discretization, absolute energy-reference convention и declared effective display gauge                                                  |
+
+Context проверяет structural counts/shapes/links, а не equilibrium applicability. Он не вводит
+нового запрета на raw failed IEEE, limiting temperatures или invalid sampled weights. Ограничения
+existing physical constructors остаются прежними; reader проверяет применимость своего oracle
+отдельно.
+
+### Stored views и явная стоимость
+
+| Поля / logical axes                             | Значение                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Four potentials[z], eV                          | Structure E_c·E0+Eref, external -F(z-z0), accepted Hartree U·E0 и сумма; не predicted next_U                                                                                                                                                                                         |
+| Density[z], m^-3                                | Published n/L0³, без скрытой repair/reprojection                                                                                                                                                                                                                                     |
+| Spatial-energy density[E,z], eV^-1 m^-3         | Один existing full-coherence `spatial_energy_density`; energy measure E0·wE. При согласованном published density интеграл даёт electron density                                                                                                                                      |
+| Spectral/occupied traces[E,k], eV^-1            | ReTr(A)/E0 и ReTr(-iGL)/E0; без spin, quadrature weights или 2π. Local `spectral_maps(z,E)` не подстановка                                                                                                                                                                           |
+| Localized/effective levels[state], eV           | diag(H(k0)) и one-particle eigenlevels, Eref+E0·value. k0 обозначает первый actual momentum sample (обычно κ=0); actual κ сохраняется в context. Один `project_hamiltonians`, один legacy `eigen(Hermitian(h0))`, upper-triangle convention; новый Hermiticity threshold не вводится |
+| Complex wavefunctions[z,state], nm^-1/2         | χ/√(L0·1e9), χV/√(L0·1e9). Phase fixing до unit conversion: first argmax spatial magnitude, positive real pivot. Ascending energy, без matching degenerate subspaces между points                                                                                                    |
+| Complex sheet matrices[state,state_prime], m^-2 | Full coherence GL integral и V†PV; populations — real diagonal, fraction denominator Ndop²D·fion, не сумма selected states                                                                                                                                                           |
+| Current/sheet scalars                           | e·boundary_flux(embedding_plus), A/m², positive electron flow toward +z; real trace sheet matrix, m^-2                                                                                                                                                                               |
+| Positivity                                      | Ровно один `positivity_diagnostics(...;integrate=true)`: все six raw witnesses/statuses/limits/counts и четыре full integral arrays. k→E scan и strict `>` first-on-tie сохранены                                                                                                    |
+
+Outputs передаются owning без второго deepcopy. Новых G/Σ/K или retained witness copies нет.
+Expected unavailable views имеют `nothing` и конкретный `FinalObservationIssue` с reason/detail.
+Полученные NaN/Inf samples сохраняются; error sentinel не становится measured zero/pass. Unexpected
+bugs, interrupt, allocation errors остаются exceptions. Completed restore не запускается этим port:
+вызывающий сначала явно выбирает разрешённую runtime operation и приносит result/receipt.
+
+### Checked memory forecast и buffer inventory
+
+Пусть z,e,k,b — actual dimensions. Все products/additions выполняются checked Int до dominant
+allocation. Estimate возвращает отдельно caller residency, C/V/D/M/W/B и peak additional allowance.
+Caller residency — `Base.summarysize((solution,terminal))`, без повторного owning state copy.
+
+| Allowance            | Numeric payload / owning source                                                                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C                    | 8(3z+3e+3k+b)+max(e,8ceil(e/64)); nine Float64 coordinate/weight arrays, Int64 states, word-padded BitVector allowance                                                                                                         |
+| V                    | 8(5z+ez+2ek+2b)+16(2zb+3b²)+16; potentials/density, E-z density, two traces/level sets, two wavefunction sets, transform/two sheet matrices, two scalar values                                                                 |
+| D                    | 16kb²+8(kb+ek+6k); four positivity integral arrays. Six-kind count/witness records входят в M                                                                                                                                  |
+| A                    | 8(z+e+k); existing assessment создаёт fresh quadrature copies, передаваемые без повторного copy                                                                                                                                |
+| W baseline           | 16(kb²+8zb+64b²)+8(4z+4e+4k+64b)+65536; full projected H, projected Φ/χV intermediates, h0 copies, local PSD/density/current blocks, conversion/phase/ordering vectors                                                         |
+| Q, дополнительно в W | Actual queried WORK/RWORK/IWORK plus W/support arrays, maximum для eigen и eigvals. Eigenvector output уже учтён V; input matrix copies — baseline W                                                                           |
+| M                    | 65536+8·summarysize(selected source metadata); report/options, selected audit/receipts, original evidence/warnings и model flags. Проверяется `maximum_metadata_bytes`; headers/strings/records не выдаются за numeric payload |
+| B                    | 4·summarysize((problem,terminal))+32768; existing canonical identity/integrity buffers. Это реальная baseline стоимость, не O(1) и не новая streaming-hash implementation                                                      |
+
+Поле W = W baseline + Q; peak additional = C+V+D+A+M+W+B. Guard `maximum_bytes` проверяется до
+canonical validation, Hamiltonian, projections, dominant matrices и PSD. Библиотечный workspace
+query использует только scalar buffers и -1 workspace lengths; dimensions/products проверяются на
+representability в actual `BlasInt` до FFI. Julia1.13 Hermitian eigen/eigvals default driver не
+меняется. Query-only return до matrix access предусмотрен
+[LAPACK ZHEEVR](https://github.com/Reference-LAPACK/lapack/blob/v3.12.0/SRC/zheevr.f).
+
+Inventory по owning source: `project_hamiltonians` создаёт H[k,b,b], projected/temporary operators;
+`spatial_energy_density` — output[E,z], integrated[b,b] и returned coordinate vectors;
+`sheet_density_matrix` — complex block/integral и physical conversion matrices; integrated
+positivity — четыре output arrays и bounded block-local six-kind/eigvals scratch; boundary current —
+energy ordering и local block products. W сохраняет conservative baseline даже после добавления
+actual Q. Existing representation-digest buffers учитываются в baseline allowances; нет
+дополнительного Hamiltonian ради representation IDs и нет full input-array deepcopy.
+
+Численные live buffers не являются total RSS: compiler, allocator/GC, shared BLAS caches и runtime
+reserves учитывает вызывающий resource owner. Core не probe host и не вводит campaign limit. Runner
+добавляет собственную wire metadata и bounded serialization slab; файловый commit здесь не
+выполняется.
+
+[Constructor/binding/budget controls](../../../test/domain/final_observation_contract.jl) и
+[literal full-coherence/units/IEEE/receipts/context controls](../../../test/numerics/final_observation_snapshot.jl)
+проверяют этот port без SCBA/Poisson и без completed selected-map evaluation. Искусственные
+strict/approximate reports проверяют classification только; они не numerical accuracy evidence.
+Publication и downstream native interoperability требуют отдельной owning проверки.
