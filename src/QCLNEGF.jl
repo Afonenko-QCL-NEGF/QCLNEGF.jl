@@ -678,6 +678,8 @@ include("numerics/optimized/public_state_capture.jl")
 include("numerics/optimized/public_state_completed.jl")
 include("numerics/optimized/public_state_adaptive.jl")
 include("numerics/reference/diagnostic_observations.jl")
+include("numerics/optimized/final_observation_types.jl")
+include("numerics/optimized/final_observations.jl")
 include("numerics/optimized/public_operator_api.jl")
 
 export AbstractProductionKernel,
@@ -1012,6 +1014,13 @@ for name in (:ExactExecutionIdentity,:ExactRestartIdentity,:ExactSolverState,:Re
     :CoreDatum,:CoreScalar,:CoreArray,:CoreList,:CoreRecord,:exact_restart_identity,
     :validate_exact_state,:restore_exact_state,:restore_completed_solution,
     :RevalidationReceipt,:IndependentOracleReceipt,:CompletedStateEvidence)
+    @eval import .QCLNumerics: $name
+    @eval export $name
+end
+for name in (:FinalObservationMemoryEstimate,:FinalObservationScales,:FinalObservationInputs,
+    :FinalObservationContext,:StoredFinalObservations,:FinalScientificSummary,
+    :FinalObservationIssue,:FinalObservationSnapshot,:final_observation_memory_estimate,
+    :final_observation_snapshot)
     @eval import .QCLNumerics: $name
     @eval export $name
 end
