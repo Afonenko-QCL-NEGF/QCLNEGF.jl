@@ -554,7 +554,8 @@ function product_integration_hilbert_matrix(ε::AbstractVector{<:Real})
             H[i, i] -= logarithm
         end
     end
-    return H ./ (2π)
+    H ./= 2π
+    return H
 end
 
 """
