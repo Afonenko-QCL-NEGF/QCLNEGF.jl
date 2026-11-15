@@ -1106,13 +1106,19 @@ function _retarded_self_energy_selected(
         return return_roundoff ? (Σᴿ, Γ, 0.0) : (Σᴿ, Γ)
     elseif algorithms.hilbert === :product_integration
         Γ = ComplexF64.(im .* (Σᵍ .- Σˡ))
-        Λ, residual = product_integration_hilbert_transform(
-            Γ,
-            problem.grids.ε,
-            problem.grids.wᴱ;
-            return_roundoff = true,
-            operator = cache.product_hilbert_operator,
-        )
+        Λ, residual = if cache.product_hilbert_operator isa _ProductionPIFFTHilbertPlan
+            _production_pi_fft_hilbert_transform(
+                Γ, problem.grids.ε, problem.grids.wᴱ, cache.product_hilbert_operator,
+            )
+        else
+            product_integration_hilbert_transform(
+                Γ,
+                problem.grids.ε,
+                problem.grids.wᴱ;
+                return_roundoff = true,
+                operator = cache.product_hilbert_operator,
+            )
+        end
         Σᴿ = ComplexF64.(Λ .- 0.5im .* Γ)
         return return_roundoff ? (Σᴿ, Γ, residual) : (Σᴿ, Γ)
     elseif algorithms.hilbert === :direct

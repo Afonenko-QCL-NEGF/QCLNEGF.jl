@@ -91,8 +91,8 @@ function _acceptance_metric_description(name::Symbol)
             formula = "max_enabled_channel ||Lambda1-Lambda2||F/(||Lambda1||F+1e-14)",
             normalization = "Norm of the real retarded reconstruction, per mechanism.",
             floor = additive,
-            weights = "Hilbert quadrature uses wE; direct/product integration reverse the accumulation order; FFT repeats at twice valid padding.",
-            source = "src/numerics/reference/kernels.jl::direct_hilbert_transform, product_integration_hilbert_transform; src/numerics/optimized/production_operators.jl::fft_hilbert_transform",
+            weights = "Direct/nodal FFT use wE; PI includes its measure without an extra weight factor. Direct/dense PI reverse accumulation order; nodal FFT/uniform FFT PI repeat at twice valid padding.",
+            source = "src/numerics/reference/kernels.jl::direct_hilbert_transform, product_integration_hilbert_transform; src/numerics/optimized/production_operators.jl::fft_hilbert_transform; src/numerics/optimized/fft_parallel.jl::_production_pi_fft_hilbert_transform",
             error_class = "roundoff_indicator",
             context = "Empirical ordering/padding sensitivity, not a forward-error bound or finite-window error.",
             tolerance = "r_roundoff",
@@ -532,7 +532,7 @@ function _acceptance_metric_metadata(name::Symbol, solution::NEGFSolution)
             "value"=>eps(Float64),
             "units"=>"scaled real retarded self-energy norm",
         )
-        metadata["formula_context"]="Product integration compares opposite matrix-column orders; its denominator differs from direct/FFT reconstruction."
+        metadata["formula_context"]="Product integration compares opposite matrix-column orders on dense/nonuniform grids and twice valid padding on canonical uniform FFT grids; its denominator differs from direct/nodal FFT reconstruction."
     end
     return metadata
 end
