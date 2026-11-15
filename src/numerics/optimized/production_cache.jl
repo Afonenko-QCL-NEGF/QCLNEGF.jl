@@ -407,10 +407,53 @@ function _production_kernel(
     return DenseProductionKernel(matrix, Nk, Nb)
 end
 
+# No rank inference or tolerance-based projection: the complete source tensor
+# must match the canonical independent-interface builder, including its exact
+# finite angular grid and normalization. Custom/modified tensors fail closed.
+function _canonical_ifr_production_kernel(problem::NEGFProblem)
+    K, q = problem.kernels.K[:IFR], problem.kernels.qᴷ[:IFR]
+    Nk, Nb = problem.numerical.N_k, problem.numerical.N_b
+    size(K) == (Nk, Nk, Nb, Nb, Nb, Nb) || return nothing
+    # Preserve the already cheaper reduced path, including radial factors
+    # which round to momentum independence on the actual source grid.
+    _is_momentum_independent(K) && return nothing
+    count = length(problem.physical.interfaces)
+    count > 0 && 2big(count) <= big(Nb)^2 || return nothing
+    2big(Nb)^2*count + big(Nk)^2 <= big(Nk)^2*big(Nb)^4 || return nothing
+    data = try
+        _interface_roughness_kernel_data(problem.physical, problem.scales,
+                                        problem.grids, problem.basis)
+    catch error
+        (error isa ArgumentError || error isa DimensionMismatch) || rethrow()
+        return nothing
+    end
+    q > 0 && isfinite(q) && data.amplitude > 0 || return nothing
+    for b = 1:Nb, d = 1:Nb, c = 1:Nb, a = 1:Nb, mp = 1:Nk, m = 1:Nk
+        K[m,mp,a,c,d,b] == data.radial[m,mp]*data.block[a,c,d,b]/q || return nothing
+    end
+    left, right = zeros(ComplexF64,Nb^2,count), zeros(ComplexF64,count,Nb^2)
+    for j = 1:count
+        coefficient = data.band_coefficients[j]*sqrt(data.amplitude/_K₀(problem.scales))
+        for b = 1:Nb, a = 1:Nb
+            pair = a + Nb*(b-1)
+            value = data.interface_vectors[a,j]*conj(data.interface_vectors[b,j])
+            left[pair,j] = coefficient^2/q*value
+            right[j,pair] = conj(value)
+        end
+    end
+    radial = ComplexF64.(data.radial ./ data.amplitude)
+    all(isfinite,left) && all(isfinite,right) && all(isfinite,radial) || return nothing
+    return _SeparableIFRProductionKernel(left,right,radial,Nk,Nb)
+end
+
 _kernel_operator_bytes(::LiteralProductionKernel) = 0
 
 function _kernel_operator_bytes(op::DenseProductionKernel)
     return sizeof(eltype(op.matrix)) * length(op.matrix)
+end
+
+function _kernel_operator_bytes(op::_SeparableIFRProductionKernel)
+    return sizeof(ComplexF64)*(length(op.left)+length(op.right)+length(op.radial))
 end
 
 function _kernel_operator_bytes(op::MomentumIndependentProductionKernel)
@@ -727,7 +770,10 @@ function build_production_cache(
     ε = problem.grids.ε
     kernels = Dict{Symbol,AbstractProductionKernel}()
     for name in problem.kernels.enabled
-        kernels[name] = _production_kernel(problem.kernels.K[name], options.algorithms)
+        structured = name === :IFR && options.algorithms.contraction === :dense_blas ?
+            _canonical_ifr_production_kernel(problem) : nothing
+        kernels[name] = structured === nothing ?
+            _production_kernel(problem.kernels.K[name], options.algorithms) : structured
     end
     # Report the post-detection estimate (acoustic/alloy are normally reduced).
     Mdense = count(
