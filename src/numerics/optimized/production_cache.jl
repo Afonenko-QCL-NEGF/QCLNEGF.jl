@@ -436,7 +436,7 @@ function _estimate_production_memory(
     lo_kernel::Symbol = :dense,
     compact_shifts::Bool = options.algorithms.energy_shift === :sparse_plan,
     worker_capacity::Union{Nothing,Integer} = nothing,
-    product_integration_fft::Bool = false,
+    product_integration_fft::Union{Nothing,Bool} = false,
 )
     _check_production_options(options)
     NE, Nk, Nb = n.N_E, n.N_k, n.N_b
@@ -458,8 +458,11 @@ function _estimate_production_memory(
         "four-axis state element count",
     )
     n6 = _production_memory_int((big(Nk) * big(Nb)^2)^2, "six-axis kernel element count")
-    pi_fft = options.algorithms.hilbert === :product_integration && product_integration_fft
-    Lfft = if options.algorithms.hilbert === :fft || pi_fft
+    pi_fft = options.algorithms.hilbert === :product_integration && product_integration_fft === true
+    pi_unknown = options.algorithms.hilbert === :product_integration && product_integration_fft === nothing
+    # Unknown geometry reserves both possible backend storage roles. Dense H
+    # alone need not dominate FFT buffers for small NE and large chunks.
+    Lfft = if options.algorithms.hilbert === :fft || pi_fft || pi_unknown
         fft_required = _production_memory_int(2big(NE) - 1, "minimum FFT transform length")
         transform_length = try
             nextpow(2, fft_required)
@@ -541,7 +544,7 @@ function _estimate_production_memory(
         :energy_shift_plans => 4big(NE) * (2sizeof(Int) + 2R),
         :blas_workspace => big(contraction_workers) * 2 * Nk * big(Nb)^2 * chunk * C,
         :fft_workspace =>
-            (pi_fft || options.verify_fft_roundoff ? 3 : 1) *
+            (pi_fft || pi_unknown || options.verify_fft_roundoff ? 3 : 1) *
             big(Lfft) *
             (1 + big(fft_workers) * fft_buffer_columns) *
             C,
@@ -626,9 +629,10 @@ end
 Conservative estimate available before an expensive `NEGFProblem` is built.
 Set `dense_mechanism_count` to the expected number of momentum-dependent
 mechanisms.  For the default model acoustic is reduced exactly, while LO,
-impurity, and IFR remain dense. Numerical-only planning assumes the public
-builder's canonical uniform energy grid for product integration. The overload
-for a built problem selects FFT or dense PI storage from its actual nodes.
+impurity, and IFR remain dense. With no `energy_nodes`, PI planning reserves
+both dense and FFT storage as an upper envelope of unknown geometry, not a
+claim that both backends are allocated simultaneously. Supply actual
+`energy_nodes` (length `n.N_E`) to select the real PI backend; the overload for a built problem always uses its actual nodes.
 
 See [Numerical scales and cost](@ref theory-cost) and the
 [production RAM contract](@ref theory-production).
@@ -642,7 +646,10 @@ function estimate_production_memory(
     ),
     options::ProductionOptions = ProductionOptions(),
     worker_capacity::Union{Nothing,Integer} = nothing,
+    energy_nodes::Union{Nothing,AbstractVector{<:Real}} = nothing,
 )
+    energy_nodes === nothing || length(energy_nodes) == n.N_E ||
+        throw(DimensionMismatch("planning energy nodes differ from N_E"))
     return _estimate_production_memory(
         n,
         mechanism_count,
@@ -650,8 +657,8 @@ function estimate_production_memory(
         options;
         lo_kernel,
         worker_capacity,
-        # The public builder creates canonical uniform range grids.
-        product_integration_fft = options.algorithms.hilbert === :product_integration,
+        product_integration_fft = energy_nodes === nothing ? nothing :
+            _uniform_product_integration_geometry(energy_nodes) !== nothing,
     )
 end
 

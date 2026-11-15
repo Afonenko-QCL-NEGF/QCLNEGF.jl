@@ -72,11 +72,9 @@ triangle_pv(E, a, c, b) = (
         (name => name === :N_E ? 4097 : getfield(n, name)
          for name in fieldnames(NumericalParameters))...,
     )
-    # Numerical-only public planning assumes the builder's uniform grid.
-    # Exercise the actual dense fallback's internal planning branch explicitly.
-    large_estimate = QCLNEGF.QCLNumerics._estimate_production_memory(large, 0, 0,
-        ProductionOptions(algorithms = AlgorithmOptions(hilbert = :product_integration));
-        lo_kernel = :absent, product_integration_fft = false,
+    large_estimate = estimate_production_memory(large, 0;
+        dense_mechanism_count = 0,
+        options = ProductionOptions(algorithms = AlgorithmOptions(hilbert = :product_integration)),
     )
     @test large_estimate.peak_bytes >= 2*4097^2*sizeof(Float64)
     @test large_estimate.breakdown[:product_hilbert_verification_temporary] ==

@@ -98,18 +98,19 @@ end
     @test N._uniform_product_integration_geometry(collect(range(1e12, 1e12+1; length = 18))) === nothing
 end
 
-function production_fixture(nodes; options)
+function production_fixture(nodes; options, return_build = false)
     original = tutorial_numerics()
     changes = (; N_b = 2, N_k = 2, N_E = nodes)
     numerical = NumericalParameters(;
         (name => hasproperty(changes, name) ? getproperty(changes, name) :
                  getfield(original, name) for name in fieldnames(NumericalParameters))...,
     )
-    return build_problem_production(;
+    built = build_problem_production(;
         numerical, production_options = options,
         scattering = ScatteringOptions(
             LO = false, acoustic = false, impurity = false, IFR = false, alloy = false),
-    ).problem
+    )
+    return return_build ? built : built.problem
 end
 
 function nonuniform_fixture(problem)
@@ -183,5 +184,75 @@ end
         memory_budget_bytes = estimate.peak_bytes-1)
     @test_throws ArgumentError build_production_cache(problem; options = too_small)
     @test_throws ArgumentError QCLNEGF._validated_production_cache(cache, problem, too_small)
+end
+end
+
+module ProductIntegrationPrebuildMemory
+include("../support/common.jl")
+import ..UniformProductIntegrationFFT
+const N = QCLNEGF.QCLNumerics
+
+@testset "PI prebuild admission uses actual geometry before expensive static work" begin
+    original = tutorial_numerics()
+    changes = (; N_b = 2, N_k = 2, N_E = 130,
+                E_min = 1e11u"eV", E_max = (1e11+1)*u"eV")
+    numerical = NumericalParameters(;
+        (name => hasproperty(changes, name) ? getproperty(changes, name) :
+                 getfield(original, name) for name in fieldnames(NumericalParameters))...,
+    )
+    physical, scales = reference_parameters(), ScaleSystem()
+    scattering = ScatteringOptions(
+        LO = false, acoustic = false, impurity = false, IFR = false, alloy = false)
+    options = ProductionOptions(worker_count = 1, hilbert_columns = 1,
+        algorithms = AlgorithmOptions(hilbert = :product_integration))
+    # This real builder creates a canonical range rejected by the precision
+    # guard. A canonical family alone must not imply the FFT allocation model.
+    grids = build_grids(physical, numerical, scales)
+    @test N._uniform_product_integration_geometry(grids.ε) === nothing
+    actual_dense = estimate_production_memory(numerical, 0;
+        dense_mechanism_count = 0, options, energy_nodes = grids.ε)
+    unknown = estimate_production_memory(numerical, 0;
+        dense_mechanism_count = 0, options)
+    canonical = collect(range(-1.0, 1.0; length = numerical.N_E))
+    actual_fft = estimate_production_memory(numerical, 0;
+        dense_mechanism_count = 0, options, energy_nodes = canonical)
+    @test unknown.peak_bytes >= max(actual_dense.peak_bytes, actual_fft.peak_bytes)
+    @test unknown.resident_bytes >= max(actual_dense.resident_bytes, actual_fft.resident_bytes)
+    @test actual_dense.breakdown[:product_hilbert_operator] == numerical.N_E^2*sizeof(Float64)
+    @test actual_dense.breakdown[:fft_workspace] == 0
+    @test actual_fft.peak_bytes < actual_dense.peak_bytes
+    # The former optimistic FFT preflight would admit this rejected geometry.
+    limited = QCLNEGF.with_production_options(options;
+        memory_budget_bytes = actual_dense.peak_bytes-1)
+    @test actual_fft.peak_bytes < limited.memory_budget_bytes
+    @test_throws ArgumentError build_problem_production(;
+        physical, numerical, scales, scattering, production_options = limited)
+    @test_throws ArgumentError QCLNEGF._preflight_production_memory(
+        numerical, scattering, limited; energy_nodes = grids.ε)
+    @test_throws DimensionMismatch estimate_production_memory(numerical, 0;
+        dense_mechanism_count = 0, options, energy_nodes = canonical[2:end])
+
+    # For small NE, many FFT buffer columns can cost more than dense H. The
+    # unknown-geometry bound must cover both branches even in that regime.
+    small = tutorial_numerics()
+    wide = QCLNEGF.with_production_options(options; hilbert_columns = 32)
+    small_fft = estimate_production_memory(small, 0; dense_mechanism_count = 0,
+        options = wide, energy_nodes = collect(range(-1.0, 1.0; length = small.N_E)))
+    small_unknown = estimate_production_memory(small, 0;
+        dense_mechanism_count = 0, options = wide)
+    @test small_fft.breakdown[:fft_workspace] > 2*small.N_E^2*sizeof(Float64)
+    @test small_unknown.peak_bytes >= small_fft.peak_bytes
+    @test small_unknown.resident_bytes >= small_fft.resident_bytes
+
+    # Known actual uniform geometry remains admissible under a bound that
+    # correctly rejects unknown/dense geometry at S01's energy-node count.
+    tight = QCLNEGF.with_production_options(options; memory_budget_bytes = 512*1024^2)
+    built = UniformProductIntegrationFFT.production_fixture(30721;
+        options = tight, return_build = true)
+    n = built.problem.numerical
+    @test estimate_production_memory(n, 0;
+        dense_mechanism_count = 0, options = tight).peak_bytes > tight.memory_budget_bytes
+    actual = estimate_production_memory(built.problem; options = tight)
+    @test built.memory_estimate.peak_bytes == actual.peak_bytes < tight.memory_budget_bytes
 end
 end

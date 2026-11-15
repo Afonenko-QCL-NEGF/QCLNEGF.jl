@@ -717,7 +717,8 @@ end
 function _preflight_production_memory(
     numerical::NumericalParameters,
     scattering::ScatteringOptions,
-    production_options::ProductionOptions,
+    production_options::ProductionOptions;
+    energy_nodes::Union{Nothing,AbstractVector{<:Real}} = nothing,
 )
     requested = count(
         identity,
@@ -737,6 +738,7 @@ function _preflight_production_memory(
         dense_mechanism_count = dense,
         lo_kernel,
         options = production_options,
+        energy_nodes,
     )
     estimate.peak_bytes <= production_options.memory_budget_bytes || throw(
         ArgumentError(
@@ -785,8 +787,9 @@ function build_problem_production(;
     physical_models::PhysicalModelOptions = PhysicalModelOptions(),
 )
     physical = resolve_physical_models(physical, physical_models)
-    estimate = _preflight_production_memory(numerical, scattering, production_options)
     grids = build_grids(physical, numerical, scales)
+    estimate = _preflight_production_memory(numerical, scattering, production_options;
+        energy_nodes = grids.ε)
     profiles = build_profiles(physical, numerical, scales, grids)
     basis = build_basis(physical, numerical, scales, grids, profiles; localization)
     kernels, diagnostics = build_kernels_production(
