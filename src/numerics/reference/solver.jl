@@ -127,6 +127,7 @@ function solve(
     initial_Uᴴ::Union{Nothing,AbstractVector{<:Real}} = nothing,
     initial_scba::Union{Nothing,SCBAResult} = nothing,
     history_observer::Union{Nothing,Function} = nothing,
+    elastic_retarded::Symbol = :hilbert,
 )
     _check_options(options)
     Nz = problem.numerical.N_z
@@ -151,6 +152,7 @@ function solve(
             Uᴴ;
             options = inner_policy.options,
             initial = previous_scba,
+            elastic_retarded,
             history_observer = history_observer===nothing ? nothing :
                                (row->history_observer(:scba, μ, row, problem)),
         )
@@ -230,6 +232,8 @@ function solve(
     Uᴴ = published_U
     nfinal = _electron_density_bar(problem, final_scba.green.Gˡ)
     observables = _collect_observables(problem, final_scba, Uᴴ)
+    elastic_retarded === :hilbert ||
+        (observables[:elastic_retarded] = String(elastic_retarded))
     observables[:warnings] = warnings
     observables[:acceptance_measurement_context] = Dict{String,Any}(
         "backend"=>"educational",
@@ -286,7 +290,8 @@ function solve(;
     scattering::ScatteringOptions = default_scattering(),
     scales::ScaleSystem = ScaleSystem(),
     options::SolverOptions = baseline_options(),
+    elastic_retarded::Symbol = :hilbert,
 )
     problem = build_problem(; physical, numerical, scattering, scales)
-    return solve(problem; options)
+    return solve(problem; options, elastic_retarded)
 end

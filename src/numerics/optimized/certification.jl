@@ -1,11 +1,12 @@
 function _algorithm_options_from_solution(solution::NEGFSolution)
-    contract = get(solution.observables, :restart_contract, nothing)
+    contract = get(solution.observables, :restart_contract, solution.scba.restart_contract)
     contract === nothing && return AlgorithmOptions(
         solver_backend = :educational,
         energy_shift = :dense,
         hilbert = :direct,
         contraction = :literal,
         kernel_build = :direct,
+        elastic_retarded = Symbol(get(solution.observables, :elastic_retarded, "hilbert")),
     )
     raw = get(contract, "algorithms", nothing)
     raw isa AbstractDict ||
@@ -14,6 +15,7 @@ function _algorithm_options_from_solution(solution::NEGFSolution)
     return AlgorithmOptions(;
         (
             name=>(
+                name === :elastic_retarded ? Symbol(get(raw, String(name), "hilbert")) :
                 getfield(defaults, name) isa Symbol ? Symbol(raw[String(name)]) :
                 raw[String(name)]
             ) for name in fieldnames(AlgorithmOptions)
@@ -25,7 +27,9 @@ end
 function _audit_candidate_for_solution(solution::NEGFSolution)
     algorithms = _algorithm_options_from_solution(solution)
     algorithms.solver_backend === :educational &&
-        return _reference_audit_candidate(solution.problem, solution.scba)
+        return _reference_audit_candidate(
+            solution.problem, solution.scba; elastic_retarded = algorithms.elastic_retarded,
+        )
     production = ProductionOptions(algorithms = algorithms)
     cache = build_production_cache(solution.problem; options = production)
     scattering, roundoff = _scattering_candidate_production(
@@ -107,6 +111,7 @@ function certify_solution(
             options,
             initial_Uᴴ = solution.Uᴴ,
             initial_scba = solution.scba,
+            elastic_retarded = _algorithm_options_from_solution(solution).elastic_retarded,
         )
     else
         algorithms = _algorithm_options_from_solution(solution)

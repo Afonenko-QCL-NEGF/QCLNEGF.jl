@@ -1231,7 +1231,13 @@ function _scattering_candidate_production(
                 options,
             )
         end
-        if return_roundoff && options.verify_fft_roundoff
+        if options.algorithms.elastic_retarded === :direct_green &&
+           options.algorithms.retarded_real_part !== :drop &&
+           mechanism in (:acoustic, :impurity, :IFR, :alloy)
+            Σᴿ = _selected_static_contraction(
+                problem, cache, mechanism, green.Gᴿ, qᴷ, options,
+            )
+        elseif return_roundoff && options.verify_fft_roundoff
             Σᴿ, _, residual = _retarded_self_energy_selected(
                 Σˡ,
                 Σᵍ,

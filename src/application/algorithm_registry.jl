@@ -275,7 +275,8 @@ function algorithm_impact(options::AlgorithmOptions)
        options.transverse_momentum != :resolved ||
        options.embedding !== :full_cell_resolvent
         return :physical_model
-    elseif options.localization in (:none, :real_space) ||
+    elseif options.elastic_retarded === :direct_green ||
+           options.localization in (:none, :real_space) ||
            options.hilbert === :product_integration ||
            options.energy_shift === :conservative_pair ||
            (
@@ -312,6 +313,7 @@ function algorithm_manifest(options::AlgorithmOptions)
         "embedding" => String(options.embedding),
         "embedding_periods" => options.embedding_periods,
         "occupation_normalization" => String(options.occupation_normalization),
+        "elastic_retarded" => String(options.elastic_retarded),
         "retarded_real_part" => String(options.retarded_real_part),
         "self_energy_structure" => String(options.self_energy_structure),
         "transverse_momentum" => String(options.transverse_momentum),

@@ -1,7 +1,9 @@
 """Evaluate the reference raw map; no optimized kernel is used as its oracle."""
-function _reference_audit_candidate(problem::NEGFProblem, scba::SCBAResult)
+function _reference_audit_candidate(
+    problem::NEGFProblem, scba::SCBAResult; elastic_retarded::Symbol = :hilbert,
+)
     scattering, roundoff =
-        _scattering_candidate(problem, scba.green; return_roundoff = true)
+        _scattering_candidate(problem, scba.green; return_roundoff = true, elastic_retarded)
     embedding, plus, minus = embedding_self_energy(problem, scba.green)
     return FixedPointAuditCandidate(scattering, embedding, plus, minus, roundoff)
 end
