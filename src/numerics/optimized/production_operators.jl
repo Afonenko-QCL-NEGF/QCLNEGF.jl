@@ -465,6 +465,74 @@ end
 
 function _production_static_contraction!(
     Σ::AbstractArray{ComplexF64,4},
+    op::_SeparableIFRProductionKernel,
+    G::AbstractArray{<:Number,4},
+    wᵏ::AbstractVector{<:Real},
+    qᴷ::Real,
+    energy_chunk::Integer;
+    α::Number = 1,
+    β::Number = 0,
+    parallel_backend::Symbol = :blas,
+    worker_count::Integer = 0,
+)
+    NE, Nk, Nb, Nb2 = size(G)
+    (Nk,Nb)==(op.N_k,op.N_b) && Nb==Nb2 ||
+        throw(DimensionMismatch("Green field and IFR kernel differ"))
+    size(Σ)==size(G) || throw(DimensionMismatch("output shape differs"))
+    length(wᵏ)==Nk || throw(DimensionMismatch("radial weights differ"))
+    energy_chunk>0 || throw(ArgumentError("energy_chunk must be positive"))
+    first_energies = 1:energy_chunk:NE
+    workers = _production_worker_count(parallel_backend,worker_count,length(first_energies))
+    capacity = min(Int(energy_chunk),NE)
+    J = size(op.right,1)
+    factor = α*qᴷ
+    function run_worker(worker)
+        packed = Matrix{ComplexF64}(undef,Nb^2,Nk*capacity)
+        scalars = Matrix{ComplexF64}(undef,J,Nk*capacity)
+        radial_input = Matrix{ComplexF64}(undef,Nk,J*capacity)
+        # Two disjoint intermediate buffers, with aliasing headers only after
+        # their old role is dead. GEMM input and output never overlap.
+        radial_output = reshape(scalars,Nk,J*capacity)
+        final_scalars = reshape(radial_input,J,Nk*capacity)
+        for chunk_index = worker:workers:length(first_energies)
+            first_energy = first_energies[chunk_index]
+            count = min(Int(energy_chunk),NE-first_energy+1)
+            P = view(packed,:,1:Nk*count)
+            T = view(scalars,:,1:Nk*count)
+            X = view(radial_input,:,1:J*count)
+            Y = view(radial_output,:,1:J*count)
+            F = view(final_scalars,:,1:Nk*count)
+            @inbounds for e = 1:count, m = 1:Nk, b = 1:Nb, a = 1:Nb
+                P[a+Nb*(b-1),(e-1)*Nk+m] = G[first_energy+e-1,m,a,b]
+            end
+            mul!(T,op.right,P)
+            @inbounds for e = 1:count, j = 1:J, mp = 1:Nk
+                X[mp,(e-1)*J+j] = wᵏ[mp]*T[j,(e-1)*Nk+mp]
+            end
+            mul!(Y,op.radial,X)
+            @inbounds for e = 1:count, m = 1:Nk, j = 1:J
+                F[j,(e-1)*Nk+m] = Y[m,(e-1)*J+j]
+            end
+            mul!(P,op.left,F)
+            @inbounds for e = 1:count, m = 1:Nk, b = 1:Nb, a = 1:Nb
+                index = first_energy+e-1
+                value = factor*P[a+Nb*(b-1),(e-1)*Nk+m]
+                Σ[index,m,a,b] = iszero(β) ? value : β*Σ[index,m,a,b]+value
+            end
+        end
+    end
+    if workers==1
+        run_worker(1)
+    else
+        Base.Threads.@threads :static for worker = 1:workers
+            run_worker(worker)
+        end
+    end
+    return Σ
+end
+
+function _production_static_contraction!(
+    Σ::AbstractArray{ComplexF64,4},
     op::MomentumIndependentProductionKernel,
     G::AbstractArray{<:Number,4},
     wᵏ::AbstractVector{<:Real},

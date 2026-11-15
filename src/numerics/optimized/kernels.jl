@@ -455,7 +455,7 @@ once, while the Gaussian spectrum is averaged as a scalar for every `(k,k')`
 pair.  This is algebraically identical to `interface_roughness_kernel` for the
 same `grids.φ`; no continuum-angle or Bessel-function approximation is used.
 """
-function _interface_roughness_kernel_separable(
+function _interface_roughness_kernel_data(
     p::PhysicalParameters,
     s::ScaleSystem,
     grids::ModelGrids,
@@ -466,17 +466,21 @@ function _interface_roughness_kernel_separable(
     Λ = _metres(p.Λᴵᶠᴿ)
     L0 = s.L₀_m
     covariance = zeros(ComplexF64, Nb^2, Nb^2)
-    for zint in p.interfaces
+    interface_vectors = Matrix{ComplexF64}(undef, Nb, length(p.interfaces))
+    band_coefficients = Vector{Float64}(undef, length(p.interfaces))
+    for (j, zint) in pairs(p.interfaces)
         xint = _metres(zint) / L0
         χint = [_interface_value(view(basis.χ, :, a), grids.x, xint) for a = 1:Nb]
         ΔEc = Float64(ustrip(u"J", _band_jump(p, zint)))
+        interface_vectors[:, j] .= conj.(χint)
+        band_coefficients[j] = ΔEc/L0
         D = [ΔEc * conj(χint[a]) * χint[c] / L0 for a = 1:Nb, c = 1:Nb]
         vector = reshape(D, Nb^2)
         covariance .+= vector * adjoint(vector)
     end
     block = _pair_covariance_to_block(covariance, Nb) ./ _K₀(s)
     Nk = length(grids.κ)
-    K = zeros(ComplexF64, Nk, Nk, Nb, Nb, Nb, Nb)
+    radial = zeros(Float64, Nk, Nk)
     ratio2 = (Λ / L0)^2
     amplitude = π * Δ^2 * Λ^2
     Base.Threads.@threads :static for linear = 1:(Nk*Nk)
@@ -489,7 +493,18 @@ function _interface_roughness_kernel_separable(
             angular_factor += exp(-ratio2 * qbar2 / 4)
         end
         angular_factor *= amplitude / length(grids.φ)
-        view(K, m, mp, :, :, :, :) .= angular_factor .* block
+        radial[m, mp] = angular_factor
+    end
+    return (; block, radial, interface_vectors, band_coefficients, amplitude)
+end
+
+function _interface_roughness_kernel_separable(p, s, grids, basis)
+    data = _interface_roughness_kernel_data(p, s, grids, basis)
+    Nk, Nb = length(grids.κ), size(basis.χ, 2)
+    K = zeros(ComplexF64, Nk, Nk, Nb, Nb, Nb, Nb)
+    Base.Threads.@threads :static for linear = 1:(Nk*Nk)
+        m, mp = (linear-1)%Nk+1, (linear-1)÷Nk+1
+        view(K, m, mp, :, :, :, :) .= data.radial[m, mp] .* data.block
     end
     return K
 end

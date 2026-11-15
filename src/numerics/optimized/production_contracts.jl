@@ -224,6 +224,17 @@ struct DenseProductionKernel <: AbstractProductionKernel
     N_b::Int
 end
 
+# Exact rank-one interface vertices and their common finite-angle radial map.
+# Constructed only after matching the canonical IFR source recipe; arbitrary
+# six-index kernels retain the dense implementation.
+struct _SeparableIFRProductionKernel <: AbstractProductionKernel
+    left::Matrix{ComplexF64}
+    right::Matrix{ComplexF64}
+    radial::Matrix{ComplexF64}
+    N_k::Int
+    N_b::Int
+end
+
 """
 Exact reduced map for a kernel independent of both radial momenta.
 
