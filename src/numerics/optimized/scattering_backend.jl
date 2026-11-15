@@ -151,7 +151,10 @@ function scattering_evidence_class(
        options.transverse_momentum !== :resolved
         return :E3
     end
-    return scattering_evidence_class(scattering_numerical_plan(options, kernel_options))
+    kernel_class = scattering_evidence_class(scattering_numerical_plan(options, kernel_options))
+    # The kernel construction/contraction can remain E0/E1 while the selected
+    # finite-window retarded closure is a controlled numerical change.
+    return options.elastic_retarded === :direct_green ? :E2 : kernel_class
 end
 
 """Typed assembly boundary between physical models and discretization data.

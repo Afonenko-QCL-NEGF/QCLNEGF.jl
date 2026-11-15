@@ -9,9 +9,11 @@ without depending on the outer composition layer.
 The first six fields select interchangeable numerical realizations of the
 same discrete equations, except that `contraction=:low_rank` is controlled
 numerical approximation whenever `low_rank_relative_tolerance > 0`, and
-`kernel_build=:tabulated` carries a measured interpolation error.  The final
-three switches deliberately change the physical SCBA model and are never
-described as physics-preserving speedups.
+`kernel_build=:tabulated` carries a measured interpolation error.
+`elastic_retarded=:direct_green` selects the direct static SCBA closure
+`SigmaR=K[GR]` instead of the finite-window Hilbert reconstruction; it is a
+distinct numerical variant, not a roundoff-equivalent optimization. The final
+three switches deliberately change the physical SCBA model.
 
 See [Optimization decision tree](@ref optimization-decision-tree) and
 [Physics-first equivalence tests](@ref theory-validation).
@@ -32,6 +34,7 @@ Base.@kwdef struct AlgorithmOptions
     anderson_history_depth::Int = 5
     anderson_damping::Float64 = 1.0
     anderson_regularization::Float64 = 1e-12
+    elastic_retarded::Symbol = :hilbert
     retarded_real_part::Symbol = :kramers_kronig
     self_energy_structure::Symbol = :full
     transverse_momentum::Symbol = :resolved
@@ -64,6 +67,16 @@ function _check_algorithm_options(options::AlgorithmOptions)
     )
     options.retarded_real_part in (:kramers_kronig, :drop) ||
         throw(ArgumentError("retarded_real_part must be :kramers_kronig or :drop"))
+    options.elastic_retarded in (:hilbert, :direct_green) ||
+        throw(ArgumentError("elastic_retarded must be :hilbert or :direct_green"))
+    if options.elastic_retarded === :direct_green &&
+       options.retarded_real_part !== :drop && options.contraction === :low_rank &&
+       (options.low_rank_relative_tolerance > 0 || options.low_rank_maximum_rank > 0)
+        throw(ArgumentError(
+            "direct_green elastic retarded closure requires an untruncated kernel; " *
+            "general truncated SVD does not establish adjoint/positivity preservation",
+        ))
+    end
     options.self_energy_structure in (:full, :diagonal) ||
         throw(ArgumentError("self_energy_structure must be :full or :diagonal"))
     options.transverse_momentum in (:resolved, :averaged) ||
@@ -115,7 +128,16 @@ function _check_exact_restart_contract(
             "exact restart is unavailable: checkpoint has no numerical algorithm contract",
         ),
     )
-    contract == _solver_restart_contract(options, algorithms) || throw(
+    # Historical v1 contracts predate this default-preserving option. A missing
+    # field means the original Hilbert closure, never the direct-green variant.
+    compared = contract
+    if contract isa AbstractDict &&
+       get(contract, "algorithms", nothing) isa AbstractDict &&
+       !haskey(contract["algorithms"], "elastic_retarded")
+        compared = deepcopy(contract)
+        compared["algorithms"]["elastic_retarded"] = "hilbert"
+    end
+    compared == _solver_restart_contract(options, algorithms) || throw(
         ArgumentError(
             "exact restart numerical contract differs (algorithms, mixing or quality policy); start a new run",
         ),

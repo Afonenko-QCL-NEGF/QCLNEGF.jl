@@ -464,6 +464,12 @@ function _acceptance_metric_metadata(name::Symbol, solution::NEGFSolution)
            get(algorithms, "retarded_real_part", nothing)=="drop"
             applicable=false
             reason="The declared approximation drops the real retarded reconstruction."
+        elseif scope=="retarded_scattering_reconstruction" &&
+               get(algorithms, "elastic_retarded",
+                   get(solution.observables, :elastic_retarded, "hilbert"))=="direct_green" &&
+               all(name->name in (:acoustic, :impurity, :IFR, :alloy), active)
+            applicable=false
+            reason="Only direct static contractions are active; no Hilbert reconstruction is applied."
         end
     elseif scope=="electron_electron"
         applicable=:electron_electron in active

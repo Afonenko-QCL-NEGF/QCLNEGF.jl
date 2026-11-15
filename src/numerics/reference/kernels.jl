@@ -622,7 +622,10 @@ function _scattering_candidate(
     problem::NEGFProblem,
     green::GreenState;
     return_roundoff::Bool = false,
+    elastic_retarded::Symbol = :hilbert,
 )
+    elastic_retarded in (:hilbert, :direct_green) ||
+        throw(ArgumentError("elastic_retarded must be :hilbert or :direct_green"))
     candidates = Dict{Symbol,SelfEnergyFamily}()
     r_roundoff = 0.0
     for mechanism in problem.kernels.enabled
@@ -640,7 +643,13 @@ function _scattering_candidate(
             Σˡ = _static_contraction(K, green.Gˡ, problem.grids.wᵏ, qᴷ)
             Σᵍ = _static_contraction(K, green.Gᵍ, problem.grids.wᵏ, qᴷ)
         end
-        if return_roundoff
+        if elastic_retarded === :direct_green &&
+           mechanism in (:acoustic, :impurity, :IFR, :alloy)
+            # Static SCBA is complex-linear: K[GR], with the same qK/wK and
+            # tensor ordering as K[G</>]. This is a distinct finite-window
+            # closure; no Hilbert residual is invented for a transform not used.
+            Σᴿ = _static_contraction(K, green.Gᴿ, problem.grids.wᵏ, qᴷ)
+        elseif return_roundoff
             Σᴿ, _, rH = retarded_self_energy(Σˡ, Σᵍ, problem.grids; return_roundoff = true)
             r_roundoff = max(r_roundoff, rH)
         else
