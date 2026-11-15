@@ -145,8 +145,27 @@ function solve_scba(
     options::SolverOptions = baseline_options(),
     initial::Union{Nothing,SCBAResult} = nothing,
     history_observer::Union{Nothing,Function} = nothing,
+    elastic_retarded::Symbol = :hilbert,
 )
     _check_options(options)
+    elastic_retarded in (:hilbert, :direct_green) ||
+        throw(ArgumentError("elastic_retarded must be :hilbert or :direct_green"))
+    reference_algorithms = AlgorithmOptions(;
+        solver_backend = :educational, energy_shift = :dense,
+        hilbert = :direct, contraction = :literal, kernel_build = :direct,
+        elastic_retarded,
+    )
+    # Preserve the historical default result; explicitly tag the new variant.
+    restart_contract = elastic_retarded === :hilbert ? nothing :
+                       _solver_restart_contract(options, reference_algorithms)
+    if initial !== nothing
+        saved_mode = initial.restart_contract === nothing ? "hilbert" :
+                     get(get(initial.restart_contract, "algorithms", Dict()),
+                         "elastic_retarded", "hilbert")
+        saved_mode == String(elastic_retarded) || throw(ArgumentError(
+            "reference warm state elastic retarded closure differs; start a new run",
+        ))
+    end
     h = project_hamiltonians(problem, Uᴴ)
     n = problem.numerical
     shape = (n.N_E, n.N_k, n.N_b, n.N_b)
@@ -154,7 +173,7 @@ function solve_scba(
 
     if initial === nothing
         green, _ = _seed_green(problem, h)
-        scattering = _scattering_candidate(problem, green)
+        scattering = _scattering_candidate(problem, green; elastic_retarded)
         embedding, plus, minus = embedding_self_energy(problem, green)
     else
         Set(keys(initial.scattering)) == Set(problem.kernels.enabled) ||
@@ -196,7 +215,7 @@ function solve_scba(
         local candidate_sc, candidate_embedding, candidate_plus, candidate_minus, rround
         try
             candidate_sc, rround =
-                _scattering_candidate(problem, green; return_roundoff = true)
+                _scattering_candidate(problem, green; return_roundoff = true, elastic_retarded)
             candidate_embedding, candidate_plus, candidate_minus =
                 embedding_self_energy(problem, green)
         catch error
@@ -216,6 +235,7 @@ function solve_scba(
                 false,
                 :invalid_candidate,
                 :invalid,
+                restart_contract,
             )
         end
         candidate_total = _combined_candidate(candidate_sc, candidate_embedding, shape)
@@ -285,6 +305,7 @@ function solve_scba(
                 false,
                 :nonfinite_metrics,
                 :invalid,
+                restart_contract,
             )
         end
         assessment = scba_convergence_assessment(
@@ -317,6 +338,7 @@ function solve_scba(
                 decision.converged,
                 decision.status,
                 decision.quality,
+                restart_contract,
             )
         end
 
