@@ -260,14 +260,14 @@ See [Production backend](@ref theory-production),
 [Field-periodic closure](@ref theory-periodicity), and
 [Microscopic kernels](@ref theory-kernels).
 """
-struct ProductionCache{P}
+struct ProductionCache{P,H}
     W̃₊ᴱᵖ::EnergyShiftPlan
     W̃₋ᴱᵖ::EnergyShiftPlan
     W̃₊ᴸᴼ::EnergyShiftPlan
     W̃₋ᴸᴼ::EnergyShiftPlan
     kernels::Dict{Symbol,AbstractProductionKernel}
     fft_hilbert_plan::P
-    product_hilbert_operator::Union{Nothing,Matrix{Float64}}
+    product_hilbert_operator::H
     estimate::ProductionMemoryEstimate
     source_grids::ModelGrids
     source_kernel_arrays::Dict{Symbol,Array{ComplexF64,6}}

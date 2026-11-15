@@ -168,7 +168,7 @@ end
 
 function _production_fft_hilbert_apply(
     Γ::AbstractArray{<:Number,4},
-    wᴱ::AbstractVector{<:Real},
+    wᴱ::Union{Nothing,AbstractVector{<:Real}},
     workspace::_ProductionFFTHilbertWorkspace,
     column_chunk::Integer,
     task_width::Integer = length(workspace.workers),
@@ -191,7 +191,8 @@ function _production_fft_hilbert_apply(
             @inbounds for local_column = 1:active_columns
                 local source_column = first_column + local_column - 1
                 for energy = 1:NE
-                    buffer[energy, local_column] = wᴱ[energy] * Γ2[energy, source_column]
+                    buffer[energy, local_column] = isnothing(wᴱ) ?
+                        Γ2[energy, source_column] : wᴱ[energy] * Γ2[energy, source_column]
                 end
             end
             mul!(buffer, worker.forward_plan, buffer)
@@ -292,6 +293,110 @@ function production_fft_hilbert_transform(
     return Λ, residual
 end
 
+# Canonical range equality is intentional: arbitrary nearly-uniform nodes are
+# never snapped to a different PI geometry. The extra jitter guard rejects
+# canonical grids whose coordinate precision is poor relative to their window.
+function _uniform_product_integration_geometry(ε::AbstractVector{<:Real})
+    N = length(ε)
+    N >= 2 && all(isfinite, ε) || return nothing
+    a, b = Float64(first(ε)), Float64(last(ε))
+    width = b-a
+    isfinite(width) && width > 0 || return nothing
+    canonical = range(a, b; length = N)
+    h = width/(N-1)
+    max_node_deviation, max_spacing_deviation = 0.0, 0.0
+    for i in eachindex(ε)
+        ε[i] == canonical[i] || return nothing
+        if i > 1
+            step = Float64(ε[i]-ε[i-1])
+            step > 0 || return nothing
+            max_spacing_deviation = max(max_spacing_deviation, abs(step-h))
+        end
+        max_node_deviation = max(max_node_deviation, abs(Float64(ε[i])-muladd(i-1, h, a)))
+    end
+    max_spacing_deviation <= 8eps(Float64)*width || return nothing
+    return (; origin = a, spacing = h, max_node_deviation,
+            relative_node_deviation = max_node_deviation/h)
+end
+
+# Integral of a unit-width triangular hat against 1/(2π*(n-u)). The stable
+# log1p form has bounded cancellation even for the farthest energy lags.
+function _product_integration_lag_coefficient(n::Integer)
+    iszero(n) && return 0.0
+    n < 0 && return -_product_integration_lag_coefficient(-n)
+    n == 1 && return log(2)/π
+    x = Float64(n)
+    q = inv(x)
+    return (x*log1p(-q*q) + log1p(2/(x-1)))/(2π)
+end
+
+struct _ProductionPIFFTHilbertPlan{W,G}
+    energy_count::Int
+    column_count::Int
+    column_chunk::Int
+    geometry::G
+    primary::W
+    verification::W
+end
+
+function _production_pi_fft_workspace(NE, Ncolumns, L, column_chunk, worker_count)
+    Ncolumns > 0 || throw(ArgumentError("Ncolumns must be positive"))
+    column_chunk > 0 || throw(ArgumentError("column_chunk must be positive"))
+    worker_count > 0 || throw(ArgumentError("worker_count must be positive"))
+    kernel_fft = zeros(ComplexF64, L)
+    # Same shifted linear-convolution layout and middle extraction as the
+    # baseline worker apply. Full endpoint hats require no input weights.
+    for lag = 1:(NE-1)
+        value = _product_integration_lag_coefficient(lag)
+        kernel_fft[NE+lag] = value
+        kernel_fft[NE-lag] = -value
+    end
+    kernel_plan = FFTW.plan_fft!(kernel_fft, 1; flags = FFTW.ESTIMATE, num_threads = 1)
+    mul!(kernel_fft, kernel_plan, kernel_fft)
+    active_workers = min(Int(worker_count), Base.Threads.nthreads(:default))
+    ranges = _production_fixed_column_ranges(Ncolumns, active_workers)
+    buffer_columns = min(Int(column_chunk), maximum(length, ranges))
+    workers = map(ranges) do columns
+        buffer = zeros(ComplexF64, L, buffer_columns)
+        forward, inverse = _production_single_thread_plans!(buffer)
+        _ProductionFFTHilbertWorker(columns, buffer, forward, inverse)
+    end
+    return _ProductionFFTHilbertWorkspace(Int(L), kernel_fft, workers)
+end
+
+# Exact uniform PI Toeplitz application (up to Float64 range representation
+# and arithmetic), with the existing zero ghost nodes one spacing beyond each
+# endpoint. This is a distinct operator from baseline nodal hilbert=:fft.
+function _ProductionPIFFTHilbertPlan(ε, Ncolumns; column_chunk = 32, worker_count = 1)
+    geometry = _uniform_product_integration_geometry(ε)
+    geometry === nothing && throw(ArgumentError("PI FFT requires a canonical uniform range grid"))
+    NE = length(ε)
+    L = nextpow(2, 2NE-1)
+    planner_threads = FFTW.get_num_threads()
+    primary = _production_pi_fft_workspace(NE, Ncolumns, L, column_chunk, worker_count)
+    verification = _production_pi_fft_workspace(NE, Ncolumns, 2L, column_chunk, worker_count)
+    FFTW.get_num_threads() == planner_threads || error("FFTW planner thread count was not restored")
+    return _ProductionPIFFTHilbertPlan(NE, Int(Ncolumns), Int(column_chunk), geometry,
+                                     primary, verification)
+end
+
+function _production_pi_fft_hilbert_transform(Γ, ε, wᴱ, plan::_ProductionPIFFTHilbertPlan)
+    NE, Nk, Nb, Nb2 = size(Γ)
+    Nb == Nb2 || throw(DimensionMismatch("Γ blocks must be square"))
+    length(ε) == NE == length(wᴱ) == plan.energy_count ||
+        throw(DimensionMismatch("PI FFT energy data differ"))
+    Nk*Nb^2 == plan.column_count || throw(DimensionMismatch("PI FFT column count differs"))
+    all(isfinite, wᴱ) && all(>(0), wᴱ) || throw(ArgumentError("invalid energy weights"))
+    _uniform_product_integration_geometry(ε) == plan.geometry ||
+        throw(ArgumentError("PI FFT grid geometry differs"))
+    Λ = _production_fft_hilbert_apply(Γ, nothing, plan.primary, plan.column_chunk)
+    Λsecond = _production_fft_hilbert_apply(Γ, nothing, plan.verification, plan.column_chunk)
+    Λsecond .-= Λ
+    # Same PI normalization as dense reverse-order verification. This witness
+    # compares doubled padding, not an executed dense reverse summation.
+    return Λ, norm(Λsecond)/max(norm(Λ), eps(Float64))
+end
+
 """
     production_fft_workspace_bytes(plan; verification=false)
 
@@ -303,7 +408,7 @@ See [numerical cost and memory](@ref theory-cost) and
 [Production backend](@ref theory-production).
 """
 function production_fft_workspace_bytes(
-    plan::ProductionFFTHilbertPlan;
+    plan::Union{ProductionFFTHilbertPlan,_ProductionPIFFTHilbertPlan};
     verification::Bool = false,
 )
     workspace = verification ? something(plan.verification) : plan.primary

@@ -436,6 +436,7 @@ function _estimate_production_memory(
     lo_kernel::Symbol = :dense,
     compact_shifts::Bool = options.algorithms.energy_shift === :sparse_plan,
     worker_capacity::Union{Nothing,Integer} = nothing,
+    product_integration_fft::Bool = false,
 )
     _check_production_options(options)
     NE, Nk, Nb = n.N_E, n.N_k, n.N_b
@@ -457,7 +458,8 @@ function _estimate_production_memory(
         "four-axis state element count",
     )
     n6 = _production_memory_int((big(Nk) * big(Nb)^2)^2, "six-axis kernel element count")
-    Lfft = if options.algorithms.hilbert === :fft
+    pi_fft = options.algorithms.hilbert === :product_integration && product_integration_fft
+    Lfft = if options.algorithms.hilbert === :fft || pi_fft
         fft_required = _production_memory_int(2big(NE) - 1, "minimum FFT transform length")
         transform_length = try
             nextpow(2, fft_required)
@@ -502,11 +504,11 @@ function _estimate_production_memory(
         :compact_shift_operators_in_problem =>
             compact_shifts ? 4big(NE) * (2sizeof(Int) + 2R) : big(0),
         :product_hilbert_operator =>
-            options.algorithms.hilbert === :product_integration ? big(NE)^2 * R : big(0),
+            options.algorithms.hilbert === :product_integration && !pi_fft ? big(NE)^2 * R : big(0),
         # PI roundoff verification reverses the dense operator's columns.
         # This additional H is transient, not part of the resident cache.
         :product_hilbert_verification_temporary =>
-            options.algorithms.hilbert === :product_integration ? big(NE)^2 * R : big(0),
+            options.algorithms.hilbert === :product_integration && !pi_fft ? big(NE)^2 * R : big(0),
         :cavity_workspace =>
             options.algorithms.embedding === :finite_chain ?
             3big(n4)*C +
@@ -539,7 +541,7 @@ function _estimate_production_memory(
         :energy_shift_plans => 4big(NE) * (2sizeof(Int) + 2R),
         :blas_workspace => big(contraction_workers) * 2 * Nk * big(Nb)^2 * chunk * C,
         :fft_workspace =>
-            (options.verify_fft_roundoff ? 3 : 1) *
+            (pi_fft || options.verify_fft_roundoff ? 3 : 1) *
             big(Lfft) *
             (1 + big(fft_workers) * fft_buffer_columns) *
             C,
@@ -624,7 +626,9 @@ end
 Conservative estimate available before an expensive `NEGFProblem` is built.
 Set `dense_mechanism_count` to the expected number of momentum-dependent
 mechanisms.  For the default model acoustic is reduced exactly, while LO,
-impurity, and IFR remain dense.
+impurity, and IFR remain dense. Numerical-only planning assumes the public
+builder's canonical uniform energy grid for product integration. The overload
+for a built problem selects FFT or dense PI storage from its actual nodes.
 
 See [Numerical scales and cost](@ref theory-cost) and the
 [production RAM contract](@ref theory-production).
@@ -646,6 +650,8 @@ function estimate_production_memory(
         options;
         lo_kernel,
         worker_capacity,
+        # The public builder creates canonical uniform range grids.
+        product_integration_fft = options.algorithms.hilbert === :product_integration,
     )
 end
 
@@ -679,6 +685,8 @@ function estimate_production_memory(
         lo_kernel,
         worker_capacity,
         compact_shifts = problem.W₊ᴱᵖ isa EnergyShiftPlan,
+        product_integration_fft = options.algorithms.hilbert === :product_integration &&
+            _uniform_product_integration_geometry(problem.grids.ε) !== nothing,
     )
 end
 
@@ -686,7 +694,8 @@ end
     build_production_cache(problem; options=ProductionOptions())
 
 Build exact sparse shifts, BLAS-ready kernel maps, and the selected Hilbert
-operator storage. FFT plans are built only for `algorithms.hilbert=:fft`.
+operator storage. Nodal FFT and canonical uniform product integration use
+bounded FFT plans; nonuniform product integration retains its dense operator.
 A conservative peak estimate is checked before any duplicate flattened kernel
 storage is allocated. This is a RAM guard, not a runtime guarantee: the estimate's
 `kernel_flops_per_candidate` must also be inspected for large dense kernels.
@@ -728,6 +737,8 @@ function build_production_cache(
         options;
         lo_kernel,
         compact_shifts = problem.W₊ᴱᵖ isa EnergyShiftPlan,
+        product_integration_fft = options.algorithms.hilbert === :product_integration &&
+            _uniform_product_integration_geometry(problem.grids.ε) !== nothing,
     )
     fft_hilbert_plan = if options.algorithms.hilbert === :fft
         fft_workers = _production_thread_worker_count(
@@ -744,6 +755,20 @@ function build_production_cache(
     else
         nothing
     end
+    product_hilbert_operator = if options.algorithms.hilbert === :product_integration
+        if _uniform_product_integration_geometry(ε) === nothing
+            product_integration_hilbert_matrix(ε)
+        else
+            _ProductionPIFFTHilbertPlan(
+                ε, problem.numerical.N_k * problem.numerical.N_b^2;
+                column_chunk = options.hilbert_columns,
+                worker_count = _production_thread_worker_count(
+                    options, problem.numerical.N_k * problem.numerical.N_b^2),
+            )
+        end
+    else
+        nothing
+    end
     return ProductionCache(
         build_shift_plan(ε, +sp.Eᵖ),
         build_shift_plan(ε, -sp.Eᵖ),
@@ -751,8 +776,7 @@ function build_production_cache(
         build_shift_plan(ε, -sp.ħωᴸᴼ),
         kernels,
         fft_hilbert_plan,
-        options.algorithms.hilbert === :product_integration ?
-        product_integration_hilbert_matrix(problem.grids.ε) : nothing,
+        product_hilbert_operator,
         estimate,
         problem.grids,
         problem.kernels.K,
@@ -835,8 +859,20 @@ function _validated_production_cache(
         options;
         lo_kernel,
         compact_shifts = problem.W₊ᴱᵖ isa EnergyShiftPlan,
+        product_integration_fft = options.algorithms.hilbert === :product_integration &&
+            _uniform_product_integration_geometry(problem.grids.ε) !== nothing,
     )
-    if options.algorithms.hilbert === :fft
+    if options.algorithms.hilbert === :product_integration &&
+       cache.product_hilbert_operator isa _ProductionPIFFTHilbertPlan
+        plan = cache.product_hilbert_operator
+        expected_columns = problem.numerical.N_k * problem.numerical.N_b^2
+        plan.energy_count == problem.numerical.N_E &&
+        plan.geometry == _uniform_product_integration_geometry(problem.grids.ε) &&
+        plan.column_count == expected_columns &&
+        plan.column_chunk == options.hilbert_columns &&
+        length(plan.primary.workers) == _production_thread_worker_count(options, expected_columns) ||
+            throw(ArgumentError("production cache PI FFT options differ; rebuild the cache"))
+    elseif options.algorithms.hilbert === :fft
         plan = cache.fft_hilbert_plan
         expected_columns = problem.numerical.N_k * problem.numerical.N_b^2
         expected_workers = _production_thread_worker_count(options, expected_columns)
