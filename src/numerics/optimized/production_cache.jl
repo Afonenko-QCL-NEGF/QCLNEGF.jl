@@ -457,15 +457,20 @@ function _estimate_production_memory(
         "four-axis state element count",
     )
     n6 = _production_memory_int((big(Nk) * big(Nb)^2)^2, "six-axis kernel element count")
-    fft_required = _production_memory_int(2big(NE) - 1, "minimum FFT transform length")
-    Lfft = try
-        nextpow(2, fft_required)
-    catch error
-        (error isa OverflowError || error isa DomainError) || rethrow()
-        throw(OverflowError("FFT transform length exceeds addressable Int-sized storage"))
+    Lfft = if options.algorithms.hilbert === :fft
+        fft_required = _production_memory_int(2big(NE) - 1, "minimum FFT transform length")
+        transform_length = try
+            nextpow(2, fft_required)
+        catch error
+            (error isa OverflowError || error isa DomainError) || rethrow()
+            throw(OverflowError("FFT transform length exceeds addressable Int-sized storage"))
+        end
+        transform_length > 0 ||
+            throw(OverflowError("FFT transform length exceeds addressable Int-sized storage"))
+        transform_length
+    else
+        0
     end
-    Lfft > 0 ||
-        throw(OverflowError("FFT transform length exceeds addressable Int-sized storage"))
     chunk = min(options.energy_chunk, NE)
     worker_capacity === nothing ||
         worker_capacity >= 1 ||
@@ -497,6 +502,10 @@ function _estimate_production_memory(
         :compact_shift_operators_in_problem =>
             compact_shifts ? 4big(NE) * (2sizeof(Int) + 2R) : big(0),
         :product_hilbert_operator =>
+            options.algorithms.hilbert === :product_integration ? big(NE)^2 * R : big(0),
+        # PI roundoff verification reverses the dense operator's columns.
+        # This additional H is transient, not part of the resident cache.
+        :product_hilbert_verification_temporary =>
             options.algorithms.hilbert === :product_integration ? big(NE)^2 * R : big(0),
         :cavity_workspace =>
             options.algorithms.embedding === :finite_chain ?
@@ -586,6 +595,7 @@ function _estimate_production_memory(
         big(resident) +
         breakdown[:candidate_generation] +
         breakdown[:candidate_transform_temporaries] +
+        breakdown[:product_hilbert_verification_temporary] +
         breakdown[:retained_warm_start] +
         breakdown[:blas_workspace] +
         breakdown[:scalar_reduction_workspace],
@@ -675,9 +685,10 @@ end
 """
     build_production_cache(problem; options=ProductionOptions())
 
-Build exact sparse shifts and BLAS-ready kernel maps.  A conservative peak
-estimate is checked before any duplicate flattened kernel storage is
-allocated.  This is a RAM guard, not a runtime guarantee: the estimate's
+Build exact sparse shifts, BLAS-ready kernel maps, and the selected Hilbert
+operator storage. FFT plans are built only for `algorithms.hilbert=:fft`.
+A conservative peak estimate is checked before any duplicate flattened kernel
+storage is allocated. This is a RAM guard, not a runtime guarantee: the estimate's
 `kernel_flops_per_candidate` must also be inspected for large dense kernels.
 
 See [Production backend](@ref theory-production),
@@ -718,17 +729,21 @@ function build_production_cache(
         lo_kernel,
         compact_shifts = problem.W₊ᴱᵖ isa EnergyShiftPlan,
     )
-    fft_workers = _production_thread_worker_count(
-        options,
-        problem.numerical.N_k * problem.numerical.N_b^2,
-    )
-    fft_hilbert_plan = ProductionFFTHilbertPlan(
-        problem.grids.ε,
-        problem.numerical.N_k * problem.numerical.N_b^2;
-        column_chunk = options.hilbert_columns,
-        worker_count = fft_workers,
-        verify_roundoff = options.verify_fft_roundoff,
-    )
+    fft_hilbert_plan = if options.algorithms.hilbert === :fft
+        fft_workers = _production_thread_worker_count(
+            options,
+            problem.numerical.N_k * problem.numerical.N_b^2,
+        )
+        ProductionFFTHilbertPlan(
+            problem.grids.ε,
+            problem.numerical.N_k * problem.numerical.N_b^2;
+            column_chunk = options.hilbert_columns,
+            worker_count = fft_workers,
+            verify_roundoff = options.verify_fft_roundoff,
+        )
+    else
+        nothing
+    end
     return ProductionCache(
         build_shift_plan(ε, +sp.Eᵖ),
         build_shift_plan(ε, -sp.Eᵖ),
@@ -821,15 +836,17 @@ function _validated_production_cache(
         lo_kernel,
         compact_shifts = problem.W₊ᴱᵖ isa EnergyShiftPlan,
     )
-    plan = cache.fft_hilbert_plan
-    expected_columns = problem.numerical.N_k * problem.numerical.N_b^2
-    expected_workers = _production_thread_worker_count(options, expected_columns)
-    plan.energy_count == problem.numerical.N_E &&
-    plan.column_count == expected_columns &&
-    plan.column_chunk == options.hilbert_columns &&
-    length(plan.primary.workers) == expected_workers &&
-    (isnothing(plan.verification) == !options.verify_fft_roundoff) ||
-        throw(ArgumentError("production cache FFT options differ; rebuild the cache"))
+    if options.algorithms.hilbert === :fft
+        plan = cache.fft_hilbert_plan
+        expected_columns = problem.numerical.N_k * problem.numerical.N_b^2
+        expected_workers = _production_thread_worker_count(options, expected_columns)
+        plan.energy_count == problem.numerical.N_E &&
+        plan.column_count == expected_columns &&
+        plan.column_chunk == options.hilbert_columns &&
+        length(plan.primary.workers) == expected_workers &&
+        (isnothing(plan.verification) == !options.verify_fft_roundoff) ||
+            throw(ArgumentError("production cache FFT options differ; rebuild the cache"))
+    end
     estimate.peak_bytes <= options.memory_budget_bytes || throw(
         ArgumentError(
             "estimated peak memory $(estimate.peak_bytes) bytes exceeds the " *
