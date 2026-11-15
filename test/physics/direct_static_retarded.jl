@@ -226,6 +226,22 @@ end
     @test defaults.elastic_retarded === :hilbert
     @test algorithm_manifest(direct)["elastic_retarded"] == "direct_green"
     @test algorithm_impact(direct) === :controlled_numerical
+    @test scattering_evidence_class(AlgorithmOptions(kernel_build=:direct)) === :E1
+    @test scattering_evidence_class(direct) === :E2
+    @test scattering_evidence_class(scattering_numerical_plan(direct)) === :E1
+    educational = AlgorithmOptions(solver_backend=:educational,contraction=:literal,
+        kernel_build=:direct,elastic_retarded=:direct_green)
+    @test scattering_evidence_class(educational) === :E2
+    @test scattering_evidence_class(scattering_numerical_plan(educational)) === :E0
+    for (field,value) in ((:retarded_real_part,:drop),
+                          (:self_energy_structure,:diagonal),
+                          (:transverse_momentum,:averaged))
+        model = AlgorithmOptions(;
+            (name=>(name===field ? value : getfield(direct,name)) for
+             name in fieldnames(AlgorithmOptions))...,
+        )
+        @test scattering_evidence_class(model) === :E3
+    end
     @test_throws ArgumentError BN._check_algorithm_options(AlgorithmOptions(elastic_retarded=:unknown))
     @test_throws ArgumentError BN._check_algorithm_options(AlgorithmOptions(
         elastic_retarded=:direct_green,contraction=:low_rank,low_rank_relative_tolerance=1e-4))
