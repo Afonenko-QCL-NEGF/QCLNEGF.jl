@@ -1,11 +1,5 @@
 module QCLNEGF
 
-const REQUIRED_JULIA_VERSION = v"1.13.0"
-VERSION == REQUIRED_JULIA_VERSION || error(
-    "QCLNEGF requires Julia $(REQUIRED_JULIA_VERSION) exactly; " *
-    "the running interpreter is Julia $(VERSION).",
-)
-
 using LinearAlgebra
 using Logging
 using SHA
