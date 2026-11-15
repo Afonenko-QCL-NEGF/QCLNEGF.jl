@@ -1,9 +1,12 @@
 # QCLNEGF.jl
 
-Julia **1.13.0** library for nonequilibrium Green-function transport in layered
+Julia **1.13.x** library for nonequilibrium Green-function transport in layered
 quantum-cascade heterostructures. Version **0.2.0** contains dimensional model
 types, independent reference and optimized numerical operators, SCBA and Poisson
 solvers, physical observables, and optical-response calculations.
+
+Compatibility with Julia 1.13 patch releases is distinct from the exact
+Manifest recorded for an individual calculation environment.
 
 The library solves an explicitly constructed problem in memory. YAML studies,
 files, checkpoints, reports, plots and command-line execution belong to

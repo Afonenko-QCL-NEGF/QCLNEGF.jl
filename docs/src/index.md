@@ -1,6 +1,6 @@
 # QCLNEGF
 
-QCLNEGF 0.2.0 implements in-memory NEGF transport calculations in Julia 1.13.0.
+QCLNEGF 0.2.0 implements in-memory NEGF transport calculations in Julia 1.13.x.
 Start with the [model](@ref theory-model) and [small direct calculation](@ref implementation-plan).
 The [architecture](@ref developer-architecture) describes package ownership; the
 [API](api/public.md) and [operators](api/operators.md) document the numerical interface.
