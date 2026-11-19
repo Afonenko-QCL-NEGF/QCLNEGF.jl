@@ -128,16 +128,7 @@ function _check_exact_restart_contract(
             "exact restart is unavailable: checkpoint has no numerical algorithm contract",
         ),
     )
-    # Historical v1 contracts predate this default-preserving option. A missing
-    # field means the original Hilbert closure, never the direct-green variant.
-    compared = contract
-    if contract isa AbstractDict &&
-       get(contract, "algorithms", nothing) isa AbstractDict &&
-       !haskey(contract["algorithms"], "elastic_retarded")
-        compared = deepcopy(contract)
-        compared["algorithms"]["elastic_retarded"] = "hilbert"
-    end
-    compared == _solver_restart_contract(options, algorithms) || throw(
+    contract == _solver_restart_contract(options, algorithms) || throw(
         ArgumentError(
             "exact restart numerical contract differs (algorithms, mixing or quality policy); start a new run",
         ),

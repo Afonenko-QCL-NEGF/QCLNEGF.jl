@@ -48,9 +48,8 @@ end
 
 @testset "Checkpoint decisions precede snapshots and preserve marker cadence" begin
     fixture = native_physics_fixture(; energy_nodes = 17)
-    calls, requests = Ref(0), Int[]
     options = SolverOptions(
-        max_scba = 3,
+        max_scba = 5,
         max_poisson = 1,
         convergence = ConvergencePolicy(
             required_consecutive_scba_passes = 99,
@@ -61,21 +60,82 @@ end
     production = ProductionOptions(
         worker_count = 1,
         checkpoint_every_scba = 1,
-        checkpoint_request = context -> (push!(requests, context.iteration); false),
-        physics_markers = SCBAPhysicsMarkerPolicy(cadence = 10),
+        physics_markers = SCBAPhysicsMarkerPolicy(cadence = 3),
         progress_every_scba = 0,
+        outer_iteration = 7,
     )
-    result = solve_scba_production(
+    marker_iterations(history) = [row.ν for row in history if row.physical_markers !== nothing]
+    raw_rows(history) = [(row.ν, row.r_K, row.r_Σ, row.r_PSD, row.r_caus, row.J) for row in history]
+    no_callback = solve_scba_production(
+        fixture.problem,
+        fixture.Uᴴ;
+        options,
+        production_options = BN.with_production_options(
+            production;
+            checkpoint_request = _ -> error("checkpoint query without a sink"),
+        ),
+    )
+    @test marker_iterations(no_callback.history) == [1, 3, 5]
+
+    intents = (N.CHECKPOINT_NONE, N.CHECKPOINT_STATE_AND_MARKERS, N.CHECKPOINT_STATE_ONLY)
+    @test intents === (:none, :state_and_markers, :state_only)
+    _, audited_snapshots, snapshots = map(intents) do intent
+        requests = NamedTuple[]
+        checkpoints = Dict{Int,SCBAResult}()
+        request = function (context)
+            push!(requests, context)
+            return context.iteration == 4 ? N.CHECKPOINT_NONE : intent
+        end
+        observed = SCBAIteration[]
+        result = solve_scba_production(
+            fixture.problem,
+            fixture.Uᴴ;
+            options,
+            production_options = BN.with_production_options(
+                production;
+                checkpoint_request = request,
+            ),
+            history_observer = row -> push!(observed, row),
+            iteration_callback = state -> begin
+                @test last(state.history) === last(observed)
+                checkpoints[last(state.history).ν] = deepcopy(state)
+            end,
+        )
+        @test requests == [(stage = :scba, iteration = ν, outer_iteration = 7) for ν = 1:5]
+        @test sort!(collect(keys(checkpoints))) ==
+              (intent === N.CHECKPOINT_NONE ? Int[] : [1, 2, 3, 5])
+        @test marker_iterations(result.history) ==
+              (intent === N.CHECKPOINT_STATE_AND_MARKERS ? [1, 2, 3, 5] : [1, 3, 5])
+        @test raw_rows(result.history) == raw_rows(no_callback.history)
+        @test (result.status, result.quality) == (no_callback.status, no_callback.quality)
+        return checkpoints
+    end
+    for unsupported in (true, false, :unrecognized)
+        invalid = BN.with_production_options(production; checkpoint_request = _ -> unsupported)
+        @test_throws ArgumentError N._production_checkpoint_request(invalid, :scba, 2)
+    end
+    @test last(snapshots[2].history).physical_markers === nothing
+    @test last(audited_snapshots[2].history).physical_markers.measured_iteration == 2
+    for ν in sort!(collect(keys(snapshots)))
+        state, audited = snapshots[ν], audited_snapshots[ν]
+        @test state.green.Gᴿ == audited.green.Gᴿ
+        @test state.green.Gˡ == audited.green.Gˡ
+        @test state.green.Gᵍ == audited.green.Gᵍ
+        @test state.embedding.Σᴿ == audited.embedding.Σᴿ
+        @test state.embedding.Σˡ == audited.embedding.Σˡ
+        @test state.embedding.Σᵍ == audited.embedding.Σᵍ
+    end
+    resumed = solve_scba_production(
         fixture.problem,
         fixture.Uᴴ;
         options,
         production_options = production,
-        iteration_callback = state->(calls[]+=1),
+        initial = snapshots[2],
+        resume_iterations = true,
     )
-    @test requests == [1, 2, 3]
-    @test calls[] == 0
-    @test result.history[2].physical_markers === nothing
-    @test result.history[end].physical_markers !== nothing
+    @test marker_iterations(resumed.history) == [1, 3, 5]
+    @test raw_rows(resumed.history) == raw_rows(no_callback.history)
+    @test resumed.green.Gˡ == no_callback.green.Gˡ
 end
 
 @testset "Producer phases negotiate bounded task widths and actual counter intervals" begin

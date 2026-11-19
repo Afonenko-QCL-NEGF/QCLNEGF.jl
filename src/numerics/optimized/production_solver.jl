@@ -718,9 +718,9 @@ function solve_scba_production(
             ν;
             memory_burst_bytes = 0,
         )
-        checkpoint_due =
-            iteration_callback !== nothing &&
-            _production_checkpoint_requested(production_options, :scba, ν)
+        checkpoint_request =
+            iteration_callback === nothing ? CHECKPOINT_NONE :
+            _production_checkpoint_request(production_options, :scba, ν)
         _production_phase_end(production_options, phase)
         phase = _production_phase_begin(production_options, :physics_markers, ν)
         physics_markers_seconds = _ensure_scba_physical_markers!(
@@ -731,7 +731,7 @@ function solve_scba_production(
             production_options;
             seed_mu_scaled,
             seed_number_ratio,
-            terminal = decision.terminal || checkpoint_due,
+            terminal = decision.terminal || checkpoint_request === CHECKPOINT_STATE_AND_MARKERS,
             mixed_scattering = scattering,
             fresh_scattering = candidate_sc,
             mixed_embedding = embedding,
@@ -744,7 +744,7 @@ function solve_scba_production(
         )
         _production_phase_end(production_options, phase)
         history_observer === nothing || history_observer(last(history))
-        if checkpoint_due
+        if checkpoint_request !== CHECKPOINT_NONE
             aligned = SCBAResult(
                 green,
                 scattering,
@@ -1162,7 +1162,7 @@ function _solve_production(
         end
 
         if checkpoint_sink !== nothing &&
-           _production_checkpoint_requested(production_options, :outer, μ)
+           _production_checkpoint_request(production_options, :outer, μ) !== CHECKPOINT_NONE
             dummy = ConvergenceReport(false, Dict{Symbol,Float64}(), String[])
             checkpoint_solution = NEGFSolution(
                 problem,

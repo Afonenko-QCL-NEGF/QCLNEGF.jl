@@ -66,6 +66,10 @@ _solver_metrics(::Nothing) = SolverMetric[]
 _solver_metrics(metric::SolverMetric) = SolverMetric[metric]
 _solver_metrics(metrics) = SolverMetric[metric for metric in metrics]
 
+const CHECKPOINT_NONE = :none
+const CHECKPOINT_STATE_ONLY = :state_only
+const CHECKPOINT_STATE_AND_MARKERS = :state_and_markers
+
 """
     ProductionOptions
 
@@ -80,6 +84,15 @@ lets the application resource planner use all available Julia threads, while a
 positive value caps the logical worker count. `residual_chunk` sets
 deterministic residual task granularity, and `phase_timing=true` emits
 per-iteration timing telemetry.
+
+`checkpoint_request` overrides checkpoint cadence for a configured sink. It
+receives `(; stage, iteration, outer_iteration)` and returns one of
+`:none` to skip the checkpoint, `:state_only` to request an aligned checkpoint
+with ordinary marker cadence, or `:state_and_markers` to request the checkpoint
+and force SCBA physical markers at that map. The same intents are available as
+`QCLNumerics.CHECKPOINT_NONE`, `QCLNumerics.CHECKPOINT_STATE_ONLY`, and
+`QCLNumerics.CHECKPOINT_STATE_AND_MARKERS`. Without a callback override, the
+configured checkpoint cadence requests the state and markers together.
 
 See [Production backend](@ref theory-production),
 [numerical cost and memory](@ref theory-cost), and the
@@ -430,17 +443,23 @@ The request contains counters only; persistence and control paths stay outside
 numerics. An explicit request owns cadence. Without it the numerical cadence is
 used, preserving the ordinary low-level solver contract.
 """
-function _production_checkpoint_requested(
+function _production_checkpoint_request(
     options::ProductionOptions,
     stage::Symbol,
     iteration::Int,
 )
     request = options.checkpoint_request
     if request !== nothing
-        return request((; stage, iteration, outer_iteration = options.outer_iteration)) ===
-               true
+        requested = request((; stage, iteration, outer_iteration = options.outer_iteration))
+        requested isa Symbol &&
+            requested in (CHECKPOINT_NONE, CHECKPOINT_STATE_ONLY, CHECKPOINT_STATE_AND_MARKERS) ||
+            throw(ArgumentError(
+                "checkpoint_request must return :none, :state_only, or :state_and_markers",
+            ))
+        return requested
     end
     cadence =
         stage === :scba ? options.checkpoint_every_scba : options.checkpoint_every_outer
-    return cadence > 0 && iteration % cadence == 0
+    return cadence > 0 && iteration % cadence == 0 ? CHECKPOINT_STATE_AND_MARKERS :
+           CHECKPOINT_NONE
 end

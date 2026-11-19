@@ -40,6 +40,17 @@ include("../support/common.jl")
     )
     @test saved[] !== nothing
     @test saved[].restart_contract==BN._solver_restart_contract(base, production.algorithms)
+    incomplete = deepcopy(saved[])
+    delete!(incomplete.restart_contract["algorithms"], "elastic_retarded")
+    @test_throws ArgumentError solve_scba_production(
+        problem,
+        zeros(problem.numerical.N_z);
+        options = effective,
+        restart_options = base,
+        production_options = production,
+        initial = incomplete,
+        resume_iterations = true,
+    )
     @test_throws ArgumentError solve_scba_production(
         problem,
         zeros(problem.numerical.N_z);
