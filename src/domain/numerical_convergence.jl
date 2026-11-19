@@ -1,4 +1,4 @@
-"""Validate the solver options shared by reference and optimized numerics."""
+"""Проверяет общие настройки эталонного и оптимизированного решателей."""
 function _check_options(options::SolverOptions)
     0 < options.α_Σ ≤ 1 || throw(ArgumentError("α_Σ must lie in (0,1]"))
     0 < options.α_P ≤ 1 || throw(ArgumentError("α_P must lie in (0,1]"))
@@ -71,7 +71,7 @@ end
 const _SCBA_RESULT_QUALITIES =
     (:strictly_converged, :approximate_fixed_point, :unresolved, :invalid)
 
-"""Validate the shared outer-status and SCBA-quality classification."""
+"""Проверяет согласованность статуса внешнего цикла и оценки качества SCBA."""
 function _check_scba_result_classification(converged::Bool, status::Symbol, quality::Symbol)
     quality in _SCBA_RESULT_QUALITIES ||
         throw(ArgumentError("unsupported SCBA quality $quality"))
@@ -83,7 +83,7 @@ function _check_scba_result_classification(converged::Bool, status::Symbol, qual
     return quality
 end
 
-"""Validate the stricter classification of one fixed-Hartree SCBA state."""
+"""Проверяет более строгую классификацию состояния SCBA при фиксированном потенциале Хартри."""
 function _check_inner_scba_result_classification(
     converged::Bool,
     status::Symbol,
@@ -96,7 +96,7 @@ function _check_inner_scba_result_classification(
     return quality
 end
 
-"""Result of evaluating every required gate at one solver iteration."""
+"""Результат всех обязательных проверок на одной итерации решателя."""
 struct ConvergenceAssessment
     eligible::Bool
     passed::Bool
@@ -170,7 +170,7 @@ function _assess_convergence(
     )
 end
 
-"""Evaluate the complete inner fixed-point acceptance contract."""
+"""Проверяет все критерии приёмки неподвижной точки внутреннего цикла."""
 scba_convergence_assessment(
     iteration::SCBAIteration,
     tolerances::SolverTolerances,
@@ -182,7 +182,7 @@ scba_convergence_assessment(
     policy.minimum_scba_iterations,
 )
 
-"""Evaluate the complete outer Poisson fixed-point acceptance contract."""
+"""Проверяет все критерии приёмки неподвижной точки внешнего цикла Пуассона."""
 poisson_convergence_assessment(
     iteration::OuterIteration,
     tolerances::SolverTolerances,
@@ -195,11 +195,12 @@ poisson_convergence_assessment(
 )
 
 """
-Evaluate the optional exploratory SCBA quality band.
+Проверяет опциональные допуски для исследовательской оценки качества SCBA.
 
-Fixed-point, normalization and declared physical stability gates use their
-separate approximate limits. Dyson, spectral identity and roundoff retain
-the strict algebraic tolerances. All measurements belong to the current state.
+Для неподвижной точки, нормировки и заявленных критериев физической устойчивости
+действуют отдельные приближённые допуски. Проверки уравнения Дайсона, спектрального
+тождества и округления сохраняют строгие алгебраические допуски. Все измерения
+относятся к текущему состоянию.
 """
 function scba_diagnostic_quality_assessment(
     iteration::SCBAIteration,
@@ -244,7 +245,7 @@ function scba_diagnostic_quality_assessment(
     )
 end
 
-"""Advance the approximate-band diagnostic streak and derive its quality label."""
+"""Обновляет число последовательных прохождений приближённых критериев и присваивает оценку качества."""
 function _scba_diagnostic_quality_state(
     previous_streak::Integer,
     assessment::ConvergenceAssessment,
@@ -301,12 +302,12 @@ function _scba_window_progress(history, window, score)
     return (; old_best, new_best, improvement)
 end
 
-"""Diagnose bounded failure without using physical quality as a progress score.
+"""Определяет причину остановки, не используя физические критерии как меру прогресса.
 
-`:stagnated` requires an unaccepted fixed-point score to stop improving.
-`:quality_blocked` requires fixed-point gates to pass throughout the window
-while every remaining inadmissibility gate fails to improve. Neither status
-accepts the state or relaxes any strict or approximate tolerance.
+Статус `:stagnated` означает, что ещё не прошедшая проверку мера ошибки неподвижной
+точки перестала улучшаться. В статусе `:quality_blocked` критерии неподвижной точки
+выполняются во всём окне, но ни одна оставшаяся невыполненная проверка больше не
+улучшается. Оба статуса оставляют состояние непринятым и сохраняют все допуски.
 """
 function _scba_stopping_reason(
     history::AbstractVector{SCBAIteration},
@@ -351,7 +352,7 @@ function _scba_stopping_reason(
     return :quality_blocked
 end
 
-"""Whether the SCBA fixed-point iteration, independently of physical gates, stagnates."""
+"""Проверяет стагнацию итерации неподвижной точки SCBA независимо от физических критериев."""
 scba_convergence_stagnated(
     history::AbstractVector{SCBAIteration},
     tolerances::SolverTolerances,
@@ -368,11 +369,12 @@ function _trailing_pass_count(history, passed::Function)
     return count
 end
 
-"""Bounded approximate acceptance, based on fresh raw residuals before mixing.
+"""Приближённая приёмка по свежим сырым невязкам до смешивания с ограничением числа итераций.
 
-The complete last confirmation window must pass. The target is attempted
-first; a continuously valid coarse band is accepted after a bounded wait.
-No change of mixing strength can change these raw residual gates.
+Проверки должны выполняться в каждой точке последнего окна подтверждения.
+Сначала проверяются целевые допуски. Если более грубые допуски непрерывно
+выполняются, они допускаются по окончании заданного ожидания.
+Критерии по сырым невязкам не зависят от силы смешивания.
 """
 function scba_approximate_acceptance(
     history::AbstractVector{SCBAIteration},
@@ -406,13 +408,13 @@ function scba_approximate_acceptance(
            ((exhausted || stabilized) && coarse_streak >= q.required_consecutive_passes)
 end
 
-"""Whether an inner result permits evaluating the outer fixed-point map."""
+"""Определяет, разрешает ли результат внутреннего цикла вычислить отображение внешней неподвижной точки."""
 scba_accepted(scba::SCBAResult) =
     scba.converged ||
     (scba.status === :research_continue && scba.quality === :unresolved) ||
     (scba.status === :approximate && scba.quality === :approximate_fixed_point)
 
-"""Stable public quality vocabulary, independent of process completion."""
+"""Устойчивый публичный набор оценок качества, независимый от статуса завершения процесса."""
 solution_quality(solution::NEGFSolution) =
     solution.converged ? :strict :
     solution.scba.quality === :invalid ? :invalid :
@@ -446,13 +448,13 @@ function _approximate_options(options::SolverOptions)
     )
 end
 
-"""Choose bounded inexact inner tolerances from completed raw outer residuals.
+"""Выбирает ограниченные рабочие допуски внутреннего цикла по завершённым сырым невязкам внешнего цикла.
 
-Only `adaptive_working` with an explicitly enabled diagnostic band uses this
-schedule. The outer solve always retains its strict tolerances. The best
-finite raw Hartree/density residual tightens the inner band monotonically;
-within ten strict outer tolerances the approximate return is disabled.
-This does not change the physical gates or the final certification thresholds.
+Схема применяется при `adaptive_working` и явно включённой диагностике приближённого
+качества. Внешний цикл сохраняет строгие допуски. Лучшие конечные сырые невязки
+потенциала Хартри и плотности монотонно сужают внутренний допуск. Как только
+невязки внешнего цикла укладываются в десятикратный строгий допуск, приближённый
+возврат отключается. Физические критерии и пороги итоговой проверки сохраняются.
 """
 function inner_working_policy(
     options::SolverOptions,

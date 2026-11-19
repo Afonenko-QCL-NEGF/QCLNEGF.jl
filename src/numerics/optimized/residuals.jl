@@ -2,18 +2,17 @@ export ProductionResidualWorkspace,
     production_residual_suite, production_selfenergy_residual
 
 """
-Reusable storage for the exact production SCBA residuals.
+Повторно используемая память для точных невязок SCBA.
 
-The four per-block vectors make the two global Frobenius-norm reductions
-independent of thread scheduling: workers write one scalar per `(E,k)` block,
-and the final sum is performed serially in canonical energy-major order.  The
-small matrices are private to a Julia worker.  Consequently, the threaded
-implementation changes neither the residual definitions nor their reduction
-order.
+Четыре вектора по блокам позволяют вычислять две глобальные нормы
+Фробениуса независимо от расписания. Исполнители записывают по скаляру
+на блок `(E,k)`, а итоговая сумма считается последовательно в
+каноническом порядке с главным индексом энергии. У каждого потока
+Julia свои малые матрицы.
 
-See [the SCBA fixed point](@ref theory-scba),
-[verification residuals](@ref theory-validation), and
-[the production backend](@ref theory-production).
+См. [неподвижную точку SCBA](@ref theory-scba),
+[проверочные невязки](@ref theory-validation)
+и [оптимизированный решатель](@ref theory-production).
 """
 struct ProductionResidualWorkspace
     N_E::Int
@@ -43,12 +42,12 @@ end
     ProductionResidualWorkspace(N_E, N_k, N_b;
                                 chunk_size=64, worker_count=0)
 
-Allocate the bounded workspace used by [`production_residual_suite`](@ref)
-and [`production_selfenergy_residual`](@ref).  `chunk_size` controls only task
-granularity.  It does not change the canonical order used for the two sums.
-`worker_count=0` selects the complete default Julia thread pool; use
-`worker_count=1` with a BLAS-parallel production backend.  One workspace is
-owned by one solver call and must not be shared by concurrent calls.
+Выделить ограниченную рабочую память для
+[`production_residual_suite`](@ref) и [`production_selfenergy_residual`](@ref).
+`chunk_size` задаёт размер задач, сохраняя канонический порядок суммирования.
+`worker_count=0` разрешает весь обычный пул потоков Julia. Для параллельной
+работы на уровне BLAS задайте `worker_count=1`. Для каждого одновременного
+решения нужна отдельная рабочая память.
 """
 function ProductionResidualWorkspace(
     N_E::Integer,
@@ -308,7 +307,7 @@ function _check_production_residual_inputs(
     return NE, Nk, Nb
 end
 
-"""Allocation-free LAPACK `zheev` using storage owned by one worker."""
+"""Вычислить собственные значения LAPACK `zheev` в буфере исполнителя без новых выделений."""
 function _production_hermitian_eigvals!(
     H::Matrix{ComplexF64},
     values::Vector{Float64},
@@ -352,7 +351,7 @@ function _production_hermitian_eigvals!(
     return info[1] == 0
 end
 
-"""Allocation-free LAPACK `zgesvd` spectral norm using worker storage."""
+"""Вычислить спектральную норму LAPACK `zgesvd` в буфере исполнителя без новых выделений."""
 function _production_opnorm!(
     A::Matrix{ComplexF64},
     values::Vector{Float64},
@@ -410,7 +409,7 @@ function _production_opnorm!(
     return _production_metric(maximum(values))
 end
 
-"""Fill `H` with the Hermitian part of `factor*X` and return its PSD defect."""
+"""Записать в `H` эрмитову часть `factor*X` и вернуть её дефект положительности."""
 function _production_negative_part!(
     H::Matrix{ComplexF64},
     X::AbstractMatrix,
@@ -452,7 +451,7 @@ function _production_negative_part!(
     return _production_metric(witness.ratio)
 end
 
-"""Fill `H` with `Im(X)` in the retarded-matrix sense."""
+"""Записать матричную мнимую часть запаздывающей компоненты `X` в `H`."""
 function _production_retarded_imaginary!(H::Matrix{ComplexF64}, X::AbstractMatrix)
     Nb = size(H, 1)
     @inbounds for j = 1:Nb, i = 1:Nb
@@ -517,24 +516,23 @@ end
     production_residual_suite(ε, h, green, total, candidate;
                               workspace=nothing, chunk_size=64, worker_count=0)
 
-Evaluate the exact production residual tuple
-`(r_D, r_A, r_K, r_PSD, r_caus)` in one threaded pass over independent
-`(E_e,k_m)` blocks.  These are algebraically identical to
-`_dyson_residual`, `_spectral_residual`, `_keldysh_residual`,
-`_green_positivity`, and `_causality_residual`.
+Вычислить точные невязки `(r_D, r_A, r_K, r_PSD, r_caus)` за один
+многопоточный проход по независимым блокам `(E_e,k_m)`. Они алгебраически
+совпадают с `_dyson_residual`, `_spectral_residual`, `_keldysh_residual`,
+`_green_positivity` и `_causality_residual`.
 
-Chunks have fixed boundaries and write to disjoint partials.  Frobenius terms
-are stored per block and summed serially in energy-major order, making their
-result independent of Julia thread scheduling and of `chunk_size`.  Any NaN,
-infinity, eigensolver failure, or arithmetic overflow relevant to a metric is
-reported as `Inf`, so a non-finite state can never satisfy a convergence test.
+Задачи имеют фиксированные границы и записывают отдельные частичные
+результаты. Слагаемые нормы Фробениуса сохраняются по блокам и
+суммируются последовательно в порядке энергии. Итог независим от
+расписания потоков Julia и `chunk_size`. При NaN, бесконечности,
+ошибке вычисления собственного значения или переполнении затронутая
+невязка становится `Inf`.
 
-`worker_count` caps the active workers independently of allocated workspace
-capacity; zero uses that capacity.
+`worker_count` ограничивает число активных исполнителей независимо от
+ёмкости памяти. Ноль использует всю выделенную ёмкость.
 
-No approximation of the Dyson, Keldysh, spectral, positivity, or causality
-equations is introduced.  See [verification residuals](@ref theory-validation)
-and [the production SCBA loop](@ref theory-production).
+См. [проверочные невязки](@ref theory-validation)
+и [оптимизированный цикл SCBA](@ref theory-production).
 """
 function production_residual_suite(
     ε::AbstractVector{<:Real},
@@ -771,7 +769,7 @@ function production_residual_suite(
     )
 end
 
-"""Worst PSD block from the latest residual pass, without another eigenscan."""
+"""Блок с наибольшим дефектом положительности по последнему проходу, без повторной диагонализации."""
 function _production_positivity_witness(workspace::ProductionResidualWorkspace)
     result = _empty_positivity_witness()
     for witness in workspace.positivity_witness
@@ -784,7 +782,7 @@ end
     production_selfenergy_residual(old, candidate;
                                    workspace=nothing, chunk_size=64, worker_count=0)
 
-Evaluate
+Вычислить
 
 ```math
 r_\Sigma=\max_{X\in\{R,<,>\}}
@@ -792,14 +790,14 @@ r_\Sigma=\max_{X\in\{R,<,>\}}
      {\|\Sigma^X_{\mathrm{candidate}}\|_F+10^{-14}}
 ```
 
-without allocating the four-dimensional difference arrays created by
-`norm(candidate-old)`.  With a supplied `ProductionResidualWorkspace`, all
-size-dependent storage is reused.  Per-block squared norms are written in
-parallel and reduced in canonical order.  Non-finite data or overflow returns
-`Inf`.
+без выделения четырёхмерных разностей `norm(candidate-old)`. При наличии
+`ProductionResidualWorkspace` память, зависящая от размера, используется
+повторно. Квадраты норм записываются параллельно по блокам и суммируются
+в каноническом порядке. При нечисловых данных или переполнении
+возвращается `Inf`.
 
-See [the SCBA convergence criteria](@ref theory-validation) and
-[the production backend](@ref theory-production).
+См. [критерии сходимости SCBA](@ref theory-validation)
+и [оптимизированный решатель](@ref theory-production).
 """
 function production_selfenergy_residual(
     old::SelfEnergyFamily,

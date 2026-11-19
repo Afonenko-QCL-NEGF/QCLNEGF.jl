@@ -104,7 +104,7 @@ function _emit_scba_progress(
     return nothing
 end
 
-"""A producer clock sample; CPU/GC/allocation counters are process-inclusive."""
+"""Снимок времени и счётчиков CPU, сборки мусора и выделений по всему процессу."""
 function _production_counter_sample()
     gc = Base.gc_num()
     return (

@@ -4,24 +4,23 @@
                      Tᴸᴼ=problem.physical.Tᴸᴼ,
                      validate_static=true, energy_shift=nothing)
 
-Create an operating-point copy of an already built problem while reusing the
-spatial grid, material profiles, localized basis and normalized microscopic
-kernels.  Exactly one of `V_period` and `F_bias` may be supplied; omitting both
-keeps the field. The two period-shift operators are rebuilt because the
-field-periodic energy shift changes. The original energy discretization is
-preserved unless `energy_shift` explicitly selects another one. The LO matrices
-are reused when that discretization is unchanged; otherwise both field and LO
-operators are rebuilt together.
+Создаёт копию собранной задачи для новой рабочей точки, используя готовую
+пространственную сетку, профили материалов, локальный базис и нормированные
+микроскопические ядра. Можно задать либо `V_period`, либо `F_bias`. При отсутствии
+обоих поле сохраняется. Два оператора сдвига на период строятся заново для
+нового поля. Дискретизацию по энергии меняет только явно заданный `energy_shift`.
+Матрицы LO переиспользуются при сохранении дискретизации и представления
+сдвига. Иначе обновляются и полевые, и фононные операторы.
 
-For the implemented elastic-equipartition acoustic channel the normalized
-kernel is temperature independent and its exact scale is proportional to
-`Tᴸ`; consequently only `qᴷ[:acoustic]` is rescaled.  LO temperature enters
-the Bose factor during every SCBA candidate and requires no kernel rebuild.
-No other material or scattering parameter is silently changed.
+В упругом акустическом канале в приближении равнораспределения нормированное
+ядро не зависит от температуры. Его масштаб пропорционален `Tᴸ`, поэтому
+пересчитывается только `qᴷ[:acoustic]`. Температура LO входит в фактор Бозе
+каждого кандидата SCBA. Ядра для неё перестраивать не требуется. Остальные
+параметры материала и рассеяния сохраняются.
 
-See [Field-periodic closure](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/06_periodicity.md),
-[Microscopic kernels](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/08_kernels.md), and
-[production sweep construction](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
+См. [замыкание по периодам в поле](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/06_periodicity.md),
+[микроскопические ядра](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/08_kernels.md) и
+[расчёт серии рабочих точек](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
 """
 function retarget_problem(
     problem::NEGFProblem;
@@ -145,12 +144,12 @@ end
 """
     retarget_production_cache(cache, problem)
 
-Reuse BLAS-ready kernel operators at a new bias/temperature operating point
-and rebuild only the four `O(N_E)` shift plans.  This is exact provided
-[`retarget_problem`](@ref) created `problem`, so the normalized six-index
-kernels and all array dimensions are unchanged.
+Переиспользует операторы ядер, подготовленные для BLAS, в новой рабочей
+точке по полю и температуре. Перестраивает четыре плана сдвига сложности
+`O(N_E)`. Операция точна для задачи, полученной через [`retarget_problem`](@ref),
+при неизменных нормированных шестимерных ядрах и размерах массивов.
 
-See [Production sweep, warm start, and recovery](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
+См. [серию рабочих точек, начальное состояние и восстановление](https://github.com/Afonenko-QCL-NEGF/QCLNEGF.jl/blob/main/docs/src/theory/19_production.md).
 """
 function retarget_production_cache(cache::ProductionCache, problem::NEGFProblem)
     _cache_source_contract(cache, problem)

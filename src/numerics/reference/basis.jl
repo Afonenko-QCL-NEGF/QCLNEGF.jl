@@ -85,18 +85,18 @@ end
 """
     build_localized_basis(physical, numerical, scales, grids, profiles)
 
-Construct the fixed seven-period (or configured odd-window) zero-field
-eigenspace, diagonalize `PzP`, select the central-period columns, perform the
-cell-local Löwdin orthogonalization, and project `H₀`, `Z`, `M⁻¹`, and `T±`.
+Построить спектральное подпространство при нулевом поле в окне из семи
+периодов (или другом заданном нечётном окне), диагонализировать `PzP`,
+выбрать столбцы центрального периода, ортогонализовать их по Лёвдину
+и спроецировать `H₀`, `Z`, `M⁻¹` и `T±`.
 
-All returned matrices are dense.  `Φ` has shape `(N_z,N_b)` and is orthonormal
-in the discrete cell metric; `χ=Φ/sqrt(Δx)` represents the continuous
-dimensionless envelopes.  The function stops rather than pseudo-inverting a
-rank-deficient cell overlap.
+Все возвращаемые матрицы плотные. Матрица `Φ` размера `(N_z,N_b)`
+ортонормирована в дискретной метрике ячейки. Непрерывные безразмерные
+огибающие равны `χ=Φ/sqrt(Δx)`. При вырожденной матрице перекрытия функция
+останавливается.
 
-Implements [EQ-BASIS-001](@ref eq-pzp-lowdin).
-See [BenDaniel–Duke and the fixed PzP basis](@ref theory-basis) for the
-projection, localization, and Löwdin steps.
+Реализует [EQ-BASIS-001](@ref eq-pzp-lowdin).
+См. [гамильтониан БенДэниела — Дьюка и базис PzP](@ref theory-basis).
 """
 function build_localized_basis(
     p::PhysicalParameters,
@@ -257,13 +257,14 @@ function build_localized_basis(
     )
 end
 
-"""Build the configured basis through a stable numerical-strategy interface.
+"""
+Построить базис по выбранной численной схеме.
 
-`localization=:pzp` is the truncated
-projected-position/Löwdin approximation and is not a low-rank physical oracle;
-`localization=:none` uses central-cell energy eigenstates and is a controlled
-numerical choice whenever the basis is truncated. `:real_space` preserves the
-entire cell FD space and requires `N_b == N_z`.
+При `localization=:pzp` применяется усечённая проекция оператора координаты
+с ортогонализацией Лёвдина. При `localization=:none` используются
+энергетические собственные состояния центральной ячейки. Сходимость по
+рангу проверяют для обоих вариантов. Режим `:real_space` сохраняет всё
+конечно-разностное пространство ячейки и требует `N_b == N_z`.
 """
 build_basis(
     p::PhysicalParameters,
@@ -277,13 +278,12 @@ build_basis(
 """
     project_hamiltonians(problem, Uᴴ)
 
-Project the periodic Hartree energy `Uᴴ(x_g)` and assemble the full dense
-matrix `h(κ_m;Uᴴ)` for every radial momentum.  The returned array order is
-`(N_k,N_b,N_b)` and every value is dimensionless.
+Спроецировать периодическую энергию Хартри `Uᴴ(x_g)` и собрать полную плотную
+матрицу `h(κ_m;Uᴴ)` для каждого радиального импульса. Возвращает безразмерный
+массив размера `(N_k,N_b,N_b)`.
 
-Implements [EQ-HRED-001](@ref eq-reduced-hamiltonian).
-See [BenDaniel–Duke and the fixed PzP basis](@ref theory-basis) for every
-term of the projected Hamiltonian.
+Реализует [EQ-HRED-001](@ref eq-reduced-hamiltonian). См. разбор членов
+[спроецированного гамильтониана](@ref theory-basis).
 """
 function project_hamiltonians(
     basis::BasisData,
@@ -337,20 +337,20 @@ end
     build_multiperiod_reference_basis(p, n, scales, grids, profiles;
                                       localization=:pzp_tails)
 
-Small, complete-window reference for comparing `:pzp_tails`,
-`:bloch_wannier`, and `:wannier_stark`. The window has `2P_basis+1` periods.
-All envelope tails and the full projected Hamiltonian are retained, without
-forcing a nearest-neighbour or rank-one coupling. `transform` acts on the
-entire real-space window. This return type is intentionally distinct from
-cell-local `BasisData`: it cannot accidentally be used with cell-local
-density/scattering/embedding operators. Use `project_reference_operator`
-to transform *every* full-window observable/vertex consistently.
+Эталонная задача на полном небольшом окне из `2P_basis+1` периодов для
+сравнения `:pzp_tails`, `:bloch_wannier` и `:wannier_stark`. Сохраняются все
+хвосты огибающих и полный спроецированный гамильтониан, в том числе связи
+с дальними периодами и связи ранга больше единицы. Преобразование `transform`
+действует во всём координатном окне. Результат имеет отдельный тип,
+отличный от базиса одной ячейки `BasisData`. Для преобразования наблюдаемой
+или вершины рассеяния во всём окне используйте `project_reference_operator`.
 
-PzP uses a zero-field Dirichlet spectral subspace. Wannier uses the low bands
-of the periodic BDD cell, parallel-transported with a distributed unitary
-holonomy before a discrete Bloch transform. Wannier--Stark uses the actual
-finite-window field Hamiltonian; finite-window edge states and truncation
-still require a domain-size and energy-window convergence study.
+PzP использует спектральное подпространство при нулевом поле с условиями
+Дирихле. Функции Ванье строятся из нижних зон периодической ячейки БенДэниела
+— Дьюка. Перед дискретным преобразованием Блоха выполняется параллельный
+перенос с распределённой унитарной голономией. Для функций Ванье — Штарка
+используется гамильтониан конечного окна с полем. Влияние краевых состояний
+и усечения проверяется по размеру области и энергетическому окну.
 """
 function build_multiperiod_reference_basis(
     p::PhysicalParameters,
@@ -471,7 +471,7 @@ function build_multiperiod_reference_basis(
     )
 end
 
-"""Project a full-window Hamiltonian, density/current operator or scattering vertex."""
+"""Спроецировать гамильтониан, оператор плотности или тока либо вершину рассеяния во всём окне."""
 function project_reference_operator(reference, operator::AbstractMatrix)
     N = size(reference.transform, 1)
     size(operator) == (N, N) ||
@@ -479,7 +479,7 @@ function project_reference_operator(reference, operator::AbstractMatrix)
     return reference.transform' * operator * reference.transform
 end
 
-"""Measure low-band errors of a cell-local reduction against its original FD Bloch operator."""
+"""Измерить ошибки нижних зон приведённого базиса относительно исходного конечно-разностного оператора Блоха."""
 function basis_dispersion_diagnostic(
     basis::BasisData,
     profiles::MaterialProfiles,
@@ -509,10 +509,11 @@ function basis_dispersion_diagnostic(
 end
 
 """
-Cheap pre-SCBA spectrum/window check. Local k-resolved poles are necessary
-diagnostics, not the full interacting spectrum. The coupling norm supplies
-an additional zero-field nearest-neighbour spectral bound. No small
-population argument removes high unoccupied poles from a matrix sum rule.
+Оценить спектральное покрытие окна перед SCBA. Локальные полюса для каждого
+импульса дают предварительную диагностику. Норма межпериодной связи
+дополнительно ограничивает спектр при нулевом поле для связей ближайших
+соседей. Малая населённость верхних состояний не устраняет их полюса
+из матричного правила сумм.
 """
 function spectral_window_diagnostic(problem::NEGFProblem, h::AbstractArray{<:Number,3})
     size(h, 1) == length(problem.grids.κ) ||

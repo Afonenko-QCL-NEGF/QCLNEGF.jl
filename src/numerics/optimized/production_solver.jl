@@ -1,22 +1,22 @@
 """
     solve_scba_production(problem, Uᴴ; ...)
 
-Fixed-Hartree SCBA with exact sparse shifts, chunked BLAS contractions,
-zero-padded FFT Hilbert transforms, and threaded independent Dyson/Keldysh
-blocks.  It returns the same `SCBAResult` contract as the educational direct
-backend.  All mechanism candidates are still built from one common Green
-state before mixing (Jacobi semantics).
+Решить SCBA при фиксированной энергии Хартри с выбранными схемами сдвига,
+свёрток BLAS и преобразования Гильберта, параллельно обрабатывая
+независимые блоки Дайсона и Келдыша. Возвращает тот же `SCBAResult`,
+что и прямой решатель. Все кандидаты рассеяния строятся из общей
+функции Грина до смешивания по схеме Якоби.
 
-`iteration_callback`, when supplied, is invoked synchronously with a borrowed
-view of the accepted arrays before in-place mixing.  The callback may inspect
-or serialize that state during the call, but must make its own copy if it needs
-to retain the object after returning. `consume_initial=true` transfers ownership
-of a private restart's arrays and permits in-place mixing; callers must not reuse
-that initial state. The default preserves caller-owned input arrays.
+`iteration_callback`, если задан, синхронно получает доступ к массивам
+принятого состояния до смешивания на месте. Он может читать и сохранять
+их во время вызова. Для последующего хранения нужна своя копия.
+`consume_initial=true` передаёт решателю исключительное право на массивы
+состояния возобновления и разрешает смешивание на месте. По умолчанию
+входные массивы вызывающего кода сохраняются.
 
-See [the SCBA fixed point](@ref theory-scba),
-[Microscopic kernels](@ref theory-kernels), and
-[Production backend](@ref theory-production).
+См. [неподвижную точку SCBA](@ref theory-scba),
+[микроскопические ядра](@ref theory-kernels)
+и [оптимизированный решатель](@ref theory-production).
 """
 function solve_scba_production(
     problem::NEGFProblem,
@@ -924,14 +924,15 @@ end
 """
     _solve_production(problem; ...)
 
-Fully nested Poisson--SCBA solve using the production inner backend.  Optional
-`initial_Uᴴ` and `initial_scba` implement in-memory warm starts across nearby
-bias points. An optional neutral state sink receives a state whose
-Green functions and self-energies correspond to the stored Hartree field.
+Выполнить вложенные циклы Пуассона и SCBA с оптимизированным внутренним
+решателем. `initial_Uᴴ` и `initial_scba` позволяют переиспользовать
+состояние в памяти для соседних рабочих точек. Приёмник состояния
+получает функции Грина и собственные энергии, соответствующие
+сохранённому полю Хартри.
 
-See [the closed Poisson–SCBA loop](@ref theory-outer-loop),
-[Production backend](@ref theory-production), and the
-[state persistence contract](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+См. [замкнутый цикл Пуассона и SCBA](@ref theory-outer-loop),
+[оптимизированный решатель](@ref theory-production)
+и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 function _solve_production(
     problem::NEGFProblem;

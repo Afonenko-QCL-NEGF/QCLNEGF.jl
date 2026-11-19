@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# Reproduce the documentation data with the real domain/numerics layer only.
+# Воспроизведение данных атласа средствами физического и численного ядра.
 # julia --startup-file=no --project=. examples/10_physics_atlas.jl [output-directory]
 using QCLNEGF
 using LinearAlgebra
@@ -140,8 +140,8 @@ for method in (:energy, :pzp_tails, :bloch_wannier, :wannier_stark)
                 ),
             ),
         )
-        # Keep the five displayed envelopes, while metrics/operators retain
-        # every selected state. Full arrays need not bloat documentation.
+        # Сохраняются пять огибающих для рисунка. Метрики и операторы учитывают
+        # все выбранные состояния.
         if j in ref.central_columns
             for g in eachindex(ref.coordinates)
                 push!(
@@ -220,12 +220,12 @@ csv(
     operator_rows,
 )
 
-# Same finite-dimensional resolvent in two bases. This is a noninteracting
-# spectral illustration: eta and the Fermi distribution are prescribed.
+# Одна конечномерная резольвента в двух базисах. Спектральный пример без
+# взаимодействия использует заданные η и распределение Ферми.
 eta = ustrip(u"meV", 2.0u"meV")
 chemical_potential = ustrip(u"meV", 60.0u"meV")
 kBT = ustrip(u"meV", QCLNEGF.CODATA.kᴮₑᵥ*p.Tᴸ)
-# Explicit educational probe energy, not a solver default.
+# Пробная энергия для учебного примера задаётся явно.
 probe = ustrip(u"meV", 73.0u"meV")
 H_meV = reference.hamiltonian .* meV
 G_projected = inv((probe + im*eta)*I - H_meV)
@@ -252,8 +252,8 @@ csv(
     spectral_rows,
 )
 
-# A neutral trial electron profile constructed from actual localized states.
-# One Poisson solve measures electrostatic response, not self-consistency.
+# Нейтральный пробный электронный профиль построен из локализованных состояний.
+# Одно решение уравнения Пуассона даёт электростатический отклик на этот профиль.
 central = reference.transform[reference.central_rows, reference.central_columns]
 trial_shape = abs2.(central) * [0.4, 0.3, 0.15, 0.10, 0.05]
 electron_density = sp.Nᴰ²ᴰ .* trial_shape ./ dot(grids.wˣ, trial_shape)
@@ -275,7 +275,7 @@ csv(
     ),
 )
 
-# Longitudinal form factors of full-window PzP states: exact projected exp(iqz).
+# Продольные формфакторы состояний PzP в полном окне: проекция exp(iqz).
 a, b = first(reference.central_columns), first(reference.central_columns)+1
 screening_q_nm = ustrip(u"nm^-1", p.q_s)
 correlation_nm = ustrip(u"nm", p.Λᴵᶠᴿ)
@@ -309,7 +309,7 @@ csv(
     ),
 )
 
-# Grid/window diagnostics compare invariant subspaces, not transport currents.
+# Проверка сетки и окна сравнивает инвариантные подпространства.
 refinement_rows = Tuple[]
 for (Nz, P) in ((48, 2), (96, 2), (192, 2), (96, 1), (96, 3))
     ni = numerics(Nz, P)
@@ -354,8 +354,8 @@ csv(
     refinement_rows,
 )
 
-# A two-level line shape uses a real cell Hamiltonian/dipole but prescribed
-# occupations and linewidth. It is neither a cavity spectrum nor QCL gain.
+# Двухуровневая форма линии использует гамильтониан и диполь ячейки,
+# а населённости и ширина линии заданы извне.
 cell_H = build_bdd_hamiltonian(profiles, grids, scales)
 cell_eig = eigen(Hermitian(cell_H))
 cell_Z = cell_eig.vectors' * Diagonal(grids.x .* nm) * cell_eig.vectors
@@ -398,7 +398,7 @@ csv(
         ("hartree_mean_dimensionless", abs(sum(UH)/length(UH)), 1e-10),
     ],
 )
-println("Physics atlas data: ", OUTPUT)
+println("Данные физического атласа: ", OUTPUT)
 println(
-    "Actual reference design profiles and finite-window operators; prescribed broadening/occupations; no converged transport run.",
+    "Профили эталонной структуры и операторы конечного окна. Уширение и населённости заданы извне.",
 )

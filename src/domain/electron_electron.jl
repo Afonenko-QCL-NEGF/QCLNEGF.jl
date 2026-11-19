@@ -1,9 +1,10 @@
 """
-Explicit representative-momentum single-plasmon-pole approximation.
+Одноплазмонное приближение с явно заданным характерным переданным импульсом.
 
-Enabled calculations require transfer momentum, electron temperature, effective
-mass and carrier density. The carrier-density dimension follows the declared
-screening dimension. No material or electronic temperature is guessed.
+При включении модели задают переданный импульс, температуру электронов,
+эффективную массу и концентрацию носителей. Размерность концентрации определяется
+заданной размерностью модели экранирования. Параметры материала и температуру
+электронов задаёт вызывающая сторона.
 """
 struct ElectronElectronOptions
     mode::Symbol

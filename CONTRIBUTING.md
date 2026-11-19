@@ -1,16 +1,19 @@
-# Contributing
+# Участие в разработке
 
-Run `deno task check`, `deno task test` and `deno task docs` before proposing a change.
-Keep the public model dimensional and document normalization, index order and
-approximation assumptions. A numerical change needs an independent analytic or
-physical oracle; agreement between two implementations is supplementary evidence.
-Do not loosen acceptance thresholds to make a failed calculation pass.
+Перед предложением изменений выполните `deno task check`, `deno task test` и
+`deno task docs`. Публичная модель принимает размерные величины. Указывайте
+нормировку, порядок индексов и предпосылки каждой аппроксимации. Для изменения
+численного метода нужна независимая аналитическая или физическая проверка.
+Согласие двух реализаций служит дополнительным свидетельством.
+Допуски приёмки сохраняют при неудачном расчёте.
 
-Keep reference operators independent from optimized operators. Preserve the
-separation between convergence, discretization evidence and experimental validation.
-Changes to public types or solver callbacks must be tested with QCLNEGFRunner.jl.
-Filesystem access, YAML, persistence, resource discovery and presentation belong to
-that downstream package. Core numerical routines accept explicit inputs and return
-in-memory results.
+Эталонные операторы должны оставаться независимыми от оптимизированных.
+Различайте сходимость итераций, достаточность дискретизации и валидацию по
+эксперименту. Изменения публичных типов или обратных вызовов решателя проверяйте
+в связке с QCLNEGFRunner.jl. Runner отвечает за файловую систему, YAML, сохранение
+состояния, определение доступных ресурсов и представление результатов. Ядро
+получает явные входы и возвращает результаты в памяти.
 
-Integration CI is defined in the [qcl-negf superproject](https://github.com/Afonenko-QCL-NEGF/qcl-negf) and uses its local runner. Update the component gitlink there to check a change with the complete selected source graph.
+Интеграционные проверки определены в [qcl-negf](https://github.com/Afonenko-QCL-NEGF/qcl-negf)
+и запускаются на локальном исполнителе этого проекта. Для проверки изменения
+со всеми выбранными компонентами обновите ссылку подмодуля в этом репозитории.

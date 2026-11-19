@@ -1,12 +1,13 @@
 """
     build_poisson_matrix(profiles, grids)
 
-Form the full dense cyclically tridiagonal matrix of
-`-d/dx(εᵣ du/dx)`.  The matrix is real symmetric, positive semidefinite,
-and has rank `N_z-1` before the gauge row/column is added.
+Построить полную плотную циклическую трёхдиагональную матрицу оператора
+`-d/dx(εᵣ du/dx)`. До добавления окаймляющей строки и столбца
+матрица вещественная, симметричная и положительно полуопределённая
+с рангом `N_z-1`.
 
-Implements [EQ-POISSON-001](@ref eq-poisson-matrix).
-See [Periodic Poisson and the outer loop](@ref theory-outer-loop).
+Реализует [EQ-POISSON-001](@ref eq-poisson-matrix).
+См. [периодическое уравнение Пуассона и внешний цикл](@ref theory-outer-loop).
 """
 function build_poisson_matrix(profiles::MaterialProfiles, grids::ModelGrids)
     N = length(grids.x)
@@ -30,13 +31,12 @@ end
 """
     solve_periodic_poisson(problem, n̄)
 
-Solve the dimensionless bordered periodic Poisson system for the electronic
-Hartree energy `Uᴴ/E₀=-φᴴ/φ₀`.  `n̄=L₀³n` must have `N_z` entries.  Returns
-`(Uᴴ, ζ, r_P, r_neutral)`.
+Решить безразмерную окаймлённую периодическую систему Пуассона
+для энергии Хартри электрона `Uᴴ/E₀=-φᴴ/φ₀`. Вектор `n̄=L₀³n`
+содержит `N_z` элементов. Возвращает `(Uᴴ, ζ, r_P, r_neutral)`.
 
-Implements [EQ-POISSON-002](@ref eq-bordered-poisson).
-See [Periodic Poisson and the outer loop](@ref theory-outer-loop) for the
-charge sign, periodic gauge, and neutrality condition.
+Реализует [EQ-POISSON-002](@ref eq-bordered-poisson). См. знак заряда,
+фиксацию постоянной и нейтральность в [главе о внешнем цикле](@ref theory-outer-loop).
 """
 function solve_periodic_poisson(
     profiles::MaterialProfiles,

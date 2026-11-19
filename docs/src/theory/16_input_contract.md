@@ -32,7 +32,7 @@ CurrentModule = QCLNEGF
 
 ## Физический паспорт `PhysicalParameters`
 
-| Поле Julia | Базовый набор reference design | Единица/тип | Использование |
+| Поле Julia | Базовый набор эталонной структуры | Единица/тип | Использование |
 |---|---:|---|---|
 | `layers` | 6 строк из [паспорта](@ref theory-reference2019) | `Vector{Layer}` | ``E_c,m_z,m_\parallel,\epsilon_r,x_{Al}`` |
 | `N_dop²ᴰ` | ``4.5\times10^{14}`` | m``^{-2}`` | листовая доза доноров |
@@ -68,7 +68,7 @@ CurrentModule = QCLNEGF
 | `η_seed` | 0.5 | meV | только начальное приближение; рабочее значение равно нулю |
 
 `M_E` обязан удовлетворять
-``M_E\ge\max(E_p,\hbar\omega_{LO})``. `ModelGrids.trusted_energy` —
+``M_E\ge\max(E_p,\hbar\omega_{LO})``. `problem.grids.trusted_energy` —
 `BitVector` длины ``N_E`` для узлов
 ``E_{min}+M_E\le E_e\le E_{max}-M_E``.
 

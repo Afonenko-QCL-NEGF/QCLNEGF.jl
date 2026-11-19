@@ -5,13 +5,13 @@ end
 """
     build_bdd_hamiltonian(Eᶜ, mᶻᵣ, Δx, C̄; U=zeros, boundary=:dirichlet)
 
-Return the full dense, real symmetric BenDaniel–Duke matrix.  Only its first
-off-diagonals are nonzero.  This implementation deliberately forms the full
-matrix before calling standard dense Hermitian eigensolvers.
+Построить полную плотную вещественную симметричную матрицу БенДэниела —
+Дьюка. Ненулевые внедиагональные элементы лежат только на соседних
+диагоналях. Полная матрица формируется перед вызовом стандартного
+решателя плотной эрмитовой задачи на собственные значения.
 
-Implements [EQ-BDD-001](@ref eq-bdd-matrix).
-Physical background and matrix structure are given in
-[BenDaniel–Duke and the fixed basis](@ref theory-basis).
+Реализует [EQ-BDD-001](@ref eq-bdd-matrix).
+См. [гамильтониан БенДэниела — Дьюка и базис](@ref theory-basis).
 """
 function build_bdd_hamiltonian(
     Eᶜ::AbstractVector{<:Real},

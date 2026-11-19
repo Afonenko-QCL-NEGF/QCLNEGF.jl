@@ -28,13 +28,13 @@ end
 """
     electron_density(problem, Gˡ)
 
-Reconstruct the physical volume density including all basis coherences.
-Returns a Unitful vector in `m^-3`; internal Poisson code uses the private
-dimensionless counterpart `L₀³n`.
+Восстанавливает физическую объёмную плотность с учётом всех когерентностей
+базиса. Возвращает вектор Unitful в `m^-3`. Внутренний код уравнения
+Пуассона использует безразмерную плотность `L₀³n`.
 
-Implements [EQ-DENSITY-001](@ref eq-realspace-density).
-See [Green functions and density](@ref theory-greens) and
-[observables and balances](@ref theory-observables).
+Реализует [EQ-DENSITY-001](@ref eq-realspace-density).
+См. [функции Грина и плотность](@ref theory-greens) и
+[наблюдаемые и балансы](@ref theory-observables).
 """
 function electron_density(problem::NEGFProblem, Gˡ::AbstractArray{<:Number,4})
     return (_electron_density_bar(problem, Gˡ) ./ problem.scales.L₀_m^3) .* u"m^-3"
@@ -43,23 +43,23 @@ end
 """
     spatial_energy_density(problem, Gˡ)
 
-Return `(energy_eV, z_m, n_per_eV_m3, axis_order)` with the density matrix
-`n_per_eV_m3[energy, position]` in physical `eV⁻¹ m⁻³` and
-`axis_order = (:energy, :position)`. Coordinates and densities are plain
-floating-point arrays; their field names specify their units.
+Возвращает `(energy_eV, z_m, n_per_eV_m3, axis_order)`.
+Матрица `n_per_eV_m3[energy, position]` выражена в эВ⁻¹ м⁻³,
+`axis_order = (:energy, :position)`. Координаты и плотности хранятся
+как обычные массивы чисел с плавающей точкой. Единицы указаны в именах полей.
 
-For the dimensionless Green array `(energy, momentum, basis, basis)`, the
-projection is
+Для безразмерного массива Грина `(energy, momentum, basis, basis)`
+проекция имеет вид
 `g_s/(2π E₀[eV] L₀[m]^3) * Σ_m wᵏ[m] Re[-i χ(z)ᵀ Gˡ(E,m) χ(z)*]`.
-It retains every off-diagonal basis coherence and the radial momentum and
-spin weights. Integrating the energy axis with `problem.grids.wᴱ .* E₀_eV`
-recovers [`electron_density`](@ref); integrating the position axis with
-`problem.grids.wˣ .* L₀_m` gives the energy-resolved sheet density.
+Она сохраняет все внедиагональные когерентности базиса, радиальные веса
+импульса и спиновый множитель. Интегрирование по энергии с весами
+`problem.grids.wᴱ .* E₀_eV` даёт [`electron_density`](@ref).
+Интегрирование по координате с весами `problem.grids.wˣ .* L₀_m`
+даёт поверхностную плотность с разрешением по энергии.
 
-The projection takes the real part of the density as in `electron_density`.
-It neither clips negative values nor repairs an unphysical Green function.
-`spectral_maps` retains its historical `(position, energy)` orientation and
-uses the transpose of this same physical density.
+Проекция берёт действительную часть плотности, как `electron_density`.
+Отрицательные значения сохраняются. `spectral_maps` возвращает транспонированную
+матрицу этой плотности с порядком осей `(position, energy)`.
 """
 function spatial_energy_density(problem::NEGFProblem, Gˡ::AbstractArray{<:Number,4})
     grids = problem.grids
@@ -112,20 +112,20 @@ function _sheet_density_matrix_bar(problem::NEGFProblem, Gˡ::AbstractArray{<:Nu
 end
 
 """
-Physical sheet-density matrix `P_ab` with Unitful `m^-2` entries.
-Implements [EQ-POP-001](@ref eq-sheet-density).
+Матрица физической поверхностной плотности `P_ab` с элементами Unitful в `m^-2`.
+Реализует [EQ-POP-001](@ref eq-sheet-density).
 
-See [Observables and balances](@ref theory-observables).
+См. [наблюдаемые и балансы](@ref theory-observables).
 """
 function sheet_density_matrix(problem::NEGFProblem, Gˡ::AbstractArray{<:Number,4})
     return (_sheet_density_matrix_bar(problem, Gˡ) ./ problem.scales.L₀_m^2) .* u"m^-2"
 end
 
 """
-Return `(Nₛ,p)` for localized-state sheet populations and fractions.
+Возвращает `(Nₛ,p)`: поверхностные заселённости локализованных состояний и их доли.
 
-See [Observables and balances](@ref theory-observables) and
-[the sheet-density matrix](@ref eq-sheet-density).
+См. [наблюдаемые и балансы](@ref theory-observables) и
+[матрицу поверхностной плотности](@ref eq-sheet-density).
 """
 function state_populations(problem::NEGFProblem, Gˡ::AbstractArray{<:Number,4})
     Pbar = _sheet_density_matrix_bar(problem, Gˡ)
@@ -137,14 +137,15 @@ end
 """
     effective_levels(problem, Uᴴ)
 
-Diagonalize the full Hermitian projected Hamiltonian at `k=0` strictly as
-post-processing.  Returns Unitful level energies and dipoles plus the
-dimensionless one-band oscillator-strength matrix computed with
-`problem.scales.m_ref`.  These diagnostics do not replace spectral peaks.
+Диагонализует полный эрмитов проектированный гамильтониан при `k=0`
+на этапе постобработки. Возвращает энергии уровней и диполи в единицах
+Unitful и безразмерную однозонную матрицу сил осцилляторов, вычисленную
+с массой `problem.scales.m_ref`.
 
-Implements [EQ-LEVELS-001](@ref eq-effective-levels).
-See [Observables and balances](@ref theory-observables); these effective
-levels are diagnostic eigenvalues, not interacting spectral peaks.
+Реализует [EQ-LEVELS-001](@ref eq-effective-levels).
+См. [наблюдаемые и балансы](@ref theory-observables). Полученные собственные
+значения диагностируют эффективные уровни. Спектральные пики с учётом
+взаимодействий определяются отдельно.
 """
 function effective_levels(problem::NEGFProblem, Uᴴ::AbstractVector{<:Real})
     h₀ = Matrix(view(project_hamiltonians(problem, Uᴴ), 1, :, :))
@@ -215,13 +216,13 @@ end
 """
     boundary_flux(problem, family, green)
 
-Outgoing electron number flux represented by one embedding family.  Returns
-a Unitful value in `m^-2*s^-1`; positive `embedding_plus` means electron flow
-toward `+z`.
+Исходящий поток числа электронов, представленный одним семейством граничной
+самоэнергии. Возвращает величину Unitful в `m^-2*s^-1`. Положительный
+`embedding_plus` соответствует потоку электронов к `+z`.
 
-Implements [EQ-CURRENT-001](@ref eq-boundary-flux).
-See [Observables and balances](@ref theory-observables) for the current sign
-and the relation between number flux and electrical current density.
+Реализует [EQ-CURRENT-001](@ref eq-boundary-flux).
+Знак тока и связь потока частиц с плотностью электрического тока описаны
+в разделе [наблюдаемые и балансы](@ref theory-observables).
 """
 function boundary_flux(problem::NEGFProblem, family::SelfEnergyFamily, green::GreenState)
     flux₀ =
@@ -231,10 +232,10 @@ function boundary_flux(problem::NEGFProblem, family::SelfEnergyFamily, green::Gr
 end
 
 """
-Energy-resolved engineering current `j₊(E_e)` in `A*m^-2*eV^-1`.
-Implements [EQ-CURRENT-002](@ref eq-resolved-current).
+Плотность электрического тока с разрешением по энергии `j₊(E_e)` в `A*m^-2*eV^-1`.
+Реализует [EQ-CURRENT-002](@ref eq-resolved-current).
 
-See [Observables and balances](@ref theory-observables).
+См. [наблюдаемые и балансы](@ref theory-observables).
 """
 function energy_resolved_current(
     problem::NEGFProblem,
@@ -256,12 +257,12 @@ end
 """
     bond_current(problem, Gˡ)
 
-Reconstruct the selected coordinate lesser blocks and return internal
-electron-flow bond currents.  The periodic seam is intentionally absent and
-must be compared with [`boundary_flux`](@ref).
-Implements [EQ-CURRENT-002](@ref eq-resolved-current).
-See [Observables and balances](@ref theory-observables) for its relation to
-the embedding current and the omitted periodic seam.
+Восстанавливает выбранные меньшие блоки в координатном представлении
+и возвращает внутренние потоки электронов между узлами. Поток через
+периодическую границу вычисляется отдельно с помощью [`boundary_flux`](@ref).
+Реализует [EQ-CURRENT-002](@ref eq-resolved-current).
+
+Связь с граничным током описана в разделе [наблюдаемые и балансы](@ref theory-observables).
 """
 function bond_current(problem::NEGFProblem, Gˡ::AbstractArray{<:Number,4})
     Nz = problem.numerical.N_z
@@ -299,12 +300,12 @@ function _collision_sum(
 end
 
 """
-Particle-conservation rate and normalized residual for one mechanism.
-The returned diagnostics also expose the discarded imaginary part and the
-forward/reverse fixed-order cancellation estimate.
-Implements [EQ-COLLISION-001](@ref eq-collision-balance).
+Скорость изменения числа частиц и нормированная невязка закона сохранения
+для одного механизма. Диагностика также возвращает отброшенную мнимую часть
+и оценку сокращения прямого и обратного вкладов в фиксированном порядке.
+Реализует [EQ-COLLISION-001](@ref eq-collision-balance).
 
-See [Observables and balances](@ref theory-observables).
+См. [наблюдаемые и балансы](@ref theory-observables).
 """
 function collision_balance(
     problem::NEGFProblem,
@@ -353,17 +354,17 @@ _power_scale(problem::NEGFProblem) =
     problem.scales.E₀_J * problem.scales.E₀_eV /
     (Float64(ustrip(u"eV*s", CODATA.ħₑᵥ)) * problem.scales.L₀_m^2)
 
-"""Energy transferred from one mechanism to electrons, in `W/m²`."""
+"""Мощность, передаваемая электронам одним механизмом, в `W/m²`."""
 function _collision_power(problem::NEGFProblem, family::SelfEnergyFamily, green::GreenState)
     value = _collision_power_bar(problem, family, green)
     return real(value) * _power_scale(problem) * u"W/m^2"
 end
 
 """
-Total electronic power-balance residual over internal scattering and bias
-work. Implements [EQ-POWER-001](@ref eq-power-balance).
+Полная невязка баланса мощности электронов, учитывающая внутреннее
+рассеяние и работу поля. Реализует [EQ-POWER-001](@ref eq-power-balance).
 
-See [Observables and balances](@ref theory-observables).
+См. [наблюдаемые и балансы](@ref theory-observables).
 """
 function power_balance(
     problem::NEGFProblem,
@@ -406,10 +407,11 @@ function power_balance(
 end
 
 """
-Return physical local spectral and occupied maps for visualization.
+Возвращает карты локального спектра и занятых состояний в физических
+единицах для визуализации.
 
-See [Green functions and density](@ref theory-greens) for their definitions
-and [debug/final visualization](@ref theory-visualization) for their use.
+См. определения в разделе [функции Грина и плотность](@ref theory-greens)
+и примеры в разделе [визуализация](@ref theory-visualization).
 """
 function spectral_maps(problem::NEGFProblem, green::GreenState)
     Nz = problem.numerical.N_z

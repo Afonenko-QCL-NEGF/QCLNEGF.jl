@@ -1,29 +1,29 @@
 @doc raw"""
     _seed_number_weights_production(Gᴿ, grids, g_s; thread_trace=nothing)
 
-Precompute the exact discrete sheet-number contribution of every energy node
-for the equilibrium seed.  If ``A=i(Gᴿ-Gᴬ)``, the returned vector is
+Предварительно вычислить точный дискретный вклад каждого узла энергии
+в поверхностную концентрацию равновесного начального состояния.
+При ``A=i(Gᴿ-Gᴬ)`` возвращаемый вектор равен
 
 ```math
 q_e = \frac{g_s}{2\pi}\,w^E_e
       \sum_m w^k_m\,\operatorname{tr} A_{em},
 ```
 
-so that the seed number functional is the scalar sum
-``N(\mu)=\sum_e q_e f(E_e;\mu)``.  This is the same finite quadrature used by
-[`number_functional`](@ref), with the energy-only Fermi factor contracted
-after the momentum and basis traces.  It avoids constructing an
-`(N_E,N_k,N_b,N_b)` lesser array for every chemical-potential trial.
+Функционал числа частиц начального состояния принимает вид
+``N(\mu)=\sum_e q_e f(E_e;\mu)``. Это та же конечная квадратура, что в
+[`number_functional`](@ref). Множитель Ферми суммируется по энергии
+после свёртки по импульсу и следу по базису. Для пробного
+химпотенциала не нужно выделять массив меньшей компоненты.
 
-`Gᴿ` is a dense complex array of shape `(N_E,N_k,N_b,N_b)`; the result is a
-real dimensionless vector of length `N_E`.  Independent energy rows are
-threaded.  The internal `thread_trace` hook, when supplied, must have length
-`N_E` and records the Julia thread used for each row; it exists only for
-regression testing of the production schedule.
+`Gᴿ` — плотный комплексный массив размера `(N_E,N_k,N_b,N_b)`.
+Результат — вещественный безразмерный вектор длины `N_E`. Независимые
+строки энергии обрабатываются в потоках. Внутренний `thread_trace`
+длины `N_E` записывает поток каждой строки для проверки расписания.
 
-See [Green functions and density](@ref theory-greens), especially
-[the fixed-density normalization](@ref eq-number-normalization), and the
-[production seed](@ref theory-production).
+См. [функции Грина и плотность](@ref theory-greens),
+[нормировку числа частиц](@ref eq-number-normalization)
+и [начальное состояние](@ref theory-production).
 """
 function _seed_number_weights_production(
     Gᴿ::AbstractArray{<:Number,4},
@@ -85,17 +85,16 @@ end
     _seed_lesser_production!(Gˡ, Gᴿ, ε, μ, kBT;
                              thread_trace=nothing)
 
-Fill the final equilibrium lesser seed in place from
-``G^<(E_e,k_m)=i f(E_e;\mu) A(E_e,k_m)`` and
-``A=i(G^R-G^A)``.  Blocks `(e,m)` are independent and are distributed over
-Julia threads.  All arrays are dimensionless and have shape
-`(N_E,N_k,N_b,N_b)`.
+Заполнить меньшую компоненту равновесного начального состояния
+по ``G^<(E_e,k_m)=i f(E_e;\mu) A(E_e,k_m)`` и
+``A=i(G^R-G^A)``. Независимые блоки `(e,m)` распределяются по потокам
+Julia. Все массивы безразмерны и имеют форму `(N_E,N_k,N_b,N_b)`.
 
-The optional internal `thread_trace` vector has length `N_E*N_k` and records
-the thread that wrote each block for a scheduling regression test.
+Необязательный внутренний вектор `thread_trace` длины `N_E*N_k`
+сохраняет исполнителя каждого блока для проверки расписания.
 
-See [Green functions and density](@ref theory-greens) and the
-[production backend](@ref theory-production).
+См. [функции Грина и плотность](@ref theory-greens)
+и [оптимизированный решатель](@ref theory-production).
 """
 function _seed_lesser_production!(
     Gˡ::AbstractArray{ComplexF64,4},
@@ -132,23 +131,22 @@ end
     _seed_green_production(problem, h,
                            options=ProductionOptions(); thread_trace=nothing)
 
-Construct the fixed-density equilibrium Green-function seed for the
-production backend.  The threaded production Dyson primitive is evaluated
-once.  A real vector of `N_E` exact discrete spectral weights then replaces
-the former full `Gˡ` allocation at every chemical-potential bisection step.
-Only the final `Gˡ` array is constructed, in parallel over `(E_e,k_m)`.
+Построить равновесное начальное состояние с заданным числом частиц.
+Многопоточный оператор Дайсона выполняется один раз. При делении
+пополам по химпотенциалу используются `N_E` точных дискретных спектральных
+весов. Окончательная меньшая компонента `Gˡ` строится параллельно
+по блокам `(E_e,k_m)`.
 
-The result `(green, μ₀)` has the same physical and array contract as the
-educational `_seed_green`: `green` is a [`GreenState`](@ref) whose four complex
-fields have shape `(N_E,N_k,N_b,N_b)`, and `μ₀` is a dimensionless energy.
-No momentum averaging or approximation of the discrete quadrature is made.
+Результат `(green, μ₀)` соответствует контракту `_seed_green`.
+У [`GreenState`](@ref) четыре комплексных поля размера `(N_E,N_k,N_b,N_b)`.
+`μ₀` — безразмерная энергия. Дискретная квадратура сохраняется.
 
-For tests, `thread_trace=(weights=..., lesser=...)` may be supplied with
-integer vectors of lengths `N_E` and `N_E*N_k`; production callers omit it.
+Для тестов можно передать `thread_trace=(weights=..., lesser=...)`
+с целочисленными векторами длины `N_E` и `N_E*N_k`.
 
-See [the SCBA fixed point](@ref theory-scba),
-[Green functions and density](@ref theory-greens), and the
-[production backend](@ref theory-production).
+См. [неподвижную точку SCBA](@ref theory-scba),
+[функции Грина и плотность](@ref theory-greens)
+и [оптимизированный решатель](@ref theory-production).
 """
 function _seed_green_production(
     problem::NEGFProblem,

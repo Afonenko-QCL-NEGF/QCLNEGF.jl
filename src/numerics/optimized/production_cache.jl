@@ -249,11 +249,11 @@ end
 """
     build_shift_plan(ε, δ)
 
-Build the `O(N_E)` exact sparse equivalent of `build_shift_matrix(ε, δ)`.
-The input energy nodes must be strictly increasing.
+Построить точный разреженный эквивалент `build_shift_matrix(ε, δ)`
+за `O(N_E)`. Энергетические узлы должны строго возрастать.
 
-See [Field-periodic closure](@ref theory-periodicity) and
-[Production backend](@ref theory-production).
+См. [периодичность в поле](@ref theory-periodicity)
+и [оптимизированный решатель](@ref theory-production).
 """
 function build_shift_plan(ε::AbstractVector{<:Real}, δ::Real)
     length(ε) >= 2 || throw(ArgumentError("at least two energy nodes are required"))
@@ -290,11 +290,12 @@ end
 """
     apply_energy_shift!(destination, plan, X)
 
-Apply a non-periodic two-point energy interpolation to a four-axis
-`(N_E,N_k,N_b,N_b)` field. `destination` must not alias `X`.
+Применить непериодическую двухточечную энергетическую интерполяцию
+к полю размера `(N_E,N_k,N_b,N_b)`. `destination` и `X` не должны
+указывать на пересекающиеся области памяти.
 
-See [Field-periodic closure](@ref theory-periodicity) and the
-[production sparse-shift operator](@ref theory-production).
+См. [периодичность в поле](@ref theory-periodicity)
+и [разреженный оператор сдвига](@ref theory-production).
 """
 function apply_energy_shift!(
     destination::AbstractArray{<:Number,4},
@@ -324,10 +325,10 @@ function apply_energy_shift!(
 end
 
 """
-Allocate and apply an [`EnergyShiftPlan`](@ref).
+Выделить выходной массив и применить [`EnergyShiftPlan`](@ref).
 
-See [Field-periodic closure](@ref theory-periodicity) and
-[Production backend](@ref theory-production).
+См. [периодичность в поле](@ref theory-periodicity)
+и [оптимизированный решатель](@ref theory-production).
 """
 function apply_energy_shift(plan::EnergyShiftPlan, X::AbstractArray{<:Number,4})
     T = promote_type(Float64, eltype(X))
@@ -669,16 +670,16 @@ end
 """
     estimate_production_memory(numerical, mechanism_count=4; ...)
 
-Conservative estimate available before an expensive `NEGFProblem` is built.
-Set `dense_mechanism_count` to the expected number of momentum-dependent
-mechanisms.  For the default model acoustic is reduced exactly, while LO,
-impurity, and IFR remain dense. With no `energy_nodes`, PI planning reserves
-both dense and FFT storage as an upper envelope of unknown geometry, not a
-claim that both backends are allocated simultaneously. Supply actual
-`energy_nodes` (length `n.N_E`) to select the real PI backend; the overload for a built problem always uses its actual nodes.
+Консервативно оценить память до построения `NEGFProblem`.
+В `dense_mechanism_count` передайте число механизмов, зависящих
+от импульса. В модели по умолчанию акустическое ядро точно сокращается,
+а LO, примеси и шероховатость остаются плотными. Без `energy_nodes`
+верхняя оценка учитывает и плотное интегрирование произведения, и БПФ.
+Укажите фактические `energy_nodes` длины `n.N_E`, чтобы выбрать используемую
+схему. Перегрузка для построенной задачи всегда берёт её узлы.
 
-See [Numerical scales and cost](@ref theory-cost) and the
-[production RAM contract](@ref theory-production).
+См. [численные масштабы и стоимость](@ref theory-cost)
+и [ограничение памяти](@ref theory-production).
 """
 function estimate_production_memory(
     n::NumericalParameters,
@@ -706,10 +707,10 @@ function estimate_production_memory(
 end
 
 """
-Estimate the actual enabled mechanism mix of a built problem.
+Оценить память для включённых механизмов построенной задачи.
 
-See [Numerical scales and cost](@ref theory-cost) and the
-[production RAM contract](@ref theory-production).
+См. [численные масштабы и стоимость](@ref theory-cost)
+и [ограничение памяти](@ref theory-production).
 """
 function estimate_production_memory(
     problem::NEGFProblem;
@@ -743,16 +744,17 @@ end
 """
     build_production_cache(problem; options=ProductionOptions())
 
-Build exact sparse shifts, BLAS-ready kernel maps, and the selected Hilbert
-operator storage. Nodal FFT and canonical uniform product integration use
-bounded FFT plans; nonuniform product integration retains its dense operator.
-A conservative peak estimate is checked before any duplicate flattened kernel
-storage is allocated. This is a RAM guard, not a runtime guarantee: the estimate's
-`kernel_flops_per_candidate` must also be inspected for large dense kernels.
+Подготовить точные разреженные сдвиги, операторы ядер для BLAS и рабочее
+представление преобразования Гильберта. Узловое БПФ и аналитическое
+интегрирование произведения на равномерной сетке используют планы БПФ
+с ограниченной памятью. Неравномерная сетка сохраняет плотный оператор.
+Перед выделением копий развёрнутых ядер проверяется верхняя оценка
+пиковой памяти. Для крупных плотных ядер проверьте также
+`kernel_flops_per_candidate`.
 
-See [Production backend](@ref theory-production),
-[numerical cost and memory](@ref theory-cost), and
-[Microscopic kernels](@ref theory-kernels).
+См. [оптимизированный решатель](@ref theory-production),
+[численную стоимость и память](@ref theory-cost)
+и [микроскопические ядра](@ref theory-kernels).
 """
 function build_production_cache(
     problem::NEGFProblem;

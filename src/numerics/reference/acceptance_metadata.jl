@@ -1,4 +1,4 @@
-"""Version of the descriptive acceptance contract; formulas are evaluated elsewhere."""
+"""Версия контракта приёмки. Формулы вычисляются отдельно."""
 const _ACCEPTANCE_METADATA_VERSION = "qcl-negf-acceptance-metadata-v1"
 
 # A description is not a second implementation of a physical residual. Source

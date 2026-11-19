@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-# Small independent basis study. No engine, web, HDF5 or service account.
+# Небольшая независимая проверка базиса.
 # julia --project=. examples/09_localization_audit.jl /tmp/reference2019-basis-audit
 using QCLNEGF
 using LinearAlgebra
@@ -86,11 +86,11 @@ open(joinpath(output, "localization_summary.csv"), "w") do table
                 end
             end
         end
-        for method in (:legacy_pzp, :none)
+        for method in (:pzp, :none)
             basis = build_basis(p, n, s, grids, profiles; localization = method)
             check = QCLNEGF.basis_dispersion_diagnostic(basis, profiles, grids, s)
-            # A dispersion error compares with full BDD; it is not equivalent
-            # to the invariant-subspace residual used in the full-window rows.
+            # Ошибка дисперсии измеряется относительно полного оператора BDD.
+            # Невязка в строках полного окна характеризует инвариантность подпространства.
             println(
                 table,
                 join(
@@ -112,5 +112,5 @@ open(joinpath(output, "localization_summary.csv"), "w") do table
         flush(table)
     end
 end
-println("Basis study written to ", output)
-println("This is an operator/subspace diagnostic, not a converged transport study.")
+println("Результаты проверки базиса: ", output)
+println("Проверка относится к операторам и подпространствам базиса.")

@@ -1,9 +1,10 @@
 """
     model_capabilities(problem, algorithms)
 
-Machine-readable model scope. Numerical convergence certifies a fixed point
-of the declared discrete equations, independently of physical model adequacy.
-These notices describe model assumptions; they are not failed convergence gates.
+Машиночитаемое описание области применимости модели. Численная сходимость
+подтверждает неподвижную точку заданных дискретных уравнений. Адекватность
+физической модели оценивается отдельно. Уведомления описывают предположения
+и не входят в проверку сходимости.
 """
 function model_capabilities(problem::NEGFProblem, algorithms::AlgorithmOptions)
     limits = Dict{String,Any}[]

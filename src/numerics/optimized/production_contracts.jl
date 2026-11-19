@@ -1,15 +1,14 @@
 """
     EnergyShiftPlan
 
-Sparse, non-periodic representation of the piecewise-linear map
-`X(ε) -> X(ε + δ)`.  Every valid target energy uses at most two source
-nodes.  Invalid rows are exactly zero; energy wrap-around is impossible.
+Разреженное непериодическое отображение `X(ε) -> X(ε + δ)` по
+кусочно-линейной схеме. Каждая допустимая строка использует не больше
+двух исходных узлов. Остальные строки равны нулю.
+План эквивалентен [`build_shift_matrix`](@ref). Для его построения и хранения
+требуется `O(N_E)`.
 
-The plan is algebraically equivalent to [`build_shift_matrix`](@ref) but
-requires `O(N_E)` rather than `O(N_E^2)` storage and work.
-
-See [Field-periodic closure](@ref theory-periodicity) and
-[the production sparse-shift construction](@ref theory-production).
+См. [периодичность в поле](@ref theory-periodicity)
+и [разреженный сдвиг](@ref theory-production).
 """
 struct EnergyShiftPlan <: AbstractMatrix{Float64}
     left::Vector{Int}
@@ -19,7 +18,7 @@ struct EnergyShiftPlan <: AbstractMatrix{Float64}
     δ::Float64
 end
 
-"""One serialization-neutral scalar attached to a [`SolverEvent`](@ref)."""
+"""Скалярный показатель в [`SolverEvent`](@ref), независимый от способа записи."""
 struct SolverMetric
     name::Symbol
     value::Union{Float64,Int64,Bool,String}
@@ -50,7 +49,7 @@ SolverMetric(name::Symbol, value::Bool, unit::AbstractString = "") =
 SolverMetric(name::Symbol, value::AbstractString, unit::AbstractString = "") =
     SolverMetric(name, String(value), String(unit))
 
-"""Neutral numerical event consumed by an application-supplied callback."""
+"""Численное событие для функции обратного вызова приложения."""
 struct SolverEvent
     action::Symbol
     stage::Symbol
@@ -73,30 +72,32 @@ const CHECKPOINT_STATE_AND_MARKERS = :state_and_markers
 """
     ProductionOptions
 
-Controls memory-bounded production operators, checkpoint cadence, and neutral
-progress events without changing the physical model. `parallel_backend=:threads`
-partitions independent energy chunks and matrix blocks among Julia workers;
-use it with multi-threaded Julia and one BLAS thread. `:blas` uses one outer
-worker for BLAS/LAPACK-heavy contraction, Dyson/Keldysh, embedding, and
-residual blocks, while BLAS may use its own threads; private-buffer FFT and
-lightweight elementwise phases may still use Julia threads. `worker_count=0`
-lets the application resource planner use all available Julia threads, while a
-positive value caps the logical worker count. `residual_chunk` sets
-deterministic residual task granularity, and `phase_timing=true` emits
-per-iteration timing telemetry.
+Настройки ограниченных по памяти операторов, периодичности контрольных
+точек и событий прогресса. Они не меняют физическую модель.
+`parallel_backend=:threads` распределяет независимые участки энергии
+и матричные блоки по потокам Julia. Для него задайте один поток BLAS.
+`:blas` использует одного внешнего исполнителя для свёрток, Дайсона,
+Келдыша, граничных собственных энергий и невязок, а операции BLAS/LAPACK
+могут использовать свои потоки. БПФ с отдельными буферами и простые
+поэлементные вычисления всё ещё могут выполняться в потоках Julia.
+`worker_count=0` позволяет планировщику использовать все доступные потоки
+Julia, положительное значение ограничивает число логических исполнителей.
+`residual_chunk` задаёт размер блока независимых задач по невязкам,
+а `phase_timing=true` включает хронометраж этапов каждой итерации.
 
-`checkpoint_request` overrides checkpoint cadence for a configured sink. It
-receives `(; stage, iteration, outer_iteration)` and returns one of
-`:none` to skip the checkpoint, `:state_only` to request an aligned checkpoint
-with ordinary marker cadence, or `:state_and_markers` to request the checkpoint
-and force SCBA physical markers at that map. The same intents are available as
-`QCLNumerics.CHECKPOINT_NONE`, `QCLNumerics.CHECKPOINT_STATE_ONLY`, and
-`QCLNumerics.CHECKPOINT_STATE_AND_MARKERS`. Without a callback override, the
-configured checkpoint cadence requests the state and markers together.
+`checkpoint_request` задаёт решение о сохранении при наличии приёмника.
+Функция получает `(; stage, iteration, outer_iteration)` и возвращает один
+из трёх символов: `:none` пропускает сохранение, `:state_only` сохраняет
+согласованное состояние с обычной периодичностью физических маркеров,
+`:state_and_markers` сохраняет состояние и запрашивает маркеры SCBA на этой карте.
+Соответствующие константы: `QCLNumerics.CHECKPOINT_NONE`,
+`QCLNumerics.CHECKPOINT_STATE_ONLY` и `QCLNumerics.CHECKPOINT_STATE_AND_MARKERS`.
+Без отдельной функции заданная периодичность контрольных точек
+запрашивает состояние вместе с маркерами.
 
-See [Production backend](@ref theory-production),
-[numerical cost and memory](@ref theory-cost), and the
-[state persistence contract](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+См. [оптимизированный решатель](@ref theory-production),
+[численную стоимость и память](@ref theory-cost)
+и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 Base.@kwdef struct ProductionOptions
     # The application resource planner replaces this sentinel before every
@@ -121,11 +122,10 @@ Base.@kwdef struct ProductionOptions
     outer_iteration::Int = 0
 end
 
-"""Return a copy of `options` with explicitly named fields replaced.
-
-This is the single copy/update constructor used by configuration, studies,
-auto-tuning, and progress wiring. Keeping it here prevents positional copies
-of the production policy from drifting when a field is added.
+"""
+Вернуть копию `options` с явно указанными изменениями полей.
+Единый способ обновления настроек для конфигураций, серий расчётов,
+автоподбора и событий прогресса.
 """
 function with_production_options(
     options::ProductionOptions;
@@ -171,10 +171,10 @@ function with_production_options(
 end
 
 """
-Conservative resident/peak-memory and work estimate for one solve.
+Консервативная оценка постоянной и пиковой памяти и объёма вычислений.
 
-See [Numerical scales and cost](@ref theory-cost) and the
-[production RAM contract](@ref theory-production).
+См. [численные масштабы и стоимость](@ref theory-cost)
+и [ограничение памяти](@ref theory-production).
 """
 struct ProductionMemoryEstimate
     resident_bytes::Int
@@ -202,23 +202,22 @@ function Base.show(io::IO, estimate::ProductionMemoryEstimate)
 end
 
 """
-Common dispatch interface for production scattering operators.
+Общий интерфейс операторов рассеяния для оптимизированного расчёта.
 
-Concrete implementations represent the same flattened six-index contraction
-literally, as a dense matrix, through an exact momentum-independent factor,
-or through a controlled truncated SVD.  The selected representation and its
-scientific impact are recorded by [`algorithm_manifest`](@ref QCLNEGF.algorithm_manifest).
+Реализации представляют шестииндексную свёртку напрямую, плотной матрицей,
+точным множителем при независимости от импульса либо контролируемым
+усечённым SVD. Выбранное представление и его научное влияние фиксирует
+[`algorithm_manifest`](@ref QCLNEGF.algorithm_manifest).
 
-See [Production backend](@ref theory-production),
-[Microscopic kernels](@ref theory-kernels), and
-[Optimization decision tree](@ref optimization-decision-tree).
+См. [оптимизированный решатель](@ref theory-production),
+[микроскопические ядра](@ref theory-kernels)
+и [выбор оптимизации](@ref optimization-decision-tree).
 """
 abstract type AbstractProductionKernel end
 
 """
-Marker for the reference six-index contraction.  The tensor is not duplicated:
-[`ProductionCache`](@ref) retains the normalized source array and the literal
-loops consume it directly.
+Маркер прямой шестииндексной свёртки. [`ProductionCache`](@ref) хранит
+исходный нормированный тензор, и прямые циклы используют его без копии.
 """
 struct LiteralProductionKernel <: AbstractProductionKernel
     N_k::Int
@@ -226,10 +225,10 @@ struct LiteralProductionKernel <: AbstractProductionKernel
 end
 
 """
-Dense exact scattering map from `(k′,c,d)` to `(k,a,b)`.
+Точное плотное отображение рассеяния из `(k′,c,d)` в `(k,a,b)`.
 
-See [Microscopic kernels](@ref theory-kernels) and the
-[production BLAS contraction](@ref theory-production).
+См. [микроскопические ядра](@ref theory-kernels)
+и [свёртку BLAS](@ref theory-production).
 """
 struct DenseProductionKernel <: AbstractProductionKernel
     matrix::Matrix{ComplexF64}
@@ -249,10 +248,10 @@ struct _SeparableIFRProductionKernel <: AbstractProductionKernel
 end
 
 """
-Exact reduced map for a kernel independent of both radial momenta.
+Точная сокращённая свёртка для ядра, независимого от обоих радиальных импульсов.
 
-See [Microscopic kernels](@ref theory-kernels) and the exact
-momentum-independent branch in [Production backend](@ref theory-production).
+См. [микроскопические ядра](@ref theory-kernels)
+и [ветвь с независимым от импульса ядром](@ref theory-production).
 """
 struct MomentumIndependentProductionKernel <: AbstractProductionKernel
     block::Matrix{ComplexF64}
@@ -261,12 +260,12 @@ struct MomentumIndependentProductionKernel <: AbstractProductionKernel
 end
 
 """
-Controlled truncated-SVD representation ``K \\approx U_r S_r V_r^\\dagger``
-of the flattened six-index scattering map.  `relative_frobenius_residual` is
-the exact tail norm computed from the discarded singular values of that
-discrete matrix; it is not a continuum or physical-model error bound.
+Контролируемое представление шестииндексного отображения рассеяния
+через усечённое SVD: ``K \\approx U_r S_r V_r^\\dagger``.
+`relative_frobenius_residual` — точная норма отбрасываемой части
+дискретной матрицы по её сингулярным значениям.
 
-See [Controlled numerical approximations](@ref optimization-controlled).
+См. [контролируемые численные приближения](@ref optimization-controlled).
 """
 struct LowRankProductionKernel <: AbstractProductionKernel
     left::Matrix{ComplexF64}
@@ -278,11 +277,11 @@ struct LowRankProductionKernel <: AbstractProductionKernel
 end
 
 """
-Static shift plans and exact kernel operators shared by all iterations.
+Неизменяемые планы сдвига и точные операторы ядер для всех итераций.
 
-See [Production backend](@ref theory-production),
-[Field-periodic closure](@ref theory-periodicity), and
-[Microscopic kernels](@ref theory-kernels).
+См. [оптимизированный решатель](@ref theory-production),
+[периодичность в поле](@ref theory-periodicity)
+и [микроскопические ядра](@ref theory-kernels).
 """
 struct ProductionCache{P,H}
     W̃₊ᴱᵖ::EnergyShiftPlan
@@ -299,11 +298,11 @@ struct ProductionCache{P,H}
 end
 
 """
-One retained scalar record from a production sweep point. `status` describes
-the outer solve, while `scba_quality` preserves the independent strict,
-diagnostic-approximate, unresolved, or invalid SCBA classification.
+Скалярная запись одной рабочей точки. `status` содержит статус внешнего
+решения, а `scba_quality` — независимую оценку SCBA: строгая сходимость,
+допустимое приближённое решение, отсутствие решения или недопустимость.
 
-See [Production sweep, warm start, and recovery](@ref theory-production).
+См. [серии расчётов и возобновление](@ref theory-production).
 """
 struct ProductionSweepRecord
     temperature_K::Float64
@@ -406,10 +405,11 @@ function _solution_report_metrics(solution::NEGFSolution)
 end
 
 """
-Memory-safe sweep result: summaries only, never all full NEGF states.
+Результат серии расчётов с краткими сведениями по точкам. Полные состояния
+всех точек одновременно в памяти не хранятся.
 
-See [Production sweep, warm start, and recovery](@ref theory-production) and
-the [state persistence contract](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+См. [серии расчётов и возобновление](@ref theory-production)
+и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 struct ProductionSweepResult
     records::Vector{ProductionSweepRecord}
@@ -437,11 +437,12 @@ function _check_production_options(options::ProductionOptions)
     return options
 end
 
-"""Ask the application at a safe boundary, before allocating a snapshot.
+"""
+Запросить решение приложения на безопасной границе до выделения снимка.
 
-The request contains counters only; persistence and control paths stay outside
-numerics. An explicit request owns cadence. Without it the numerical cadence is
-used, preserving the ordinary low-level solver contract.
+В запрос входят только счётчики. Запись и управление остаются в приложении.
+Явный запрос задаёт решение на каждой границе. Если функции запроса нет,
+действует заданная в численных настройках периодичность.
 """
 function _production_checkpoint_request(
     options::ProductionOptions,

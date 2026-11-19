@@ -1,8 +1,9 @@
-"""Estimated one-particle spectral coverage before an interacting solve.
+"""
+Оценка покрытия одночастичного спектра до расчёта с взаимодействием.
 
-All energies are in the declared solver energy unit relative to E_ref. The
-bound covers every eigenvalue at every represented radial momentum. It does
-not claim to bound the interacting spectral tails; those are measured later.
+Энергии заданы в единицах задачи относительно E_ref. Граница покрывает
+все собственные значения для каждого радиального импульса сетки.
+Хвосты спектра с взаимодействием измеряются отдельно после решения.
 """
 struct RepresentationCoverage
     discretization_id::String
@@ -81,11 +82,13 @@ function representation_coverage(
     )
 end
 
-"""Propose a wider energy window while preserving (or refining) the old step.
+"""
+Предложить более широкое энергетическое окно с тем же или меньшим шагом.
 
-This returns a new NumericalParameters value. The caller must rebuild grids,
-basis-dependent kernels and caches and record a new discretization; no data
-transfer or exact restart is implied. The node budget fails explicitly.
+Возвращает новые `NumericalParameters`. Вызывающий код заново строит сетки,
+зависящие от базиса ядра и рабочие кэши и фиксирует новую дискретизацию.
+Перенос состояния и точное возобновление выполняются отдельно.
+При превышении числа разрешённых узлов функция завершится с ошибкой.
 """
 function expand_energy_window(
     problem::NEGFProblem,
@@ -119,10 +122,12 @@ function expand_energy_window(
     )
 end
 
-"""Actual spectral/occupied tails and matrix spectral deficit of one state.
+"""
+Измерить хвосты спектра и занятой его части, а также матричный спектральный
+дефицит для данного состояния.
 
-The spectral sum deficit is a matrix norm, never a lost-charge fraction.
-No spectral matrix or particle population is renormalized by this check.
+Дефицит спектральной суммы измеряется матричной нормой. В ходе проверки
+спектральные матрицы и населённости не перенормируются.
 """
 function measured_representation_coverage(
     problem::NEGFProblem,
@@ -161,7 +166,7 @@ function _minimum_positive_broadening(family::SelfEnergyFamily)
     return isfinite(value) ? value : nothing
 end
 
-"""Exact finite-window weight of a normalized Lorentzian spectral line."""
+"""Точный вес нормированной линии Лоренца в конечном окне."""
 function lorentzian_window_weight(lower::Real, upper::Real, centre::Real, width::Real)
     all(isfinite, (lower, upper, centre, width)) && upper > lower && width > 0 ||
         throw(ArgumentError("Lorentzian bounds and positive width must be finite"))

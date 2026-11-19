@@ -1,4 +1,4 @@
-"""Versioned structural gates for representation sanity, not run tolerances."""
+"""Версионированные структурные критерии корректности представления, отдельные от допусков запуска."""
 const _EFFECTIVE_HAMILTONIAN_NORM_FLOOR = 1.0e-14
 const _EFFECTIVE_HAMILTONIAN_HERMITICITY_LIMIT = 1.0e-12
 const _OPTICAL_POSITION_HERMITICITY_LIMIT = 1.0e-11

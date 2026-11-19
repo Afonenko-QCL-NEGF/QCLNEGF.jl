@@ -1,9 +1,9 @@
 """
-One auditable row in [`optimization_catalog`](@ref).  `impact` is one of
-`:physics_preserving`, `:controlled_numerical`, `:physical_model`, or
-`:research_only`; `status` is `:implemented` or `:documented`.
+Одна проверяемая запись [`optimization_catalog`](@ref). Поле `impact`
+принимает `:physics_preserving`, `:controlled_numerical`, `:physical_model`
+или `:research_only`. Поле `status` принимает `:implemented` или `:documented`.
 
-See [Optimization decision tree](@ref optimization-decision-tree).
+См. [выбор метода оптимизации](@ref optimization-decision-tree).
 """
 struct OptimizationDescriptor
     id::Symbol
@@ -252,21 +252,21 @@ const _OPTIMIZATION_CATALOG = OptimizationDescriptor[
 """
     optimization_catalog()
 
-Return a copy of the optimization taxonomy used by the documentation and
-machine-readable run manifest.
+Возвращает копию классификации оптимизаций для документации и машиночитаемого
+манифеста запуска.
 
-See [Optimization decision tree](@ref optimization-decision-tree).
+См. [выбор метода оптимизации](@ref optimization-decision-tree).
 """
 optimization_catalog() = copy(_OPTIMIZATION_CATALOG)
 
 """
     algorithm_impact(options)
 
-Classify the selected run by the strongest scientific effect.  A physical
-model change dominates a controlled numerical approximation, which dominates
-roundoff-level computational rearrangements.
+Классифицирует запуск по наиболее сильному научному эффекту. Изменение
+физической модели важнее контролируемой численной аппроксимации. Далее
+следуют изменения вычислений, проявляющиеся на уровне округления.
 
-See [Evidence classes](@ref optimization-evidence-classes).
+См. [классы свидетельств](@ref optimization-evidence-classes).
 """
 function algorithm_impact(options::AlgorithmOptions)
     _check_algorithm_options(options)
@@ -294,11 +294,11 @@ end
 """
     algorithm_manifest(options)
 
-Return a flat dictionary suitable for YAML/HDF5 provenance and comparison
-reports. Values use explicit strings instead of Julia implementation types.
+Возвращает плоский словарь для хранения происхождения данных в YAML/HDF5
+и отчётов по сравнению. Значения представлены явными строками.
 
-See [YAML run configurations](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/configuration.md) and
-[Optimization decision tree](@ref optimization-decision-tree).
+См. [конфигурации запуска YAML](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/configuration.md) и
+[выбор метода оптимизации](@ref optimization-decision-tree).
 """
 function algorithm_manifest(options::AlgorithmOptions)
     _check_algorithm_options(options)

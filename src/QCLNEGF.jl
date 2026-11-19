@@ -963,8 +963,8 @@ include("application/model_capabilities.jl")
 """
     solve_production(problem; checkpoint_sink=nothing, kwargs...)
 
-Solve one transport problem in memory. A `checkpoint_sink` callback can consume
-accepted states; durable storage and file paths belong to QCLNEGFRunner.
+Решает одну транспортную задачу в памяти. Обработчик `checkpoint_sink` получает
+состояния в точках сохранения. За запись и выбор путей отвечает QCLNEGFRunner.
 """
 solve_production(problem::NEGFProblem; checkpoint_sink::Union{Nothing,Function}=nothing, kwargs...) =
     _solve_production(problem; checkpoint_sink, kwargs...)

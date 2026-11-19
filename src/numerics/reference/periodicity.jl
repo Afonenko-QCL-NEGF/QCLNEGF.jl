@@ -1,13 +1,12 @@
 """
     build_shift_matrix(ε, δ)
 
-Dense non-periodic piecewise-linear operator representing `X(ε+δ)`.
-Rows whose shifted argument lies outside the energy window are exactly zero;
-there is no wrap-around.  Shape: `(N_E,N_E)`.
+Плотный непериодический кусочно-линейный оператор `X(ε+δ)`
+размера `(N_E,N_E)`. Строки со сдвинутым аргументом за пределами
+энергетического окна равны нулю.
 
-Implements [EQ-SHIFT-001](@ref eq-energy-shift).
-See [Field-periodic closure](@ref theory-periodicity) for the sign convention
-and the reason the interpolation is non-cyclic.
+Реализует [EQ-SHIFT-001](@ref eq-energy-shift). Соглашение о знаке сдвига
+описано в [главе о периодичности в поле](@ref theory-periodicity).
 """
 function build_shift_matrix(ε::AbstractVector{<:Real}, δ::Real)
     length(ε) >= 2 || throw(ArgumentError("at least two energy nodes are required"))
@@ -36,15 +35,16 @@ end
 """
     build_conservative_shift_pair(ε, weights, δ)
 
-Finite-volume translations on energy control volumes. The cells are centred
-on the supplied nodes with interfaces at adjacent midpoints; endpoint cells
-end at the first/last node. `weights` must be the corresponding trapezoidal
-weights. A shifted cell receives its exact overlap with source cells, so this
-is a positive, piecewise-constant conservative remap, **not** nodal linear
-interpolation. For arbitrary displacement and nonuniform grids it satisfies
-`Diagonal(weights)*plus == minus'*Diagonal(weights)` to roundoff. Values
-outside the window are zero; `loss_plus/minus` expose fractional edge loss.
-No periodic wrap, energy rounding, or row renormalisation is performed.
+Сдвиг на энергетической сетке методом конечных объёмов. Границы ячеек
+проходят через середины отрезков между узлами. Крайние ячейки
+ограничены первым и последним узлами. В `weights` передаются
+соответствующие веса трапеций. Сдвинутая ячейка получает точное
+перекрытие с исходными ячейками. Получается положительный
+кусочно-постоянный консервативный перенос. При любом сдвиге и
+неравномерной сетке `Diagonal(weights)*plus == minus'*Diagonal(weights)`
+с точностью округления. За пределами окна значения равны нулю.
+`loss_plus/minus` дают долю потерь на краях. Сдвиг применяется
+без округления энергии, циклического замыкания и перенормировки строк.
 """
 function build_conservative_shift_pair(
     ε::AbstractVector{<:Real},
@@ -85,10 +85,10 @@ function build_conservative_shift_pair(
 end
 
 """
-Apply a dense energy-shift matrix to an `(N_E,N_k,N_b,N_b)` field.
-
-See [Field-periodic closure](@ref theory-periodicity) and
-[the energy-shift equation](@ref eq-energy-shift).
+Применить плотную матрицу энергетического сдвига к полю размера
+`(N_E,N_k,N_b,N_b)`.
+См. [периодичность в поле](@ref theory-periodicity)
+и [уравнение энергетического сдвига](@ref eq-energy-shift).
 """
 function apply_energy_shift(W::AbstractMatrix{<:Real}, X::AbstractArray{<:Number,4})
     NE, Nk, Nb, Nb2 = size(X)
@@ -122,18 +122,16 @@ end
 """
     embedding_self_energy(problem, green)
 
-Build the **legacy bulk-feedback approximation** for all
-three Keldysh components.  Returns `(total, plus, minus)`; every family has
-shape `(N_E,N_k,N_b,N_b)`.
+Вычислить приближение обратной связи через объёмную функцию Грина
+во всех трёх компонентах Келдыша. Возвращает `(total, plus, minus)`.
+Каждое семейство имеет размер `(N_E,N_k,N_b,N_b)`.
 
-The neighbouring full bulk Green function is not a cavity/surface Green
-function. This closure is retained to reproduce old calculations; it must
-not be identified as an exact nearest-neighbour embedding. See
-`finite_chain_green` for an independent open-chain reference.
+Объёмная функция Грина соседней ячейки отличается от функции открытого
+края цепочки. Приближение доступно для сравнительных расчётов.
+Независимый эталон открытой цепочки даёт `finite_chain_green`.
 
-Implements [EQ-EMBED-001](@ref eq-embedding).
-See [Field-periodic closure](@ref theory-periodicity) for the neighbouring
-periods represented by the returned `plus` and `minus` families.
+Реализует [EQ-EMBED-001](@ref eq-embedding). См. расположение соседних
+периодов в [главе о периодичности в поле](@ref theory-periodicity).
 """
 function embedding_self_energy(problem::NEGFProblem, green::GreenState)
     bp = problem.basis
@@ -155,19 +153,20 @@ end
     finite_chain_green(energy, onsite, couplings; sigma_retarded,
                        sigma_lesser, sigma_greater=nothing, centre, return_full=false)
 
-Independent finite open block-chain reference. `couplings[j]` is the actual
-Hamiltonian block `H[j,j+1]`; field offsets belong in `onsite[j]` and are never
-rounded to energy-grid nodes. Local scattering/reservoir self-energies are
-block diagonal. Left/right *cavities* are eliminated separately by exact
-Schur complements, including their lesser and greater injection terms.
+Независимый эталон на конечной открытой блочной цепочке.
+`couplings[j]` — фактический блок гамильтониана `H[j,j+1]`.
+Полевые сдвиги входят в `onsite[j]` без округления по сетке.
+Локальные собственные энергии рассеяния и резервуара блочно-диагональны.
+Левый и правый открытые края исключаются по отдельности точными
+дополнениями Шура с меньшими и большими членами инжекции.
 
-No bulk Green function is reused as a surface. No hidden regulator is added:
-a physical or mathematical broadening must be supplied through all three
-self-energy components. If greater is omitted it is derived by the Keldysh
-identity. Returns centre `retarded/lesser/greater`, the two embeddings, and
-optionally independently inverted full matrices for small reference tests.
-This finite domain requires a size-convergence study before describing an
-infinite system, and assumes no inter-cell scattering self-energy.
+Уширение задаётся через все три компоненты собственной энергии.
+Если большая компонента опущена, она восстанавливается по тождеству
+Келдыша. Возвращаются `retarded/lesser/greater` центрального блока,
+две граничные собственные энергии и, по запросу, независимые полные
+обращённые матрицы для малых проверок. Рассеяние между ячейками
+не учитывается. Для приближения бесконечной системы требуется
+проверка по длине цепочки.
 """
 function finite_chain_green(
     energy::Real,
@@ -264,7 +263,7 @@ function finite_chain_green(
     return (retarded = R, lesser = L, greater = G, plus = plus, minus = minus, full = full)
 end
 
-"""Retarded scalar nearest-neighbour surface Green function in the upper half-plane."""
+"""Скалярная запаздывающая поверхностная функция Грина для ближайших соседей в верхней полуплоскости."""
 function chain_surface_green(z::Complex, hopping::Number)
     imag(z) > 0 ||
         throw(ArgumentError("retarded argument must have positive imaginary part"))
@@ -277,18 +276,17 @@ end
 """
     cavity_embedding_self_energy(problem, local_scattering, h; periods=8)
 
-Controlled open-chain cavity embedding for the current field-periodic local
-scattering approximation. The central cell is surrounded by `periods` cells
-on each side. Cell j has `h_j=h_0-j*Eperiod` and all three local self-energies
-`Σ_j(E)=Σ_0(E+j*Eperiod)`, using the same noncyclic linear interpolation.
-No previous bulk Green function is fed back as a surface and no extra
-broadening is introduced. Returns `(total,plus,minus)` as SelfEnergyFamily.
+Граничная собственная энергия открытой цепочки в полевой периодической
+модели с локальным рассеянием. По обе стороны центральной ячейки
+располагается по `periods` ячеек. В ячейке j гамильтониан равен
+`h_j=h_0-j*Eperiod`, а три локальные собственные энергии —
+`Σ_j(E)=Σ_0(E+j*Eperiod)`. Применяется та же нециклическая линейная
+интерполяция. Возвращает `(total,plus,minus)` типа SelfEnergyFamily.
 
-Outside the sampled energy window local Σ is zero. Convergence in BOTH the
-number of cells and the energy-window width is mandatory; finite-chain
-reflection and neglected nonlocal scattering remain explicit model errors.
-The function is a correctness/reference mode, not an optimized large-window
-production implementation.
+Вне дискретного энергетического окна локальная Σ равна нулю.
+Сходимость проверяется по числу ячеек и ширине окна. Конечный размер
+цепочки и отсутствие нелокального рассеяния ограничивают точность.
+Функция служит эталоном для проверки корректности.
 """
 function cavity_embedding_self_energy(
     problem::NEGFProblem,

@@ -1,14 +1,16 @@
-"""Numerical construction backend. Implementations consume validated physical
-models but are forbidden from changing the enabled physics."""
+"""
+Интерфейс построения ядер. Реализации получают проверенные физические
+модели и сохраняют заданный набор механизмов.
+"""
 abstract type AbstractScatteringKernelBackend end
 
-"""E0 literal six-index kernel construction used as the test oracle."""
+"""Прямое шестииндексное построение E0, служащее эталоном для тестов."""
 struct LiteralScatteringKernelBackend <: AbstractScatteringKernelBackend end
 
-"""E1 exact production builder with threaded finite-angle blocks."""
+"""Точное построение E1 с параллельной обработкой блоков конечной угловой сетки."""
 struct ExactParallelScatteringKernelBackend <: AbstractScatteringKernelBackend end
 
-"""Continuum angular quadrature for the impurity channel; tolerance is measured."""
+"""Квадратура по непрерывному углу для примесного канала с оценкой погрешности."""
 struct AdaptiveDirectScatteringKernelBackend <: AbstractScatteringKernelBackend
     angular_tolerance::Float64
     function AdaptiveDirectScatteringKernelBackend(tolerance::Real = 1e-5)
@@ -18,7 +20,7 @@ struct AdaptiveDirectScatteringKernelBackend <: AbstractScatteringKernelBackend
     end
 end
 
-"""E2 adaptive lookup construction with measured interpolation residuals."""
+"""Адаптивное табулированное построение E2 с измеряемыми невязками интерполяции."""
 struct TabulatedScatteringKernelBackend <: AbstractScatteringKernelBackend
     options::ProductionKernelOptions
     function TabulatedScatteringKernelBackend(options::ProductionKernelOptions)
@@ -34,7 +36,7 @@ end
 TabulatedScatteringKernelBackend() =
     TabulatedScatteringKernelBackend(ProductionKernelOptions())
 
-"""Declare the E0--E2 evidence class of a numerical kernel backend."""
+"""Задать класс свидетельства E0–E2 для численной схемы построения ядер."""
 scattering_backend_evidence_class(::LiteralScatteringKernelBackend) = :E0
 scattering_backend_evidence_class(::ExactParallelScatteringKernelBackend) = :E1
 scattering_backend_evidence_class(::AdaptiveDirectScatteringKernelBackend) = :E2
@@ -49,9 +51,10 @@ function scattering_backend_evidence_class(backend::AbstractScatteringKernelBack
 end
 
 """
-Numerical policy for scattering construction and contraction. `contraction`
-is `:literal`, `:dense_blas`, or `:low_rank`. A nonzero low-rank tolerance or
-finite rank cap is E2; exact algebraic reordering is E1.
+Численная схема построения и свёртки ядер рассеяния. `contraction`
+принимает `:literal`, `:dense_blas` или `:low_rank`. Ненулевой допуск
+или конечный предел ранга относится к E2, точная алгебраическая
+перестановка — к E1.
 """
 struct ScatteringNumericalPlan{B<:AbstractScatteringKernelBackend}
     kernel_backend::B
@@ -89,7 +92,7 @@ struct ScatteringNumericalPlan{B<:AbstractScatteringKernelBackend}
     end
 end
 
-"""Return the strongest E0--E3 class selected by a scattering plan/options."""
+"""Вернуть старший класс E0–E3, выбранный планом рассеяния."""
 function scattering_evidence_class(plan::ScatteringNumericalPlan)
     backend_class = scattering_backend_evidence_class(plan.kernel_backend)
     backend_class in (:E0, :E1, :E2) || _scattering_error(
@@ -107,8 +110,10 @@ function scattering_evidence_class(plan::ScatteringNumericalPlan)
     return :E0
 end
 
-"""Translate the existing public algorithm configuration into the separated
-scattering numerical policy without interpreting any physical parameters."""
+"""
+Преобразовать настройки публичного алгоритма в отдельную численную
+схему рассеяния без интерпретации физических параметров.
+"""
 function scattering_numerical_plan(
     options::AlgorithmOptions,
     kernel_options::ProductionKernelOptions = ProductionKernelOptions();
@@ -157,12 +162,11 @@ function scattering_evidence_class(
     return options.elastic_retarded === :direct_green ? :E2 : kernel_class
 end
 
-"""Typed assembly boundary between physical models and discretization data.
-
-No numerical method may construct this context from raw unchecked
-dictionaries. `ScatteringOptions` remains the documented mechanism-selection
-contract; the validated model collection owns the corresponding physical
-parameters.
+"""
+Типизированные входные данные на границе физической модели и
+дискретизации. Численный метод получает проверенный контекст.
+`ScatteringOptions` задаёт включённые механизмы, а проверенный набор
+моделей — соответствующие физические параметры.
 """
 struct ScatteringAssemblyContext
     physical::PhysicalParameters
@@ -178,7 +182,7 @@ function _require_finite_array(mechanism, field, values)
         _scattering_error(mechanism, field, "contains non-finite values")
 end
 
-"""Validate scattering grid, profile, basis shapes and finite-value formats."""
+"""Проверить сетки, размеры профилей и базиса, а также конечность значений."""
 function validate_scattering_context(context::ScatteringAssemblyContext)
     n = context.numerical
     g = context.grids
@@ -258,7 +262,7 @@ end
 
 
 
-"""Validate the common six-axis normalized `KernelSet` data contract."""
+"""Проверить общий контракт нормированного шестимерного `KernelSet`."""
 function validate_scattering_kernel_set(
     kernels::KernelSet,
     numerical::NumericalParameters,
@@ -331,7 +335,7 @@ function validate_scattering_kernel_set(
     return kernels
 end
 
-"""Validated kernel set, diagnostics, mechanism IDs, and evidence class."""
+"""Проверенный набор ядер, диагностика, идентификаторы механизмов и класс свидетельства."""
 struct ScatteringAssemblyResult{D}
     kernels::KernelSet
     diagnostics::D
@@ -339,15 +343,17 @@ struct ScatteringAssemblyResult{D}
     evidence_class::Symbol
 end
 
-"""Typed result contract returned by every scattering kernel backend."""
+"""Типизированный результат построения ядер для каждой реализации."""
 struct ScatteringKernelBuild{D}
     kernels::KernelSet
     diagnostics::D
 end
 
-"""Numerical-backend interface. Third-party backends implement this method
-and `scattering_backend_evidence_class`; the application orchestrator never
-branches on concrete backend types."""
+"""
+Интерфейс численного построения ядер. Сторонняя реализация определяет
+этот метод и `scattering_backend_evidence_class`. Вызывающее приложение
+работает через общий интерфейс независимо от конкретного типа.
+"""
 function build_scattering_kernel_set(
     backend::AbstractScatteringKernelBackend,
     context::ScatteringAssemblyContext,
@@ -431,7 +437,7 @@ function build_scattering_kernel_set(
     return ScatteringKernelBuild(kernels, diagnostics)
 end
 
-"""Assemble kernels through the selected numerical backend interface."""
+"""Собрать ядра через интерфейс выбранной численной схемы."""
 function assemble_scattering_kernels(
     context::ScatteringAssemblyContext,
     models::AbstractVector{<:AbstractScatteringPhysicalModel},
@@ -467,10 +473,10 @@ end
 """
     build_configured_scattering_problem(; ...)
 
-Composition boundary used by application-configured runs. It builds common grids and
-basis exactly once, delegates scattering construction through
-[`build_scattering_kernel_set`](@ref), and returns one homogeneous
-`NEGFProblem` independently of the selected numerical backend.
+Построить конфигурируемую задачу приложения. Общие сетки и базис
+собираются один раз. Ядра строятся через
+[`build_scattering_kernel_set`](@ref). Возвращает единый `NEGFProblem`
+для любой выбранной численной схемы.
 """
 function build_configured_scattering_problem(;
     physical::PhysicalParameters,

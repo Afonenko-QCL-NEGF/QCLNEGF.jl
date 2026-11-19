@@ -17,7 +17,7 @@ function _marker_equilibrium_status(problem::NEGFProblem)
     return :available
 end
 
-"""Fit one equilibrium chemical potential using the spectral number, not normalized Gn."""
+"""Подобрать один равновесный химический потенциал по спектральному числу частиц без нормированной матрицы Gn."""
 function _marker_spectral_chemical_potential(energy, spectral_number_weight, target, kBT)
     all(isfinite, spectral_number_weight) ||
         return (; mu = NaN, status = :nonfinite_spectrum)
@@ -46,12 +46,15 @@ function _marker_weighted_quantile(values, weights, probability)
     return values[last(order)]
 end
 
-"""Spectrally weighted *sampled* modal Γ/ΔE, bounded by the policy block budget.
+"""
+Оценить спектрально взвешенное модовое Γ/ΔE на выборке блоков
+в пределах лимита политики.
 
-Select midpoint quantiles of wE*wK*Tr(A), then resolve each selected block in
-its spectral eigenvectors. Its modal linewidth is u'Γu, weighted by that
-mode's positive spectral weight. Γ has energy units, so no hbar or 2pi is
-inserted. Overlapping resonances need not have this projected width as FWHM.
+Выбираются квантильные середины меры wE*wK*Tr(A), затем выбранный блок
+разлагается по собственным векторам A. Модовая ширина равна u'Γu,
+её вес — положительный спектральный вес моды. Γ имеет размерность
+энергии, поэтому множители hbar и 2pi не вводятся. Для перекрывающихся
+резонансов такая ширина может отличаться от ширины на полувысоте.
 """
 function _sampled_linewidth_markers(A, total, grids, policy::SCBAPhysicsMarkerPolicy)
     NE, Nk, Nb, _ = size(A)
@@ -127,7 +130,7 @@ _marker_relative_norm(error_squared, scale_squared) =
     scale_squared > 0 ? sqrt(error_squared/scale_squared) :
     iszero(error_squared) ? 0.0 : Inf
 
-"""No array-sized temporaries: the diagnostic retains the unmixed map scale."""
+"""Сохранить масштаб несмешанного отображения без временных массивов полного размера."""
 function _channel_component_markers!(rows, channel, mixed, fresh)
     for (component, field) in ((:retarded, :Σᴿ), (:lesser, :Σˡ), (:greater, :Σᵍ))
         old, new = getfield(mixed, field), getfield(fresh, field)
@@ -152,7 +155,7 @@ function _channel_component_markers!(rows, channel, mixed, fresh)
     return rows
 end
 
-"""Compute particle/energy balances on exactly the same G without block copies."""
+"""Вычислить балансы частиц и энергии на одной и той же G без копирования блоков."""
 function _channel_collision_marker(problem, green, channel, state_kind, family)
     particle, energy = 0.0im, 0.0im
     particle_absolute, energy_absolute = 0.0, 0.0
@@ -219,10 +222,11 @@ function _fresh_map_markers(
     return (; channels, collisions, status = :available)
 end
 
-"""Weight in edge bands whose ±shift requests leave the represented energy window.
-
-This measures boundary exposure of the current state, not an extrapolated lost
-collision flux. Signed weights are retained; PSD diagnostics assess validity.
+"""
+Вес в краевых полосах, из которых запросы сдвига ±shift выходят
+за энергетическое окно. Метрика показывает долю состояния у границ.
+Веса сохраняются со знаком. Допустимость проверяется по положительной
+полуопределённости.
 """
 function _shift_boundary_markers(problem, green, shift)
     energy, weightsE, weightsK = problem.grids.ε, problem.grids.wᴱ, problem.grids.wᵏ
@@ -245,7 +249,7 @@ function _shift_boundary_markers(problem, green, shift)
     )
 end
 
-"""Reconstruct raw Keldysh blocks with O(Nb²) workspace; no full raw-array copy."""
+"""Восстановить сырые блоки Келдыша с памятью O(Nb²) без копирования полных массивов."""
 function _scba_physical_markers(
     problem,
     green,
@@ -433,11 +437,14 @@ function _ensure_scba_physical_markers!(
     return (time_ns()-started)*1e-9
 end
 
-"""First and sustained crossings on one ordered SCBA trajectory, never acceptance.
+"""
+Отметить первое и устойчивое прохождение порога на одной
+упорядоченной траектории SCBA.
 
-A missing iteration breaks a consecutive streak. Combining different outer
-iterations or attempts by resetting iteration numbers is rejected. The owning
-result supplies scientific/attempt/outer identity and final acceptance.
+Пропуск итерации прерывает последовательность прохождений.
+Запрещено склеивать разные внешние итерации или попытки сбросом номера.
+Идентификаторы расчёта, попытки и внешней итерации, как и решение
+о научной приёмке, берутся из результата.
 """
 function _scba_threshold_crossings(history; required_consecutive::Int = 3)
     required_consecutive > 0 || throw(ArgumentError("crossing streak must be positive"))

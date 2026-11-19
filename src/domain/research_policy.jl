@@ -1,4 +1,4 @@
-"""One reproducible summary of a scalar residual, without physical gate mixing."""
+"""Воспроизводимая сводка одной скалярной невязки вне физических критериев приёмки."""
 struct ResidualTrend
     initial::Float64
     final::Float64
@@ -13,7 +13,7 @@ struct ResidualTrend
     promising::Bool
 end
 
-"""Permission for an outer step is independent of strict scientific acceptance."""
+"""Разрешение на шаг внешнего цикла определяется отдельно от строгой научной приёмки."""
 struct ResearchContinuationDecision
     action::Symbol
     reason::Symbol
@@ -72,11 +72,12 @@ function residual_trend(values::AbstractVector{<:Real}, policy::ResearchTrendPol
     )
 end
 
-"""Assess a history from one fixed Hartree state, using only unmixed map defects.
+"""Оценивает историю при фиксированном потенциале Хартри по дефектам отображения до смешивания.
 
-The caller supplies mathematical usability after solving Dyson and checking
-state axes. PSD/current/spectral sum remain independent scientific diagnostics.
-A decision before the budget is always :iterate unless the state is unusable.
+Пригодность состояния задаёт вызывающая сторона после решения уравнения Дайсона
+и проверки осей состояния. PSD, ток и спектральная сумма остаются независимыми
+научными проверками. Пока бюджет не исчерпан, для пригодного состояния решение
+всегда `:iterate`.
 """
 function research_continuation_decision(
     history::AbstractVector{SCBAIteration},
@@ -153,7 +154,7 @@ function _research_transition_warning(
     )
 end
 
-"""One terminal decision for a fixed-Hartree iteration; no numerical kernels."""
+"""Итоговое решение о ходе итерации при фиксированном потенциале Хартри."""
 struct SCBAStopDecision
     terminal::Bool
     converged::Bool

@@ -1,13 +1,12 @@
 """
     Layer(; d, material, x_Al, Eᶜ, mᶻᵣ, m_parallelᵣ, εᵣ, doped=false)
 
-One epitaxial segment.  `d` and `Eᶜ` are Unitful length and energy
-quantities; the constructor converts them to metres and electronvolts.
-Relative masses and permittivity are dimensionless.
+Один эпитаксиальный слой. Толщину `d` и энергию `Eᶜ` задают величинами Unitful.
+Конструктор переводит их в метры и электронвольты. Относительные массы и
+диэлектрическая проницаемость безразмерны.
 
-Physical meaning and the reference design layer ordering are described in
-[the reference design structure passport](@ref theory-reference2019); accepted input dimensions
-are listed in [the input contract](@ref full-input-contract).
+Физический смысл и порядок слоёв приведены в [паспорте эталонной структуры](@ref theory-reference2019).
+Единицы входных величин перечислены в [контракте входных данных](@ref full-input-contract).
 """
 struct Layer
     d::LengthQuantity
@@ -67,11 +66,11 @@ function Layer(;
 end
 
 """
-All dimensioned and dimensionless inputs defining one layered transport model.
+Размерные и безразмерные параметры одной слоистой транспортной модели.
 
-See [Model and conventions](@ref theory-model),
-[reference design structure passport](@ref theory-reference2019), and
-[the complete input contract](@ref full-input-contract).
+См. [модель и соглашения](@ref theory-model),
+[паспорт эталонной структуры](@ref theory-reference2019) и
+[полный контракт входных данных](@ref full-input-contract).
 """
 struct PhysicalParameters
     layers::Vector{Layer}
@@ -172,11 +171,11 @@ struct PhysicalParameters
 end
 
 """
-Numerical grid sizes, bounds, trust margin, and seed broadening used by the
-direct implementation.
+Размеры и границы численных сеток, запас доверенного окна и затравочное уширение
+для прямой реализации.
 
-See [Indices, grids, and array shapes](@ref array-contracts) and
-[the complete input contract](@ref full-input-contract).
+См. [индексы, сетки и размеры массивов](@ref array-contracts) и
+[полный контракт входных данных](@ref full-input-contract).
 """
 struct NumericalParameters
     N_z::Int
@@ -284,14 +283,14 @@ end
 """
     SolverTolerances(; ...)
 
-Dimensionless acceptance thresholds for the inner SCBA map, outer Poisson
-map, conservation identities, edge tails, and imaginary cancellation tests.
-Every enabled criterion must pass; a non-finite residual always fails.
-This compositional record is unchecked until the validated `SolverOptions`
-constructor verifies every threshold; it is not a standalone solver input.
+Безразмерные пороги приёмки для внутреннего отображения SCBA, внешнего
+отображения Пуассона, законов сохранения, хвостов на краях сетки и проверок
+сокращения мнимых частей. Должны выполняться все включённые критерии.
+Неконечная невязка всегда означает отказ. Каждый порог проверяет конструктор
+`SolverOptions` при включении записи в настройки решателя.
 
-The individual gates are defined in [Verification](@ref theory-validation)
-and tabulated in [the input contract](@ref full-input-contract).
+Критерии определены в разделе [проверки решения](@ref theory-validation)
+и сведены в таблицу [контракта входных данных](@ref full-input-contract).
 """
 Base.@kwdef struct SolverTolerances
     r_D::Float64 = 1e-11
@@ -320,12 +319,12 @@ end
 """
     DiagnosticQualityPolicy(; enabled=false, ...)
 
-Explicit approximate acceptance for exploratory studies. The target band is
-tried before the coarser band; strict attempts after target acceptance are
-bounded. Algebraic gates remain strict and physical quality gates have their
-own declared tolerances. Approximate acceptance never sets `converged=true`.
-This unchecked compositional record is validated by `SolverOptions` together
-with its enclosing convergence policy.
+Явная приближённая приёмка для исследовательских расчётов. Сначала пробуют
+целевые допуски, затем более грубые. Число строгих попыток после прохождения
+целевых допусков ограничено. Алгебраические критерии остаются строгими, а
+физические используют собственные заявленные допуски. При приближённой приёмке
+`converged=true` не выставляется. Запись и содержащую её политику сходимости
+проверяет конструктор `SolverOptions`.
 """
 Base.@kwdef struct DiagnosticQualityPolicy
     enabled::Bool = false
@@ -342,13 +341,14 @@ Base.@kwdef struct DiagnosticQualityPolicy
     outer_threshold::Float64 = 1e-4
 end
 
-"""Trend parameters on fresh, unmixed r_K, r_Σ and r_λ histories.
+"""Параметры оценки тенденции свежих невязок r_K, r_Σ и r_λ до смешивания.
 
-The absolute promising threshold expresses numerical usefulness, never scientific
-acceptance. A late plateau is allowed after sufficient reduction. Window means
-arithmetic means; regression compares the final window to the best full window.
-Contract version 2 applies relative regression only outside the useful band;
-an entire window inside that band permits research continuation independently.
+Абсолютный порог перспективности характеризует численную пригодность.
+После достаточного снижения допускается позднее плато. По окну считают
+среднее арифметическое. Регрессия сравнивает последнее окно с лучшим полным
+окном. В версии 2 относительную регрессию оценивают за пределами рабочей
+полосы. Если окно целиком лежит внутри неё, допускается исследовательское
+продолжение.
 """
 Base.@kwdef struct ResearchTrendPolicy
     window::Int = 32
@@ -386,19 +386,19 @@ end
 """
     ConvergencePolicy(; ...)
 
-Numerical termination policy shared by the educational and production
-solvers.  Residual thresholds remain in [`SolverTolerances`](@ref); this
-policy controls only when a sequence of threshold evaluations is accepted
-and when a demonstrably stalled SCBA sequence is stopped.
-This unchecked compositional record is validated when incorporated into
-`SolverOptions`, including direct positional construction of that solver input.
+Правила остановки, общие для учебного и расчётного решателя. Пороги невязок
+задаются в [`SolverTolerances`](@ref). Эта политика определяет, когда принять
+последовательность проверок порогов и когда остановить стагнирующую
+последовательность SCBA. Запись проверяется при построении `SolverOptions`,
+включая прямой позиционный вызов конструктора.
 
-`stagnation_window=0` disables early stagnation termination.  Otherwise the
-best normalized fixed-point score (Keldysh, raw self-energy, normalization,
-current and population changes) in the newer half of the window must improve
-on the older half by at least `stagnation_relative_improvement`. Physical
-admissibility gates are diagnosed separately; a saturated positivity defect
-cannot hide improvement of the fixed-point iteration.
+При `stagnation_window=0` ранняя остановка из-за стагнации отключена.
+Иначе лучшая нормированная оценка неподвижной точки в более свежей половине
+окна должна улучшиться относительно предыдущей половины хотя бы на
+`stagnation_relative_improvement`. Оценка учитывает невязки Келдыша, сырой
+самоэнергии и нормировки, а также изменения тока и заселённостей. Физическая
+допустимость проверяется отдельно, чтобы устойчивый дефект положительности
+не скрывал улучшение итерации неподвижной точки.
 """
 Base.@kwdef struct ConvergencePolicy
     mode::Symbol = :strict_fail_fast
@@ -415,14 +415,14 @@ end
 """
     SolverOptions(; α_Σ=1, α_P=1, max_scba=1000, max_poisson=100, ...)
 
-Controls linear mixing, safety iteration limits, validation tolerances, and
-the explicit convergence and energy/momentum tail-window policies.  Mixing
-is applied identically to the retarded, lesser, and greater components of
-every self-energy family and is recorded in the returned histories.
+Настройки линейного смешивания, пределов итераций, допусков проверки,
+а также явной политики сходимости и хвостовых окон по энергии и импульсу.
+Смешивание одинаково применяется к запаздывающей, меньшей и большей
+компонентам каждого семейства самоэнергии и отражается в записях истории.
 
-See [the SCBA fixed point](@ref theory-scba),
-[the outer Poisson loop](@ref theory-outer-loop), and
-[the input contract](@ref full-input-contract).
+См. [неподвижную точку SCBA](@ref theory-scba),
+[внешний цикл Пуассона](@ref theory-outer-loop) и
+[контракт входных данных](@ref full-input-contract).
 """
 Base.@kwdef struct SolverOptions
     α_Σ::Float64 = 1.0
@@ -460,11 +460,10 @@ Base.@kwdef struct SolverOptions
 end
 
 """
-Boolean switches selecting the five explicitly implemented SCBA channels.
+Логические переключатели пяти явно реализованных каналов SCBA.
 
-The corresponding microscopic models are defined in
-[Microscopic kernels](@ref theory-kernels) and assembled by the
-[SCBA map](@ref theory-scba).
+Микроскопические модели описаны в разделе [ядра рассеяния](@ref theory-kernels).
+Их вклад собирает [отображение SCBA](@ref theory-scba).
 """
 Base.@kwdef struct ScatteringOptions
     LO::Bool = true
@@ -475,9 +474,9 @@ Base.@kwdef struct ScatteringOptions
 end
 
 """
-Base units and their derived dimensionless coupling constants.
+Базовые единицы и вычисленные из них безразмерные константы связи.
 
-See [Unitful and the dimensionless core](@ref theory-scaling).
+См. [Unitful и безразмерное ядро](@ref theory-scaling).
 """
 struct ScaleSystem
     E₀::EnergyQuantity
@@ -503,15 +502,15 @@ struct ScaleSystem
 end
 
 """
-All quadrature nodes, weights, and the trusted-energy mask in dimensionless
-variables.
+Все узлы и веса квадратур и маска доверенного энергетического окна в
+безразмерных переменных.
 
-This is an internal unchecked array representation.
-Use the grid builder to construct axes and quadrature together; direct assembly
-does not certify correspondence to a `NumericalParameters` value.
+Внутреннее представление массивов без проверки. Построитель сетки формирует
+оси и квадратуры вместе. Прямая сборка не подтверждает соответствие
+`NumericalParameters`.
 
-Their axes, shapes, and quadrature definitions are specified in
-[Indices, grids, and array shapes](@ref array-contracts).
+Оси, размеры и квадратуры описаны в разделе
+[индексы, сетки и размеры массивов](@ref array-contracts).
 """
 struct ModelGrids
     x::Vector{Float64}
@@ -527,13 +526,15 @@ struct ModelGrids
 end
 
 """
-Piecewise material and ionized-donor profiles on the cell-centred grid.
+Кусочно заданные профили материалов и ионизованных доноров на сетке
+с узлами в центрах ячеек.
 
-Internal unchecked array representation. The profile builder owns the grid and
-material correspondence; a direct positional call is not a validated input API.
+Внутреннее представление массивов без проверки. Построитель профиля
+согласует сетку с материалами. Для входных данных используйте проверяемый
+построитель.
 
-See [the reference design profile](@ref theory-reference2019) and
-[the array contract](@ref array-contracts).
+См. [профиль эталонной структуры](@ref theory-reference2019) и
+[контракт массивов](@ref array-contracts).
 """
 struct MaterialProfiles
     Eᶜ::Vector{Float64}
@@ -546,12 +547,13 @@ struct MaterialProfiles
 end
 
 """
-Fixed cell-local PzP/Löwdin basis and projected one-particle operators.
+Фиксированный локальный базис ячейки PzP с ортогонализацией Лёвдина и
+спроецированные одночастичные операторы.
 
-Internal unchecked numerical representation. Basis builders and static
-validation establish dimensions, localization, orthogonality and residuals.
+Внутреннее численное представление без проверки. Построитель базиса и
+статическая проверка устанавливают размеры, локализацию, ортогональность и невязки.
 
-See [BenDaniel–Duke and the fixed PzP basis](@ref theory-basis).
+См. [оператор БенДаниэла–Дьюка и фиксированный базис PzP](@ref theory-basis).
 """
 struct BasisData
     localization::Symbol
@@ -576,18 +578,18 @@ struct BasisData
 end
 
 """
-Normalized six-axis kernels in order `(m,m′,a,c,d,b)`.
+Нормированные ядра с шестью осями в порядке `(m,m′,a,c,d,b)`.
 
-Internal unchecked array representation. Kernel builders establish the common
-grid/basis axes and normalization; the positional container does not certify them.
+Внутреннее представление массивов без проверки. Общие оси сетки и базиса и
+нормировку устанавливают построители ядер.
 
-`K[name]` stores the normalized tensor `Khat_s = Kbar_s/qK_s`, and
-`qᴷ[name]` stores the positive scalar `qK_s = maximum(abs, Kbar_s)`.  The
-contraction restores this
-factor exactly, keeping its summands close to one without changing the map.
+В `K[name]` хранится нормированный тензор `Khat_s = Kbar_s/qK_s`, а в
+`qᴷ[name]` — положительный скаляр `qK_s = maximum(abs, Kbar_s)`. При
+свёртке множитель восстанавливается точно. Это позволяет использовать
+слагаемые порядка единицы без изменения отображения.
 
-See [Microscopic kernels and contractions](@ref theory-kernels) and
-[the array contract](@ref array-contracts).
+См. [микроскопические ядра и свёртки](@ref theory-kernels) и
+[контракт массивов](@ref array-contracts).
 """
 struct KernelSet
     K::Dict{Symbol,Array{ComplexF64,6}}
@@ -596,12 +598,14 @@ struct KernelSet
     enabled::Vector{Symbol}
 end
 
-"""Explicit physical approximations; numerical hardware options never select these.
+"""Явно задаваемые физические приближения. Параметры вычислительной реализации
+не определяют этот выбор.
 
-Density-temperature screening uses parabolic 2D compressibility for the donor
-potential and homogeneous 3D Debye screening for bulk LO. Kane modifies only
-the local transverse kinetic energy. The uniform hot-LO kinetic closure needs
-both a measured/declared decay time and density of participating phonon modes.
+Экранирование по плотности и температуре использует параболическую двумерную
+сжимаемость для потенциала доноров и однородное трёхмерное экранирование
+Дебая для объёмных LO-фононов. Приближение Кейна меняет только локальную
+поперечную кинетическую энергию. Кинетическое замыкание однородной популяции
+горячих LO-фононов требует заданных времени распада и плотности участвующих мод.
 """
 Base.@kwdef struct PhysicalModelOptions
     screening::Symbol = :fixed
@@ -671,15 +675,15 @@ Base.@kwdef struct PhysicalModelOptions
 end
 
 """
-Complete dimensionless problem after Unitful validation and scaling.
+Полная безразмерная задача после проверки единиц Unitful и масштабирования.
 
-This positional container holds unchecked assembled data for numerical
-extensions. Public configured builders assemble matching axes, units and basis.
-A hand-built container must pass static validation before it is treated as a
-physical problem.
+Позиционный конструктор хранит собранные данные численных расширений и
+требует явного выбора дискретизации энергетического сдвига и физических моделей.
+Публичные построители собирают согласованные оси, единицы и базис. Перед
+физическим расчётом вручную собранную задачу необходимо статически проверить.
 
-Its construction order is given in [the implementation plan](@ref implementation-plan),
-with fields and dimensions in [the input contract](@ref full-input-contract).
+Порядок сборки приведён в [плане реализации](@ref implementation-plan).
+Поля и размерности перечислены в [контракте входных данных](@ref full-input-contract).
 """
 struct NEGFProblem{S<:AbstractMatrix{Float64}}
     physical::PhysicalParameters
@@ -701,14 +705,13 @@ struct NEGFProblem{S<:AbstractMatrix{Float64}}
 end
 
 """
-Dimensionless Green arrays with shape `(N_E,N_k,N_b,N_b)`.
+Безразмерные массивы функций Грина размера `(N_E,N_k,N_b,N_b)`.
 
-Internal unchecked array representation. Solvers and checkpoint loading bind
-these arrays to the actual problem; a positional call alone certifies neither
-axis correspondence nor a physical Green state.
+Внутреннее представление массивов без проверки. Согласованность осей с задачей
+и физическую допустимость состояния проверяют решатель и загрузчик контрольных точек.
 
-See [Green functions and density](@ref theory-greens) and
-[the array contract](@ref array-contracts).
+См. [функции Грина и плотность](@ref theory-greens) и
+[контракт массивов](@ref array-contracts).
 """
 struct GreenState
     Gᴿ::Array{ComplexF64,4}
@@ -720,13 +723,13 @@ struct GreenState
 end
 
 """
-One retarded/lesser/greater self-energy family, all dimensionless.
+Семейство безразмерных запаздывающей, меньшей и большей компонент самоэнергии.
 
-Internal unchecked mutable array representation. The SCBA map owns its shape
-and physical interpretation; direct assembly does not certify a valid state.
+Внутреннее представление изменяемых массивов без проверки. Форму и физический
+смысл компонент определяет отображение SCBA.
 
-See [Microscopic kernels](@ref theory-kernels) and
-[the SCBA map](@ref theory-scba).
+См. [микроскопические ядра](@ref theory-kernels) и
+[отображение SCBA](@ref theory-scba).
 """
 mutable struct SelfEnergyFamily
     Σᴿ::Array{ComplexF64,4}
@@ -734,12 +737,13 @@ mutable struct SelfEnergyFamily
     Σᵍ::Array{ComplexF64,4}
 end
 
-"""Measured PSD witness in solver units, with optional compact reconstruction blocks.
+"""Измеренное свидетельство положительной полуопределённости в единицах решателя.
+Компактные матричные блоки для восстановления могут отсутствовать.
 
-Indices refer to the owning energy/momentum grid. Empty matrices mean that the
-historical scalar witness was retained without its reconstruction payload.
-Persistence selects first, worst and last payloads; no matrix is reconstructed
-from a scalar witness or from a later solver state.
+Индексы относятся к соответствующей сетке энергии и импульса. При пустых
+матрицах сохранено скалярное свидетельство той же итерации. Записываются
+матрицы для первой, худшей и последней точек. Скаляр и состояние более
+поздней итерации не используются для восстановления этих матриц.
 """
 struct SCBAPhysicsWitness
     matrix_kind::Symbol
@@ -761,11 +765,12 @@ Base.isequal(a::SCBAPhysicsWitness, b::SCBAPhysicsWitness) = all(
     fieldnames(SCBAPhysicsWitness),
 )
 
-"""Bounded diagnostic work; these settings never change the solver acceptance gates.
+"""Настройки ограниченной диагностики. Критерии приёмки решателя от них не зависят.
 
-Spectral samples are deterministic midpoint quantiles of positive spectral
-quadrature weight. Sub-roundoff negative spectral weights are ignored only in
-this diagnostic distribution; all unmodified matrices still enter PSD gates.
+Спектральные выборки — детерминированные квантили положительного квадратурного
+веса в серединах интервалов. Отрицательные спектральные веса ниже погрешности
+округления опускаются только в этом диагностическом распределении. При проверке
+положительной полуопределённости используются исходные матрицы.
 """
 struct SCBAPhysicsMarkerPolicy
     cadence::Int
@@ -785,7 +790,8 @@ struct SCBAPhysicsMarkerPolicy
     end
 end
 
-"""Raw unmixed fixed-point component, using the same Frobenius scale as rΣ."""
+"""Компонента сырой невязки неподвижной точки до смешивания с тем же
+масштабом нормы Фробениуса, что у rΣ."""
 struct SCBAChannelMarker
     channel::Symbol
     component::Symbol
@@ -794,11 +800,13 @@ struct SCBAChannelMarker
     residual_relative::Float64
 end
 
-"""Collision integral on one fixed normalized Green state, before SCBA mixing.
+"""Интеграл столкновений на одном фиксированном нормированном состоянии Грина
+до смешивания SCBA.
 
-Signed particle and energy integrals and their absolute incoming/outgoing scales
-are dimensionless; the retained imaginary parts expose cancellation/roundoff.
-A fresh map and the mixed map have distinct state_kind values.
+Знаковые интегралы частиц и энергии и абсолютные масштабы входящих и
+исходящих вкладов безразмерны. Сохранённые мнимые части выявляют погрешность
+сокращения и округления. Свежее и смешанное отображения обозначаются разными
+значениями `state_kind`.
 """
 struct SCBACollisionMarker
     channel::Symbol
@@ -816,14 +824,18 @@ for T in (SCBAChannelMarker, SCBACollisionMarker)
         all(field -> isequal(getfield(a, field), getfield(b, field)), fieldnames($T))
 end
 
-"""Compact diagnostic measurements of one unmixed Green state, never acceptance gates.
+"""Компактные диагностические измерения одного состояния Грина до смешивания.
+Они не участвуют в приёмке.
 
-Charges are dimensionless sheet numbers. Corrections and FDT use quadrature-
-weighted matrix Frobenius norms. FDT compares both occupied and empty matrices
-with a single chemical potential fitted to the *spectral* target number.
-Gamma is an energy linewidth, i(SigmaGreater-SigmaLesser), not an angular or
-ordinary frequency. Sampled linewidth ratios are diagnostics, not peak FWHM
-measurements or a certificate of quadrature convergence.
+Заряды выражены безразмерными поверхностными концентрациями. Поправки и
+флуктуационно-диссипативное соотношение (FDT) используют матричные нормы
+Фробениуса с квадратурными весами. FDT сравнивает матрицы занятых и свободных
+состояний при одном химическом потенциале, подобранном по спектральному
+целевому числу частиц.
+
+Γ = i(SigmaGreater-SigmaLesser) имеет размерность энергии и описывает уширение.
+Отношения по выборочным уширениям служат для диагностики. Для ширины пика
+на полувысоте и сходимости квадратуры нужны отдельные проверки.
 """
 struct SCBAPhysicalMarkers
     measured_iteration::Int
@@ -871,10 +883,10 @@ Base.isequal(a::SCBAPhysicalMarkers, b::SCBAPhysicalMarkers) = all(
 )
 
 """
-One complete set of residuals for a consistent, pre-mixing SCBA state.
+Полный набор невязок одного согласованного состояния SCBA до смешивания.
 
-See [the inner SCBA iteration](@ref theory-scba) and
-[the validation criteria](@ref theory-validation).
+См. [итерацию внутреннего цикла SCBA](@ref theory-scba) и
+[критерии проверки](@ref theory-validation).
 """
 struct SCBAIteration
     ν::Int
@@ -899,7 +911,8 @@ struct SCBAIteration
 
 end
 
-"""Algorithm-owned history at an accepted [SCBA boundary](@ref theory-scba), before the next mixing step."""
+"""История, которую ведёт алгоритм в принятой [точке цикла SCBA](@ref theory-scba)
+перед следующим смешиванием."""
 struct SCBAMixerState
     method::Symbol
     states::Vector{Vector{SelfEnergyFamily}}
@@ -908,7 +921,8 @@ end
 SCBAMixerState() =
     SCBAMixerState(:linear, Vector{SelfEnergyFamily}[], Vector{SelfEnergyFamily}[])
 
-"""Fixed-Hartree [SCBA state](@ref theory-scba), mechanism families, convergence and algorithm history."""
+"""[Состояние SCBA](@ref theory-scba) при фиксированном потенциале Хартри,
+семейства компонент по механизмам рассеяния, сходимость и история алгоритма."""
 struct SCBAResult
     green::GreenState
     scattering::Dict{Symbol,SelfEnergyFamily}
@@ -952,7 +966,7 @@ struct SCBAResult
     end
 end
 
-"""Fresh raw self-energy map evaluated on one published Green state."""
+"""Свежее сырое отображение самоэнергии, вычисленное на одном опубликованном состоянии Грина."""
 struct FixedPointAuditCandidate
     scattering::Dict{Symbol,SelfEnergyFamily}
     embedding::SelfEnergyFamily
@@ -961,7 +975,7 @@ struct FixedPointAuditCandidate
     roundoff::Float64
 end
 
-"""Particle-number constraint diagnostics in the solver's dimensionless area units."""
+"""Диагностика ограничения на число частиц в безразмерных единицах поверхностной плотности решателя."""
 struct ChargeConstraintDiagnostics
     raw_charge::Float64
     target_charge::Float64
@@ -973,9 +987,9 @@ struct ChargeConstraintDiagnostics
 end
 
 """
-One accepted evaluation of the outer Poisson fixed-point map.
+Одна принятая оценка отображения неподвижной точки внешнего цикла Пуассона.
 
-See [Periodic Poisson and the outer loop](@ref theory-outer-loop).
+См. [периодическое уравнение Пуассона и внешний цикл](@ref theory-outer-loop).
 """
 struct OuterIteration
     μ::Int
@@ -993,9 +1007,9 @@ struct OuterIteration
 end
 
 """
-Named validation metrics and all human-readable acceptance failures.
+Именованные показатели проверки и сообщения обо всех непройденных критериях приёмки.
 
-See [Verification](@ref theory-validation).
+См. [проверку решения](@ref theory-validation).
 """
 struct ConvergenceReport
     passed::Bool
@@ -1004,16 +1018,16 @@ struct ConvergenceReport
 end
 
 """
-Complete closed-solver result.
+Полный результат замкнутого решателя.
 
-`Uᴴ` and `n` are the dimensionless arrays ``U_H/E_0`` and ``L_0^3 n``;
-physical observables are stored in `observables` as Unitful quantities.
-`status == :converged` is issued only when both fixed points and the final
-independent validation report pass.
+`Uᴴ` и `n` — безразмерные массивы ``U_H/E_0`` и ``L_0^3 n``.
+Физические наблюдаемые хранятся в `observables` как величины Unitful.
+Статус `status == :converged` выдаётся, когда найдены обе неподвижные точки
+и пройдена итоговая независимая проверка.
 
-See [the closed Poisson–SCBA loop](@ref theory-outer-loop),
-[observables and balances](@ref theory-observables), and
-[final verification](@ref theory-validation).
+См. [замкнутый цикл Пуассона–SCBA](@ref theory-outer-loop),
+[наблюдаемые и балансы](@ref theory-observables) и
+[итоговую проверку](@ref theory-validation).
 """
 struct NEGFSolution
     problem::NEGFProblem
@@ -1045,7 +1059,7 @@ function Base.show(io::IO, solution::NEGFSolution)
     )
 end
 
-"""Explicit bounded domain expansion; each execution cold-rebuilds its operators."""
+"""Явно ограниченное расширение области. При каждом запуске операторы строятся заново."""
 Base.@kwdef struct DomainAdaptationPolicy
     mode::Symbol = :none
     maximum_expansions::Int = 2

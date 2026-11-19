@@ -1,29 +1,28 @@
-# [Architecture](@id developer-architecture)
+# [Архитектура](@id developer-architecture)
 
-QCLNEGF owns the in-memory scientific model. Dependencies point from
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl) into QCLNEGF;
-this package does not import its runner.
+QCLNEGF отвечает за научную модель и расчёты в памяти. От него зависит
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
 
-## [Source ownership](@id developer-source-map)
+## [Разделы исходного кода](@id developer-source-map)
 
-| Source | Responsibility |
+| Каталог | Назначение |
 |---|---|
-| `src/domain` | Dimensional parameters, physical models and convergence contracts |
-| `src/numerics/reference` | Independent literal operators and their algebraic definitions |
-| `src/numerics/optimized` | Optimized kernels, bounded workspaces and nonlinear solve |
-| `src/physics` | Physical observables and optical-response operators |
-| `src/application` | Numerical algorithm descriptors and model-capability metadata |
-| `src/composition` | Operating-point reuse and numerical precompilation workload |
+| `src/domain` | Размерные параметры, физические модели и критерии сходимости |
+| `src/numerics/reference` | Независимые прямые реализации операторов и их алгебраические определения |
+| `src/numerics/optimized` | Оптимизированные операторы, рабочие буферы с ограниченными размерами и нелинейный решатель |
+| `src/physics` | Физические наблюдаемые и операторы оптического отклика |
+| `src/application` | Описание численных алгоритмов и возможностей физических моделей |
+| `src/composition` | Переиспользование данных между рабочими точками и набор задач для предварительной компиляции |
 
-A caller constructs `PhysicalParameters`, `NumericalParameters`, scattering and
-solver options, builds a problem, and receives an in-memory solution. Explicit
-callbacks can observe or interrupt the solve without choosing a storage format.
-Thread width and algorithm options are explicit numerical inputs. Resource discovery
-and process admission are Runner responsibilities.
+Вызывающая программа задаёт `PhysicalParameters`, `NumericalParameters`, опции
+рассеяния и решателя, строит задачу и получает решение в памяти. Явные обратные
+вызовы позволяют наблюдать за решением и прерывать его без привязки к формату
+хранения. Число потоков и параметры алгоритмов задаются явно. Определение
+доступных ресурсов и допуск процесса к выполнению относятся к Runner.
 
-YAML, HDF5, checkpoints, result directories, reports and CairoMakie integration are
-owned by Runner. The mathematical acceptance criteria apply independently of
-how an execution allocates CPU and memory.
+Runner отвечает за YAML, HDF5, контрольные точки, каталоги результатов, отчёты
+и интеграцию с CairoMakie. Математические критерии приёмки применяются при любом
+допустимом распределении процессорного времени и памяти.
 
-See [operator contracts](@ref physics-operators), [traceability](@ref traceability),
-and [convergence policy](@ref convergence-policy).
+См. [контракты операторов](@ref physics-operators),
+[трассируемость](@ref traceability) и [критерии сходимости](@ref convergence-policy).

@@ -3,17 +3,17 @@ _matrix_block(X, e, m) = Matrix(view(X, e, m, :, :))
 """
     retarded_green(ε, h, Σᴿ; η=0, return_scale=false)
 
-Directly invert one full dense Dyson matrix for every `(E_e,k_m)`.  A scalar
-row-sum rescaling is applied before `inv`; it is algebraically exact and does
-not change the condition number.  The returned `Gᴿ` is dimensionless and has
-shape `(N_E,N_k,N_b,N_b)`.
-With `return_scale=true`, the third result is the dimensionless row-sum
-equilibration scale ``s_{em}``; otherwise the stable public return remains
-`(Gᴿ, condition_number)`.
+Обратить полную плотную матрицу Дайсона для каждой пары `(E_e,k_m)`. Перед
+`inv` применяется точное скалярное масштабирование по сумме в строке.
+Оно сохраняет число обусловленности. Возвращаемая безразмерная матрица
+`Gᴿ` имеет размер `(N_E,N_k,N_b,N_b)`.
 
-Implements [EQ-DYSON-001](@ref eq-dyson-retarded).
-See [Green functions and density](@ref theory-greens) for the index and sign
-conventions.
+Результат по умолчанию имеет вид `(Gᴿ, condition_number)`.
+При `return_scale=true` третьим результатом служит безразмерный масштаб
+уравновешивания ``s_{em}``.
+
+Реализует [EQ-DYSON-001](@ref eq-dyson-retarded). Соглашения об индексах
+и знаках описаны в [главе о функциях Грина и плотности](@ref theory-greens).
 """
 function retarded_green(
     ε::AbstractVector{<:Real},
@@ -42,10 +42,10 @@ function retarded_green(
 end
 
 """
-Return `A=i(Gᴿ-Gᴬ)` for every energy and momentum block.
+Вычислить `A=i(Gᴿ-Gᴬ)` для каждого блока энергии и импульса.
 
-See [Green functions and density](@ref theory-greens) and
-[the Keldysh identities](@ref eq-keldysh).
+См. [функции Грина и плотность](@ref theory-greens)
+и [тождества Келдыша](@ref eq-keldysh).
 """
 function spectral_function(Gᴿ::AbstractArray{<:Number,4})
     A = similar(ComplexF64.(Gᴿ))
@@ -59,10 +59,10 @@ end
 """
     keldysh_green(Gᴿ, Σˡ)
 
-Evaluate the full dense Keldysh product `Gˡ=GᴿΣˡGᴬ` independently at every
-`(E_e,k_m)`.  Implements [EQ-KELDYSH-001](@ref eq-keldysh).
-
-See [Green functions and density](@ref theory-greens).
+Независимо вычислить полное плотное произведение Келдыша
+`Gˡ=GᴿΣˡGᴬ` для каждой пары `(E_e,k_m)`.
+Реализует [EQ-KELDYSH-001](@ref eq-keldysh).
+См. [функции Грина и плотность](@ref theory-greens).
 """
 function keldysh_green(Gᴿ::AbstractArray{<:Number,4}, Σˡ::AbstractArray{<:Number,4})
     size(Gᴿ) == size(Σˡ) || throw(DimensionMismatch("Gᴿ and Σˡ differ"))
@@ -75,10 +75,10 @@ function keldysh_green(Gᴿ::AbstractArray{<:Number,4}, Σˡ::AbstractArray{<:Nu
 end
 
 """
-Construct `Gᵍ=Gᴿ-Gᴬ+Gˡ` without storing an independent advanced field.
+Построить `Gᵍ=Gᴿ-Gᴬ+Gˡ` без отдельного хранения опережающей компоненты.
 
-See [Green functions and density](@ref theory-greens) and
-[the Keldysh identities](@ref eq-keldysh).
+См. [функции Грина и плотность](@ref theory-greens)
+и [тождества Келдыша](@ref eq-keldysh).
 """
 function greater_green(Gᴿ::AbstractArray{<:Number,4}, Gˡ::AbstractArray{<:Number,4})
     size(Gᴿ) == size(Gˡ) || throw(DimensionMismatch("G arrays differ"))
@@ -91,10 +91,11 @@ function greater_green(Gᴿ::AbstractArray{<:Number,4}, Gˡ::AbstractArray{<:Num
 end
 
 """
-Dimensionless sheet-number functional of an `(E,k,a,b)` lesser field.
-Implements [EQ-NUMBER-001](@ref eq-number-normalization).
+Вычислить безразмерную поверхностную концентрацию по меньшей функции
+Грина с индексами `(E,k,a,b)`.
 
-See [Green functions and density](@ref theory-greens).
+Реализует [EQ-NUMBER-001](@ref eq-number-normalization).
+См. [функции Грина и плотность](@ref theory-greens).
 """
 function number_functional(Gˡ::AbstractArray{<:Number,4}, grids::ModelGrids, g_s::Integer)
     NE, Nk, _, _ = size(Gˡ)
@@ -111,13 +112,13 @@ end
 """
     normalize_lesser(Gˡ, target, grids, g_s)
 
-Legacy unilateral number normalization for explicit comparison only. Return
-`(Gˡ_N, λ)`, where `λ=N[Gˡ]/target`. This operation does not preserve the
-upper Pauli bound and is no longer the default SCBA iteration. A physical
-fixed point still requires `λ→1`; the default uses `_normalize_keldysh_pair!`.
-Implements [EQ-NUMBER-001](@ref eq-number-normalization).
-See [Green functions and density](@ref theory-greens) for why the scalar
-normalization eigenvalue must tend to one at the physical fixed point.
+Односторонняя нормировка числа частиц для явно выбранного сравнительного
+режима. Возвращает `(Gˡ_N, λ)` при `λ=N[Gˡ]/target`. Операция может нарушить
+верхнюю границу Паули. В физической неподвижной точке выполняется `λ→1`.
+По умолчанию SCBA использует парное преобразование `_normalize_keldysh_pair!`.
+
+Реализует [EQ-NUMBER-001](@ref eq-number-normalization).
+См. [функции Грина и плотность](@ref theory-greens).
 """
 function normalize_lesser(
     Gˡ::AbstractArray{<:Number,4},
@@ -138,16 +139,18 @@ function _green_state(Gᴿ, Gˡ, κD, scaleD)
     return GreenState(ComplexF64.(Gᴿ), ComplexF64.(Gˡ), Gᵍ, A, κD, scaleD)
 end
 
-"""Coefficients for a fixed-number, Pauli-preserving Keldysh update.
+"""
+Коэффициенты преобразования Келдыша с заданным числом частиц и сохранением
+ограничения Паули.
 
-Let `N` and `H` be the integrals of the positive occupied and empty matrices
-`Gn=-iG<` and `Gp=iG>`. For excess electrons, transfer `(1-target/N)Gn`
-to `Gp`; for missing electrons, transfer `(target-N)/H` of `Gp` to `Gn`.
-Both maps are convex and preserve `Gn+Gp`, so they preserve the Pauli cone
-when the raw candidate belongs to it. No eigenvalues are clipped. The map
-becomes the identity exactly when the raw number equals the target; the
-separate raw `lambda=N/target` gate remains mandatory. This is an iteration
-constraint, not a finite-bias Fermi distribution or a physical reservoir.
+`N` и `H` — интегралы положительных матриц занятых и пустых состояний
+`Gn=-iG<` и `Gp=iG>`. Избыток электронов переносится из `Gn` в `Gp`
+в доле `(1-target/N)`. При дефиците доля `(target-N)/H` переносится из
+`Gp` в `Gn`. Оба выпуклых преобразования сохраняют `Gn+Gp` и конус Паули
+для допустимого исходного кандидата. Собственные значения не обрезаются.
+При совпадении сырого числа частиц с целевым преобразование тождественно.
+Сырое отношение `lambda=N/target` проверяется отдельно. Это ограничение
+итерации. Оно не вводит распределение Ферми или физический резервуар.
 """
 function _paired_number_coefficients(number::Real, holes::Real, target::Real)
     isfinite(target) && target > 0 ||
@@ -181,7 +184,7 @@ function _paired_number_coefficients(number::Real, holes::Real, target::Real)
     )
 end
 
-"""Apply the paired number constraint in place to independently evaluated G</G>."""
+"""Применить парное ограничение числа частиц на месте к независимо вычисленным `G<` и `G>`."""
 function _normalize_keldysh_pair!(Gˡ, Gᵍ, number::Real, holes::Real, target::Real)
     size(Gˡ) == size(Gᵍ) || throw(DimensionMismatch("Keldysh arrays differ"))
     weights = _paired_number_coefficients(number, holes, target)
