@@ -10,7 +10,7 @@ makedocs(
     pages = [
         "Главная" => "index.md",
         "Использование" => ["user/convergence.md"],
-        "API" => ["api/operators.md", "api/public.md", "api/extensions.md"],
+        "API" => ["api/operators.md", "api/public.md", "api/solvers.md", "api/extensions.md"],
         "Теория" => ["theory/01_model.md", "theory/02_reference2019.md", "theory/03_arrays.md", "theory/04_scaling.md", "theory/05_basis.md", "theory/06_periodicity.md", "theory/07_greens.md", "theory/08_kernels.md", "theory/09_scba.md", "theory/10_poisson.md", "theory/11_observables.md", "theory/12_validation.md", "theory/13_visualization.md", "theory/14_cost.md", "theory/15_limitations.md", "theory/16_input_contract.md", "theory/17_implementation_plan.md", "theory/18_optical_response.md", "theory/19_production.md", "theory/20_optimization_decision_tree.md"],
         "Модели и численные критерии" => ["physics/models.md", "physics/numerical-policy.md"],
         "Физические иллюстрации" => ["tutorials/localization.md", "tutorials/physical-atlas.md"],
