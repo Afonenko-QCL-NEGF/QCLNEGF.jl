@@ -1,8 +1,9 @@
 """
-Opt-in physical primitives with explicit dimensions and independent limiting tests.
+Явно включаемые физические модели с указанием размерностей и независимыми
+проверками предельных случаев.
 
-SCBA integration is performed by numerical adapters, with an unchanged default
-baseline. See `docs/src/physics/models.md` for each integration boundary.
+Связь со SCBA обеспечивают численные адаптеры. Штатная базовая модель
+сохраняется. Границы интеграции описаны в `docs/src/physics/models.md`.
 """
 module PhysicalModelExtensions
 
@@ -66,10 +67,10 @@ function _positive(value::Real, label)
     return result
 end
 
-"""A physical screening closure; the spatial dimension is part of its identity."""
+"""Физическое замыкание для экранирования. Пространственная размерность входит в описание модели."""
 abstract type AbstractScreeningModel end
 
-"""Fixed inverse screening length. `dimension` must be 2 or 3, explicitly."""
+"""Фиксированная обратная длина экранирования. `dimension` задаётся явно и равна 2 или 3."""
 struct FixedScreening <: AbstractScreeningModel
     wavenumber::WaveNumber
     relative_permittivity::Float64
@@ -84,7 +85,7 @@ struct FixedScreening <: AbstractScreeningModel
     end
 end
 
-"""Classical, homogeneous 3D Debye closure at explicitly specified density and T."""
+"""Классическое замыкание Дебая для однородной трёхмерной среды с заданными концентрацией и температурой T."""
 struct DebyeScreening3D <: AbstractScreeningModel
     density::typeof(1.0u"m^-3")
     temperature::typeof(1.0u"K")
@@ -98,7 +99,7 @@ struct DebyeScreening3D <: AbstractScreeningModel
     end
 end
 
-"""Finite-T long-wavelength 2D compressibility of one ideal parabolic band."""
+"""Длинноволновая двумерная сжимаемость одной идеальной параболической зоны при конечной температуре."""
 struct ThomasFermiScreening2D <: AbstractScreeningModel
     density::typeof(1.0u"m^-2")
     temperature::typeof(1.0u"K")
@@ -151,9 +152,10 @@ _dimension(::DebyeScreening3D) = 3
 _dimension(::ThomasFermiScreening2D) = 2
 
 """
-Continuum Fourier potential, with inverse measure d^d q/(2π)^d.
-Returns J m² in 2D and J m³ in 3D. No subband form factor or normalization
-area/volume is included. An unscreened q=0 singularity is rejected.
+Непрерывный потенциал Фурье с мерой обратного преобразования d^d q/(2π)^d.
+Результат имеет единицы Дж·м² для 2D и Дж·м³ для 3D. Формфактор подзоны
+и нормировочная площадь или объём не входят в выражение. Сингулярность
+неэкранированного потенциала при q=0 вызывает ошибку.
 """
 function screened_coulomb_potential(model::AbstractScreeningModel, wavenumber)
     q = _physical(u"m^-1", wavenumber, "transfer wavenumber")
@@ -192,10 +194,11 @@ model_identity(model::ThomasFermiScreening2D) = (
 )
 
 """
-Winge et al. (2016), equations (8)–(9): static/long-wavelength single plasmon
-pole with pair-continuum term (ℏ²q²/2m)². The frequency-dependent correlation
-weight has units of energy and multiplies the bare quasi-2D Coulomb potential.
-The supplied electron temperature is a plasmon closure, not lattice temperature.
+Уравнения (8)–(9) Winge и соавт. (2016). Одноплазмонное замыкание в статическом
+длинноволновом пределе с членом парного континуума (ℏ²q²/2m)². Зависящий
+от частоты корреляционный вес имеет размерность энергии и умножает голый
+квазидвумерный кулоновский потенциал. Заданная температура электронов
+используется для плазмонного замыкания и отличается от температуры решётки.
 """
 function single_plasmon_pole(
     model::Union{DebyeScreening3D,ThomasFermiScreening2D},
@@ -254,7 +257,7 @@ function single_plasmon_pole(
     )
 end
 
-"""Isotropic, homogeneous Kane band: E(1 + αE) = ℏ²k²/(2m). α is supplied."""
+"""Изотропная однородная зона Кейна: E(1 + αE) = ℏ²k²/(2m). Коэффициент α задаётся явно."""
 struct KaneDispersion
     band_mass::typeof(1.0u"kg")
     nonparabolicity::typeof(1.0u"eV^-1")
@@ -289,7 +292,7 @@ function kane_energy(model::KaneDispersion, wavenumber)
     return _kane_from_parabolic(model, CODATA.ħ^2 * k^2 / (2 * model.band_mass))
 end
 
-"""Group speed (1/ℏ)dE/dk, consistent with `kane_energy`."""
+"""Групповая скорость (1/ℏ)dE/dk, согласованная с `kane_energy`."""
 function kane_velocity(model::KaneDispersion, wavenumber)
     k = _physical(u"m^-1", wavenumber, "wavevector magnitude")
     energy = kane_energy(model, k)
@@ -299,7 +302,7 @@ function kane_velocity(model::KaneDispersion, wavenumber)
     )
 end
 
-"""2D density of states per energy per area, including the declared degeneracy."""
+"""Двумерная плотность состояний на единицу энергии и площади с учётом заданного вырождения."""
 function kane_dos_2d(model::KaneDispersion, kinetic_energy)
     e = _physical(u"eV", kinetic_energy, "kinetic energy")
     return uconvert(
@@ -309,7 +312,7 @@ function kane_dos_2d(model::KaneDispersion, kinetic_energy)
     )
 end
 
-"""Exact number of states per area between the band minimum and E."""
+"""Точное число состояний на единицу площади от минимума зоны до энергии E."""
 function kane_state_count_2d(model::KaneDispersion, kinetic_energy)
     e = _physical(u"eV", kinetic_energy, "kinetic energy")
     return uconvert(
@@ -320,7 +323,7 @@ function kane_state_count_2d(model::KaneDispersion, kinetic_energy)
     )
 end
 
-"""Energy-cell measures ∫cell D(E)dE; momentum-space dk measures stay unchanged."""
+"""Веса энергетических ячеек ∫cell D(E)dE. Меры dk в импульсном пространстве сохраняются."""
 function kane_energy_bin_weights_2d(model::KaneDispersion, edges)
     length(edges) >= 2 || throw(ArgumentError("at least two energy edges are required"))
     e = [_physical(u"eV", value, "energy edge") for value in edges]
@@ -329,9 +332,10 @@ function kane_energy_bin_weights_2d(model::KaneDispersion, edges)
 end
 
 """
-Apply the same dispersion to a positive Hermitian homogeneous kinetic operator
-whose entries carry energy units. This is a spectral function of T, not a
-prescription for a position-dependent mass or for transforming T + V together.
+Применяет ту же дисперсию к положительному эрмитову кинетическому оператору
+однородной среды. Матричные элементы имеют размерность энергии. Преобразование
+действует как спектральная функция T. Масса, зависящая от координаты, и сумма
+T + V требуют отдельной постановки.
 """
 function kane_kinetic_operator(model::KaneDispersion, kinetic::AbstractMatrix)
     size(kinetic, 1) == size(kinetic, 2) && !isempty(kinetic) ||
@@ -350,7 +354,7 @@ function kane_kinetic_operator(model::KaneDispersion, kinetic::AbstractMatrix)
     return (eigenbasis.vectors * Diagonal(values) * eigenbasis.vectors') .* u"eV"
 end
 
-"""Dispersionless LO mode with explicit lattice temperature and decay time."""
+"""Бездисперсионная LO-мода с явно заданными температурой решётки и временем распада."""
 struct HotLOPhononBath
     phonon_energy::Energy
     lattice_temperature::typeof(1.0u"K")
@@ -364,7 +368,7 @@ struct HotLOPhononBath
     end
 end
 
-"""Occupation of one LO mode (or one explicitly declared uniform mode class)."""
+"""Заселённость одной LO-моды или одного явно заданного класса одинаково заселённых мод."""
 struct LOPopulation
     occupation::Float64
     function LOPopulation(occupation::Real)
@@ -394,7 +398,7 @@ end
 lo_scattering_factors(population::LOPopulation) =
     (emission = population.occupation + 1, absorption = population.occupation)
 
-"""Equivalent Bose temperature of a uniform LO population, distinct from lattice T."""
+"""Эквивалентная температура Бозе однородной популяции LO-мод, отличная от температуры решётки."""
 function lo_population_temperature(model::HotLOPhononBath, population::LOPopulation)
     population.occupation == 0 && return 0.0u"K"
     return uconvert(
@@ -417,7 +421,7 @@ function _lo_rates(model::HotLOPhononBath, emission_rate, absorption_rate)
     )
 end
 
-"""Stationary solution of dN/dt = a(N+1) - bN - (N-Nbath)/τ."""
+"""Стационарное решение уравнения dN/dt = a(N+1) - bN - (N-Nbath)/τ."""
 function steady_lo_population(model::HotLOPhononBath, emission_rate, absorption_rate)
     rates = _lo_rates(model, emission_rate, absorption_rate)
     rates.damping > 0u"s^-1" || throw(
@@ -429,7 +433,8 @@ function steady_lo_population(model::HotLOPhononBath, emission_rate, absorption_
     return LOPopulation(ustrip(Unitful.NoUnits, rates.source / rates.damping))
 end
 
-"""Exact nonnegative step with frozen electronic rates; unstable growth is explicit."""
+"""Точный шаг с неотрицательной заселённостью при фиксированных электронных скоростях.
+Неустойчивый рост выражен явно."""
 function advance_lo_population(
     model::HotLOPhononBath,
     population::LOPopulation,
@@ -445,7 +450,8 @@ function advance_lo_population(
     return LOPopulation(population.occupation * exp(-x) + source_dt * response)
 end
 
-"""Per-mode electron→LO, LO→bath and stored-energy rates, all in watts."""
+"""Мощности на одну моду в ваттах: вклад электронов в LO-моды, отвод в термостат
+и изменение запасённой энергии."""
 function lo_energy_balance(
     model::HotLOPhononBath,
     population::LOPopulation,
@@ -474,9 +480,9 @@ function lo_energy_balance(
 end
 
 """
-One reversible 1+2 ↔ 3+4 fermion collision between distinct spin-resolved states.
-The nonnegative coefficient in s⁻¹ must already include the microscopic matrix
-element, normalization, and quadrature. The reverse reaction is implicit.
+Одно обратимое фермионное столкновение 1+2 ↔ 3+4 между различными состояниями
+с разрешением по спину. Неотрицательный коэффициент в с⁻¹ включает микроскопический
+матричный элемент, нормировку и квадратуру. Обратная реакция учитывается автоматически.
 """
 struct BinaryCollisionChannel
     states::NTuple{4,Int}
@@ -490,13 +496,15 @@ struct BinaryCollisionChannel
 end
 
 """
-On-shell Markov/Pauli population collision model on equal-weight discrete states.
-Every channel conserves energy and both in-plane momentum components. No Hartree
-or exchange energy shift is added. A provenance label for the supplied rates is
-mandatory. Input arrays are copied into immutable tuples.
-`energy_tolerance` and `momentum_tolerance` are absolute construction-check
-tolerances, defaulting to `DEFAULT_BINARY_ENERGY_CONSERVATION_ATOL` and
-`DEFAULT_BINARY_MOMENTUM_CONSERVATION_ATOL`; neither changes a supplied state.
+Марковская модель столкновений заселённостей на энергетической оболочке с учётом
+блокировки Паули на дискретных состояниях равного веса. Каждый канал сохраняет
+энергию и обе компоненты импульса в плоскости. Сдвиги Хартри и обменной энергии
+отсутствуют. Для переданных скоростей требуется метка происхождения.
+Входные массивы копируются в неизменяемые кортежи.
+
+`energy_tolerance` и `momentum_tolerance` — абсолютные допуски при построении.
+Их значения по умолчанию — `DEFAULT_BINARY_ENERGY_CONSERVATION_ATOL` и
+`DEFAULT_BINARY_MOMENTUM_CONSERVATION_ATOL`. Эти допуски не меняют входные состояния.
 """
 struct ElectronCollisionModel{N,C}
     energies::NTuple{N,Energy}
@@ -578,7 +586,7 @@ model_identity(model::ElectronCollisionModel) = (
     momentum_tolerance_m_inverse = ustrip(u"m^-1", model.momentum_tolerance),
 )
 
-"""Collision-only time derivative of spin-resolved occupations, in s⁻¹."""
+"""Производная спин-разрешённых заселённостей по времени за счёт столкновений, в с⁻¹."""
 function electron_collision_rhs(model::ElectronCollisionModel, occupations)
     length(occupations) == length(model.energies) ||
         throw(ArgumentError("occupation axis mismatch"))
@@ -599,7 +607,7 @@ function electron_collision_rhs(model::ElectronCollisionModel, occupations)
     return derivative
 end
 
-"""Independent moment projections of a supplied collision derivative."""
+"""Независимые проекции на моменты заданной производной за счёт столкновений."""
 function electron_collision_moments(model::ElectronCollisionModel, derivative)
     length(derivative) == length(model.energies) ||
         throw(ArgumentError("derivative axis mismatch"))
@@ -619,10 +627,10 @@ function electron_collision_moments(model::ElectronCollisionModel, derivative)
 end
 
 """
-Cycle-averaged field→matter power density, ε₀ω Im(χ)|E₀|²/2, for the
-e⁻ⁱωᵗ convention and peak (not RMS) field amplitude. Negative values mean
-stimulated power delivered to the field. This diagnostic does not update the
-carrier population and introduces neither saturation nor cavity feedback.
+Средняя за цикл плотность мощности от поля к веществу, ε₀ω Im(χ)|E₀|²/2,
+при соглашении e⁻ⁱωᵗ и пиковой амплитуде поля. Отрицательное значение
+соответствует вынужденной передаче мощности в поле. Диагностика оставляет
+заселённости заданными и исключает насыщение и обратную связь резонатора.
 """
 function optical_power_density(susceptibility::Number, angular_frequency, peak_field)
     isfinite(susceptibility) || throw(ArgumentError("susceptibility must be finite"))

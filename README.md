@@ -1,26 +1,27 @@
 # QCLNEGF.jl
 
-Julia **1.13.x** library for nonequilibrium Green-function transport in layered
-quantum-cascade heterostructures. Version **0.2.0** contains dimensional model
-types, independent reference and optimized numerical operators, SCBA and Poisson
-solvers, physical observables, and optical-response calculations.
+Библиотека на Julia **1.13.x** для расчёта переноса в слоистых квантово-каскадных
+гетероструктурах методом неравновесных функций Грина. Версия **0.2.0** включает
+типы для размерных параметров, независимые эталонные и оптимизированные операторы,
+решатели SCBA и уравнения Пуассона, расчёт наблюдаемых и оптического отклика.
 
-Compatibility with Julia 1.13 patch releases is distinct from the exact
-Manifest recorded for an individual calculation environment.
+Для воспроизведения отдельного расчёта используйте его точную версию Julia
+и сохранённый `Manifest.toml`.
 
-The library solves an explicitly constructed problem in memory. YAML studies,
-files, checkpoints, reports, plots and command-line execution belong to
+Библиотека решает явно заданную задачу в памяти. Исследования на основе YAML,
+сохранение результатов и контрольных точек, отчёты, графики и командный интерфейс
+предоставляет
 [QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
 
-## Use
+## Использование
 
-From a checkout, instantiate the Julia project:
+Установите зависимости из каталога рабочей копии.
 
 ```console
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 
-A small direct calculation uses a declared educational preset:
+В небольшом прямом расчёте используется учебный набор параметров.
 
 ```julia
 using QCLNEGF
@@ -35,16 +36,16 @@ solution = solve(problem; options=tutorial_options())
 solution.status
 ```
 
-Inspect solution status, residuals and physical gates before interpreting an
-observable. A completed iteration sequence is not evidence of grid convergence or
-experimental agreement. The small tutorial grid demonstrates the equations; it is
-not a quantitative device prediction.
+Перед интерпретацией наблюдаемых проверьте статус решения, невязки и физические
+критерии. Сеточную сходимость и согласие с экспериментом устанавливают отдельными
+проверками. Малая учебная сетка служит для демонстрации уравнений.
 
-The reference geometry comes from “Thermoelectrically cooled THz quantum cascade
-laser operating up to 210 K”, [DOI 10.1063/1.5110305](https://doi.org/10.1063/1.5110305).
-General layer sequences are supported through `PhysicalParameters`.
+Геометрия эталонной структуры взята из статьи «Thermoelectrically cooled THz
+quantum cascade laser operating up to 210 K».
+Произвольную последовательность слоёв можно задать через `PhysicalParameters`.
+[DOI 10.1063/1.5110305](https://doi.org/10.1063/1.5110305)
 
-## Development
+## Разработка
 
 ```console
 deno task check
@@ -52,20 +53,16 @@ deno task test
 deno task docs
 ```
 
-The checked dependency manifest and exact Julia version define the development
-environment. Numerical tests use bounds checking, independent analytic cases,
-conservation identities and comparisons between literal and optimized operators.
-CI runs on trusted local GitHub Actions runners managed by
+Окружение разработки задают проверенный манифест зависимостей и точная версия
+Julia. Численные тесты проверяют границы массивов, независимые аналитические
+примеры, законы сохранения и согласие прямых и оптимизированных операторов.
+Проверки CI выполняются через GitHub Actions на локальных исполнителях проекта
 [qcl-negf-platform](https://github.com/Afonenko-QCL-NEGF/qcl-negf-platform).
 
-Start with the [model](docs/src/theory/01_model.md),
-[in-memory workflow](docs/src/theory/17_implementation_plan.md),
-[operator reference](docs/src/api/operators.md), and
-[architecture](docs/src/developer/architecture.md). Mathematical reference chapters
-are in Russian. Build the browsable documentation with `deno task docs`.
+Документацию для браузера собирает `deno task docs`. Начните с описания
+[физической модели](docs/src/theory/01_model.md),
+[расчёта в памяти](docs/src/theory/17_implementation_plan.md),
+[справочника операторов](docs/src/api/operators.md) и
+[архитектуры](docs/src/developer/architecture.md).
 
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl) consumes this API.
-[qcl-negf-research](https://github.com/Afonenko-QCL-NEGF/qcl-negf-research) owns study definitions;
-[qcl-negf-aiida](https://github.com/Afonenko-QCL-NEGF/qcl-negf-aiida) and Slurm schedule them.
-
-License: MIT.
+Лицензия MIT.

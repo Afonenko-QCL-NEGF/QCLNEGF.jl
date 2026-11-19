@@ -45,7 +45,7 @@ CurrentModule = QCLNEGF
 | `algorithms.contraction` | `literal`, `dense_blas`, `low_rank` | полная свёртка либо её ранговое приближение |
 | `algorithms.kernel_build` | `direct`, `tabulated`, `adaptive_direct` | угловая квадратура, таблица или адаптивная примесная квадратура |
 | `algorithms.mixing` | `linear`, `anderson` | процедура поиска неподвижной точки |
-| `algorithms.localization` | `pzp`, `legacy_pzp`, `none`, `real_space` | представление базиса ячейки |
+| `algorithms.localization` | `pzp`, `none`, `real_space` | представление базиса ячейки |
 | `algorithms.embedding` | `full_cell_resolvent`, `finite_chain` | замыкание соседних периодов |
 | `algorithms.retarded_real_part` | `kramers_kronig`, `drop` | сохранение либо удаление дисперсионного сдвига |
 | `algorithms.self_energy_structure` | `full`, `diagonal` | полные корреляции либо диагональное приближение |

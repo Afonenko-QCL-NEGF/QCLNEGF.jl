@@ -1,21 +1,21 @@
 """
     ProductionKernelOptions
 
-Controls the *construction* of production scattering tensors.  LO-phonon and
-ionized-impurity tensors are tabulated as functions of the transferred radial
-wave number and interpolated linearly.  The table is refined until direct,
-off-grid evaluations satisfy `relative_tolerance`, or until
-`maximum_lookup_nodes` is reached.
+Настройки построения ядер рассеяния. Для LO-фононов и ионизованных примесей
+ядра табулируются по радиальной величине передаваемого волнового вектора
+и линейно интерполируются. Таблица уточняется до выполнения
+`relative_tolerance` при прямой проверке вне узлов или до достижения
+`maximum_lookup_nodes`.
 
-`relative_tolerance` bounds all three direct diagnostics: globally scaled
-entrywise error, worst pointwise block-norm error, and selected angular-average
-error.  These are measured interpolation residuals, not a certified continuum
-error bound.  `strict=true` refuses a table if any diagnostic misses the
-requested residual.  IFR, acoustic, and alloy kernels use exact separable
-constructions and do not use this tolerance.
+`relative_tolerance` ограничивает три измеряемые величины: глобальную
+масштабированную поэлементную ошибку, максимальную точечную ошибку нормы
+блока и ошибку выбранных угловых средних. Режим `strict=true` отвергает
+таблицу при нарушении любого из этих порогов. Для шероховатости, акустических
+фононов и беспорядка сплава используются точные разделимые формулы,
+которые не зависят от этого допуска.
 
-See [Microscopic kernels](@ref theory-kernels) and
-[controlled production kernel construction](@ref theory-production).
+См. [микроскопические ядра](@ref theory-kernels)
+и [контролируемое построение ядер](@ref theory-production).
 """
 Base.@kwdef struct ProductionKernelOptions
     initial_lookup_nodes::Int = 65
@@ -29,10 +29,10 @@ Base.@kwdef struct ProductionKernelOptions
 end
 
 """
-Measured convergence record for one microscopic kernel family.
+Результаты проверки сходимости для одного семейства микроскопических ядер.
 
-See [Microscopic kernels](@ref theory-kernels) and
-[production kernel diagnostics](@ref theory-production).
+См. [микроскопические ядра](@ref theory-kernels)
+и [диагностику построения](@ref theory-production).
 """
 struct KernelInterpolationDiagnostic
     mechanism::Symbol
@@ -49,39 +49,11 @@ struct KernelInterpolationDiagnostic
     angular_quadrature_relative_error::Union{Nothing,Float64}
 end
 
-# Older constructors only measured table/algebra residuals. In particular a
-# zero interpolation residual never certifies angular continuum convergence.
-KernelInterpolationDiagnostic(
-    mechanism,
-    construction,
-    lookup_nodes,
-    direct_q_evaluations,
-    global_residual,
-    pointwise_residual,
-    angular_residual,
-    node_history,
-    residual_history,
-    accepted,
-) = KernelInterpolationDiagnostic(
-    mechanism,
-    construction,
-    lookup_nodes,
-    direct_q_evaluations,
-    global_residual,
-    pointwise_residual,
-    angular_residual,
-    node_history,
-    residual_history,
-    accepted,
-    false,
-    nothing,
-)
-
 """
-Diagnostics returned together with a production [`KernelSet`](@ref).
+Диагностика, возвращаемая вместе с оптимизированным [`KernelSet`](@ref).
 
-See [Microscopic kernels](@ref theory-kernels) and
-[production kernel diagnostics](@ref theory-production).
+См. [микроскопические ядра](@ref theory-kernels)
+и [диагностику построения](@ref theory-production).
 """
 struct ProductionKernelDiagnostics
     mechanisms::Dict{Symbol,KernelInterpolationDiagnostic}
@@ -142,10 +114,10 @@ function _pair_covariance_to_block(pair::AbstractMatrix{<:Number}, Nb::Int)
 end
 
 """
-Create an optimized direct evaluator `K(qbar)` for the donor covariance.
-Only grid cells with nonzero donor weight are retained; this is algebraically
-exact.  The remaining contractions are dense matrix products over the
-longitudinal quadrature and donor coordinates.
+Создать оптимизированный прямой вычислитель `K(qbar)` для ковариации доноров.
+Используются только сеточные ячейки с ненулевым донорным весом. Остальные
+свёртки выполняются плотными матричными произведениями по продольной
+квадратуре и координатам доноров.
 """
 function _production_impurity_evaluator(
     p::PhysicalParameters,
@@ -189,9 +161,10 @@ function _production_impurity_evaluator(
 end
 
 """
-Create an optimized direct evaluator for the screened bulk Fröhlich tensor.
-The `q_z` trapezoid is unchanged; only its four basis indices are flattened
-into a covariance matrix before the BLAS product.
+Создать оптимизированный прямой вычислитель экранированного объёмного
+тензора Фрёлиха. Квадратура трапеций по `q_z` сохраняется. Перед
+произведением BLAS четыре базисных индекса разворачиваются в матрицу
+ковариации.
 """
 function _production_lo_evaluator(
     p::PhysicalParameters,
@@ -346,9 +319,9 @@ function _assemble_lookup_kernel(nodes, values, grids::ModelGrids, Nb::Int)
 end
 
 """
-Assemble the finite-angle tensor without interpolation. The evaluator uses the
-same quadratures as the formula-level implementation; only independent
-`(k,k')` blocks and basis contractions are reordered for production threads.
+Собрать тензор на конечной угловой сетке без интерполяции. Квадратуры те же,
+что и в прямой формуле. Для потоков меняется порядок обработки независимых
+блоков `(k,k')` и базисных свёрток.
 """
 function _assemble_exact_parallel_kernel(evaluate, grids::ModelGrids, Nb::Int)
     Nk = length(grids.κ)
@@ -435,6 +408,8 @@ function _tabulated_angular_kernel(
         node_history,
         residual_history,
         accepted,
+        false,
+        nothing,
     )
     if !accepted && options.strict
         throw(
@@ -450,10 +425,10 @@ function _tabulated_angular_kernel(
 end
 
 """
-Exact finite-angular-grid IFR construction.  The basis covariance is formed
-once, while the Gaussian spectrum is averaged as a scalar for every `(k,k')`
-pair.  This is algebraically identical to `interface_roughness_kernel` for the
-same `grids.φ`; no continuum-angle or Bessel-function approximation is used.
+Точное построение ядра шероховатости на заданной угловой сетке.
+Ковариация базиса формируется один раз, а гауссов спектр усредняется
+как скаляр для каждой пары `(k,k')`. Результат алгебраически равен
+`interface_roughness_kernel` на той же `grids.φ`. Угловая сетка сохраняется.
 """
 function _interface_roughness_kernel_data(
     p::PhysicalParameters,
@@ -521,6 +496,8 @@ function _exact_kernel_diagnostic(mechanism::Symbol, construction::Symbol)
         Int[],
         Float64[],
         true,
+        false,
+        nothing,
     )
 end
 
@@ -555,21 +532,21 @@ end
     build_kernels_production(physical, numerical, scattering, scales,
                              grids, profiles, basis; options)
 
-Build the same full six-axis `KernelSet` contract as [`build_kernels`](@ref),
-but avoid repeated expensive longitudinal integrations:
+Собрать полный шестимерный `KernelSet`, как в [`build_kernels`](@ref),
+с меньшим числом продольных интегрирований:
 
-* LO and impurity use adaptively refined, linearly interpolated `q` tables;
-* IFR uses an exact separable discrete-angle construction;
-* acoustic and alloy use their exact momentum-independent constructions.
+* для LO и примесей используются адаптивно уточняемые таблицы по `q`
+  с линейной интерполяцией;
+* для шероховатости применяется точное разделимое построение на угловой сетке;
+* для акустических фононов и сплава используются точные формулы без зависимости
+  от импульса.
 
-Returns `(kernel_set, diagnostics)`.  The diagnostic residuals are direct
-off-grid measurements for this concrete basis and grid.  They are neither an
-analytic interpolation bound nor a substitute for a final observable-level
-convergence run with a tighter table tolerance.
+Возвращает `(kernel_set, diagnostics)`. Невязки измеряются напрямую вне узлов
+таблицы на конкретном базисе и сетке. Сходимость наблюдаемых проверяется
+отдельным расчётом с более строгим допуском таблицы.
 
-See [Microscopic kernels](@ref theory-kernels) for the physical tensors and
-[Production backend](@ref theory-production) for the controlled construction
-and residual interpretation.
+См. [микроскопические ядра](@ref theory-kernels)
+и [оптимизированное построение](@ref theory-production).
 """
 function build_kernels_production(
     p::PhysicalParameters,
@@ -633,9 +610,9 @@ function build_kernels_production(
 end
 
 """
-Build exact direct scattering tensors with the optimized algebraic evaluators.
-No lookup table, interpolation or model reduction is used. This is the E1
-production counterpart of the unchanged literal educational builder.
+Построить точные тензоры рассеяния оптимизированными прямыми формулами,
+без таблиц, интерполяции или редукции модели. Класс E1 соответствует
+прямому эталонному построителю.
 """
 function build_kernels_exact_parallel(
     p::PhysicalParameters,
@@ -771,24 +748,21 @@ end
         scales=ScaleSystem(), production_options=ProductionOptions(),
         kernel_options=ProductionKernelOptions())
 
-Production static-stage counterpart of [`build_problem`](@ref). A
-conservative RAM preflight is performed before the spatial basis and kernels
-are allocated. The spatial
-discretization, basis, complete six-axis kernel contract, and shift-matrix
-semantics are unchanged.  Only kernel construction is replaced by
-[`build_kernels_production`](@ref).  Returning diagnostics alongside the
-problem makes the measured interpolation residual part of every production
-run rather than an unrecorded build setting.
+Оптимизированное построение статических данных задачи
+[`build_problem`](@ref). Перед выделением базиса и ядер выполняется
+консервативная проверка ОЗУ. Сохраняются координатная дискретизация,
+базис, шестимерная форма ядер и смысл энергетических сдвигов.
+Ядра строятся функцией [`build_kernels_production`](@ref), а измеренная
+погрешность интерполяции сохраняется в `kernel_diagnostics`.
 
-The returned named tuple contains `problem`, `kernel_diagnostics`, and
-`memory_estimate`, so the measured interpolation error cannot become an
-unrecorded build setting. With `energy_shift=:sparse_plan`, `NEGFProblem`
-stores the exact `O(N_E)` interpolation operators directly. The educational
-and explicitly dense paths retain the dense matrix oracle.
+Именованный кортеж содержит `problem`, `kernel_diagnostics` и
+`memory_estimate`. При `energy_shift=:sparse_plan` в `NEGFProblem` хранятся
+точные операторы интерполяции размера `O(N_E)`. Для эталонного и явно
+выбранного плотного режима используются полные матрицы.
 
-See [Production backend](@ref theory-production),
-[numerical cost and memory](@ref theory-cost), and
-[the implementation plan](@ref implementation-plan).
+См. [оптимизированный решатель](@ref theory-production),
+[численную стоимость и память](@ref theory-cost)
+и [план реализации](@ref implementation-plan).
 """
 function build_problem_production(;
     physical::PhysicalParameters = reference_parameters(),
@@ -825,6 +799,14 @@ function build_problem_production(;
     W₋ᴱᵖ = shift_builder(grids.ε, -sp.Eᵖ)
     W₊ᴸᴼ = shift_builder(grids.ε, +sp.ħωᴸᴼ)
     W₋ᴸᴼ = shift_builder(grids.ε, -sp.ħωᴸᴼ)
+    augmented_kernels = add_sppa_kernel(
+        physical,
+        scales,
+        grids,
+        basis,
+        kernels,
+        physical_models.electron_electron,
+    )
     problem = NEGFProblem(
         physical,
         numerical,
@@ -833,34 +815,12 @@ function build_problem_production(;
         grids,
         profiles,
         basis,
-        kernels,
+        augmented_kernels,
         W₊ᴱᵖ,
         W₋ᴱᵖ,
         W₊ᴸᴼ,
         W₋ᴸᴼ,
-    )
-    augmented_kernels = add_sppa_kernel(
-        problem.physical,
-        problem.scales,
-        problem.grids,
-        problem.basis,
-        problem.kernels,
-        physical_models.electron_electron,
-    )
-    problem = NEGFProblem(
-        problem.physical,
-        problem.numerical,
-        problem.scattering,
-        problem.scales,
-        problem.grids,
-        problem.profiles,
-        problem.basis,
-        augmented_kernels,
-        problem.W₊ᴱᵖ,
-        problem.W₋ᴱᵖ,
-        problem.W₊ᴸᴼ,
-        problem.W₋ᴸᴼ,
-        problem.energy_shift_discretization,
+        :nodal_linear,
         physical_models,
     )
 

@@ -8,11 +8,11 @@
  viewBox="0.00 0.00 1498.00 1600.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(20.16 1579.8)">
 <title>nested_solver</title>
-<text xml:space="preserve" text-anchor="middle" x="728.6" y="-1537.64" font-family="DejaVu Sans" font-size="20.00">Вложенный solve_production: Poisson + fixed&#45;Hartree SCBA</text>
+<text xml:space="preserve" text-anchor="middle" x="728.6" y="-1537.64" font-family="DejaVu Sans" font-size="20.00">Вложенный алгоритм: Пуассон и SCBA при фиксированном Uᴴ</text>
 <g id="clust1" class="cluster">
 <title>cluster_outer</title>
 <path fill="none" stroke="#7fa7c3" d="M230.08,-316.08C230.08,-316.08 984.08,-316.08 984.08,-316.08 990.08,-316.08 996.08,-322.08 996.08,-328.08 996.08,-328.08 996.08,-1507.64 996.08,-1507.64 996.08,-1513.64 990.08,-1519.64 984.08,-1519.64 984.08,-1519.64 230.08,-1519.64 230.08,-1519.64 224.08,-1519.64 218.08,-1513.64 218.08,-1507.64 218.08,-1507.64 218.08,-328.08 218.08,-328.08 218.08,-322.08 224.08,-316.08 230.08,-316.08"/>
-<text xml:space="preserve" text-anchor="middle" x="607.08" y="-1504.84" font-family="DejaVu Sans" font-size="12.00">Внешняя итерация μ: Hartree–Poisson</text>
+<text xml:space="preserve" text-anchor="middle" x="607.08" y="-1504.84" font-family="DejaVu Sans" font-size="12.00">Внешняя итерация μ: поле Хартри</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_scba</title>
@@ -78,7 +78,7 @@
 <title>seed</title>
 <path fill="#e8f1f8" stroke="#315b7d" stroke-width="1.3" d="M909.16,-1391.04C909.16,-1391.04 711,-1391.04 711,-1391.04 705,-1391.04 699,-1385.04 699,-1379.04 699,-1379.04 699,-1366.56 699,-1366.56 699,-1360.56 705,-1354.56 711,-1354.56 711,-1354.56 909.16,-1354.56 909.16,-1354.56 915.16,-1354.56 921.16,-1360.56 921.16,-1366.56 921.16,-1366.56 921.16,-1379.04 921.16,-1379.04 921.16,-1385.04 915.16,-1391.04 909.16,-1391.04"/>
 <text xml:space="preserve" text-anchor="middle" x="810.08" y="-1376.1" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">_seed_green_production(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="810.08" y="-1362.9" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">exact scalar μ weights; final Gˡ once</text>
+<text xml:space="preserve" text-anchor="middle" x="810.08" y="-1362.9" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Точные веса для μ, затем Gˡ</text>
 </g>
 <!-- h&#45;&gt;seed -->
 <g id="edge1" class="edge">
@@ -91,7 +91,7 @@
 <title>green</title>
 <path fill="#fce8d8" stroke="#b4672b" stroke-width="1.3" d="M931.71,-1321.56C931.71,-1321.56 744.45,-1321.56 744.45,-1321.56 738.45,-1321.56 732.45,-1315.56 732.45,-1309.56 732.45,-1309.56 732.45,-1283.88 732.45,-1283.88 732.45,-1277.88 738.45,-1271.88 744.45,-1271.88 744.45,-1271.88 931.71,-1271.88 931.71,-1271.88 937.71,-1271.88 943.71,-1277.88 943.71,-1283.88 943.71,-1283.88 943.71,-1309.56 943.71,-1309.56 943.71,-1315.56 937.71,-1321.56 931.71,-1321.56"/>
 <text xml:space="preserve" text-anchor="middle" x="838.08" y="-1306.62" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">_current_green_production(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="838.08" y="-1293.42" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">threaded (E,k) Dyson/Keldysh</text>
+<text xml:space="preserve" text-anchor="middle" x="838.08" y="-1293.42" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Дайсон и Келдыш по (E,k)</text>
 <text xml:space="preserve" text-anchor="middle" x="838.08" y="-1280.22" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">_number_functional_production(...)</text>
 </g>
 <!-- seed&#45;&gt;green -->
@@ -119,21 +119,21 @@
 <g id="node29" class="node">
 <title>fatal</title>
 <path fill="#fde8e7" stroke="#b6453d" stroke-width="1.3" d="M1394.16,-1193.18C1394.16,-1193.18 1394.16,-1200.9 1394.16,-1200.9 1394.16,-1204.75 1390.34,-1209.15 1386.53,-1209.7 1386.53,-1209.7 1287.52,-1223.87 1287.52,-1223.87 1283.7,-1224.41 1276.03,-1224.96 1272.17,-1224.96 1272.17,-1224.96 1125.99,-1224.96 1125.99,-1224.96 1122.13,-1224.96 1114.46,-1224.41 1110.64,-1223.87 1110.64,-1223.87 1011.63,-1209.7 1011.63,-1209.7 1007.82,-1209.15 1004,-1204.75 1004,-1200.9 1004,-1200.9 1004,-1193.18 1004,-1193.18 1004,-1189.33 1007.82,-1184.93 1011.63,-1184.38 1011.63,-1184.38 1110.64,-1170.21 1110.64,-1170.21 1114.46,-1169.67 1122.13,-1169.12 1125.99,-1169.12 1125.99,-1169.12 1272.17,-1169.12 1272.17,-1169.12 1276.03,-1169.12 1283.7,-1169.67 1287.52,-1170.21 1287.52,-1170.21 1386.53,-1184.38 1386.53,-1184.38 1390.34,-1184.93 1394.16,-1189.33 1394.16,-1193.18"/>
-<text xml:space="preserve" text-anchor="middle" x="1199.08" y="-1200.34" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Dyson/Keldysh exception:</text>
-<text xml:space="preserve" text-anchor="middle" x="1199.08" y="-1187.14" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">rethrow; обработка отказа снаружи</text>
+<text xml:space="preserve" text-anchor="middle" x="1199.08" y="-1200.34" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Ошибка Дайсона или Келдыша</text>
+<text xml:space="preserve" text-anchor="middle" x="1199.08" y="-1187.14" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Исключение передаётся наружу</text>
 </g>
 <!-- green&#45;&gt;fatal -->
 <g id="edge28" class="edge">
 <title>green&#45;&gt;fatal</title>
 <path fill="none" stroke="#b6453d" stroke-width="1.2" stroke-dasharray="5,2" d="M928.24,-1271.32C979.29,-1257.51 1043.32,-1240.19 1096.31,-1225.85"/>
 <polygon fill="#b6453d" stroke="#b6453d" stroke-width="1.2" points="1096.84,-1228.24 1102.96,-1224.05 1095.56,-1223.51 1096.84,-1228.24"/>
-<text xml:space="preserve" text-anchor="middle" x="1041.96" y="-1247.33" font-family="DejaVu Sans" font-size="9.50" fill="#334155">exception</text>
+<text xml:space="preserve" text-anchor="middle" x="1041.96" y="-1247.33" font-family="DejaVu Sans" font-size="9.50" fill="#334155">исключение</text>
 </g>
 <!-- candidate_ok -->
 <g id="node9" class="node">
 <title>candidate_ok</title>
 <path fill="#fff7da" stroke="#a27818" stroke-width="1.3" d="M702.27,-1130.5C702.27,-1130.5 624.85,-1116.7 624.85,-1116.7 618.94,-1115.65 618.94,-1113.55 624.85,-1112.5 624.85,-1112.5 702.27,-1098.7 702.27,-1098.7 708.17,-1097.65 719.99,-1097.65 725.89,-1098.7 725.89,-1098.7 803.31,-1112.5 803.31,-1112.5 809.22,-1113.55 809.22,-1115.65 803.31,-1116.7 803.31,-1116.7 725.89,-1130.5 725.89,-1130.5 719.99,-1131.55 708.17,-1131.55 702.27,-1130.5"/>
-<text xml:space="preserve" text-anchor="middle" x="714.08" y="-1111.3" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">candidate valid?</text>
+<text xml:space="preserve" text-anchor="middle" x="714.08" y="-1111.3" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Кандидат допустим?</text>
 </g>
 <!-- candidates&#45;&gt;candidate_ok -->
 <g id="edge4" class="edge">
@@ -175,7 +175,7 @@
 <g id="node11" class="node">
 <title>scba_ok</title>
 <path fill="#fff7da" stroke="#a27818" stroke-width="1.3" d="M834.24,-944.7C834.24,-944.7 750.31,-930.66 750.31,-930.66 744.4,-929.67 744.4,-927.69 750.31,-926.7 750.31,-926.7 834.24,-912.66 834.24,-912.66 840.16,-911.67 852,-911.67 857.92,-912.66 857.92,-912.66 941.84,-926.7 941.84,-926.7 947.76,-927.69 947.76,-929.67 941.84,-930.66 941.84,-930.66 857.92,-944.7 857.92,-944.7 852,-945.69 840.16,-945.69 834.24,-944.7"/>
-<text xml:space="preserve" text-anchor="middle" x="846.08" y="-925.38" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">SCBA converged?</text>
+<text xml:space="preserve" text-anchor="middle" x="846.08" y="-925.38" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">SCBA сошлось?</text>
 </g>
 <!-- residuals&#45;&gt;scba_ok -->
 <g id="edge7" class="edge">
@@ -195,7 +195,7 @@
 <title>residuals&#45;&gt;inner_cp</title>
 <path fill="none" stroke="#526d82" stroke-width="1.2" stroke-dasharray="5,2" d="M686.77,-989.67C676.5,-977.98 664.98,-964.87 655.34,-953.89"/>
 <polygon fill="#526d82" stroke="#526d82" stroke-width="1.2" points="657.27,-952.37 650.81,-948.73 653.59,-955.6 657.27,-952.37"/>
-<text xml:space="preserve" text-anchor="middle" x="709.21" y="-965.77" font-family="DejaVu Sans" font-size="9.50" fill="#334155">каждые N SCBA</text>
+<text xml:space="preserve" text-anchor="middle" x="709.21" y="-965.77" font-family="DejaVu Sans" font-size="9.50" fill="#334155">запрос SCBA</text>
 </g>
 <!-- scba_more -->
 <g id="node12" class="node">
@@ -264,7 +264,7 @@
 <title>scba_fail&#45;&gt;observables</title>
 <path fill="none" stroke="#526d82" stroke-width="1.2" d="M686.57,-743.93C714.38,-736.67 740.08,-729.96 740.08,-729.96 740.08,-729.96 1002.08,-721.96 1002.08,-721.96 1002.08,-721.96 1281.08,-687.96 1281.08,-687.96 1281.08,-687.96 1281.08,-687.96 1281.08,-341.08 1281.08,-341.08 1256.08,-316.08 1256.08,-316.08 1256.08,-316.08 1244.03,-306.6 1231.32,-296.6"/>
 <polygon fill="#526d82" stroke="#526d82" stroke-width="1.2" points="1233.11,-294.89 1226.09,-292.49 1230.08,-298.75 1233.11,-294.89"/>
-<text xml:space="preserve" text-anchor="middle" x="1369.14" y="-516.75" font-family="DejaVu Sans" font-size="9.50" fill="#334155">outer break; без final recomputation</text>
+<text xml:space="preserve" text-anchor="middle" x="1369.14" y="-516.75" font-family="DejaVu Sans" font-size="9.50" fill="#334155">остановка без пересчёта</text>
 </g>
 <!-- poisson -->
 <g id="node17" class="node">
@@ -282,7 +282,7 @@
 <g id="node18" class="node">
 <title>mix_u</title>
 <path fill="#f8fafc" stroke="#315b7d" stroke-width="1.3" d="M512.85,-704.96C512.85,-704.96 281.31,-704.96 281.31,-704.96 275.31,-704.96 269.31,-698.96 269.31,-692.96 269.31,-692.96 269.31,-680.96 269.31,-680.96 269.31,-674.96 275.31,-668.96 281.31,-668.96 281.31,-668.96 512.85,-668.96 512.85,-668.96 518.85,-668.96 524.85,-674.96 524.85,-680.96 524.85,-680.96 524.85,-692.96 524.85,-692.96 524.85,-698.96 518.85,-704.96 512.85,-704.96"/>
-<text xml:space="preserve" text-anchor="middle" x="397.08" y="-683.66" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Unew = (1−αP)Uaccepted + αP·candidate</text>
+<text xml:space="preserve" text-anchor="middle" x="397.08" y="-683.66" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Unew = (1−αP)Uaccepted + αP·U*</text>
 </g>
 <!-- poisson&#45;&gt;mix_u -->
 <g id="edge16" class="edge">
@@ -307,8 +307,8 @@
 <g id="node20" class="node">
 <title>outer_ok</title>
 <path fill="#fff7da" stroke="#a27818" stroke-width="1.3" d="M818.56,-552.71C818.56,-552.71 716.8,-522.97 716.8,-522.97 711.04,-521.28 711.04,-517.92 716.8,-516.23 716.8,-516.23 818.56,-486.49 818.56,-486.49 824.32,-484.8 835.84,-484.8 841.6,-486.49 841.6,-486.49 943.36,-516.23 943.36,-516.23 949.12,-517.92 949.12,-521.28 943.36,-522.97 943.36,-522.97 841.6,-552.71 841.6,-552.71 835.84,-554.4 824.32,-554.4 818.56,-552.71"/>
-<text xml:space="preserve" text-anchor="middle" x="830.08" y="-522.9" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Poisson/observable</text>
-<text xml:space="preserve" text-anchor="middle" x="830.08" y="-509.7" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">criteria passed?</text>
+<text xml:space="preserve" text-anchor="middle" x="830.08" y="-522.9" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">Пуассон и наблюдаемые</text>
+<text xml:space="preserve" text-anchor="middle" x="830.08" y="-509.7" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">в допуске?</text>
 </g>
 <!-- outer_res&#45;&gt;outer_ok -->
 <g id="edge18" class="edge">
@@ -327,7 +327,7 @@
 <title>outer_res&#45;&gt;outer_cp</title>
 <path fill="none" stroke="#526d82" stroke-width="1.2" stroke-dasharray="5,2" d="M478.08,-599.09C478.08,-584.46 478.08,-563.43 478.08,-546.82"/>
 <polygon fill="#526d82" stroke="#526d82" stroke-width="1.2" points="480.53,-546.93 478.08,-539.93 475.63,-546.93 480.53,-546.93"/>
-<text xml:space="preserve" text-anchor="middle" x="515.43" y="-574.93" font-family="DejaVu Sans" font-size="9.50" fill="#334155">каждые N outer</text>
+<text xml:space="preserve" text-anchor="middle" x="515.43" y="-574.93" font-family="DejaVu Sans" font-size="9.50" fill="#334155">внешний запрос</text>
 </g>
 <!-- outer_more -->
 <g id="node21" class="node">
@@ -347,7 +347,7 @@
 <title>final_scba</title>
 <path fill="#fce8d8" stroke="#b4672b" stroke-width="1.8" d="M1232.52,-360.32C1232.52,-360.32 1015.63,-360.32 1015.63,-360.32 1009.63,-360.32 1003.63,-354.32 1003.63,-348.32 1003.63,-348.32 1003.63,-335.84 1003.63,-335.84 1003.63,-329.84 1009.63,-323.84 1015.63,-323.84 1015.63,-323.84 1232.52,-323.84 1232.52,-323.84 1238.52,-323.84 1244.52,-329.84 1244.52,-335.84 1244.52,-335.84 1244.52,-348.32 1244.52,-348.32 1244.52,-354.32 1238.52,-360.32 1232.52,-360.32"/>
 <text xml:space="preserve" text-anchor="middle" x="1124.08" y="-345.38" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">solve_scba_production(problem, Uᴴ; ...)</text>
-<text xml:space="preserve" text-anchor="middle" x="1124.08" y="-332.18" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">финальный non&#45;lagged пересчёт</text>
+<text xml:space="preserve" text-anchor="middle" x="1124.08" y="-332.18" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">пересчёт при конечном Uᴴ</text>
 </g>
 <!-- outer_ok&#45;&gt;final_scba -->
 <g id="edge25" class="edge">
@@ -406,7 +406,7 @@
 <g id="node27" class="node">
 <title>failed</title>
 <path fill="#fde8e7" stroke="#b6453d" stroke-width="1.3" d="M1417.94,-105C1417.94,-105 1224.22,-105 1224.22,-105 1218.22,-105 1212.22,-99 1212.22,-93 1212.22,-93 1212.22,-81 1212.22,-81 1212.22,-75 1218.22,-69 1224.22,-69 1224.22,-69 1417.94,-69 1417.94,-69 1423.94,-69 1429.94,-75 1429.94,-81 1429.94,-81 1429.94,-93 1429.94,-93 1429.94,-99 1423.94,-105 1417.94,-105"/>
-<text xml:space="preserve" text-anchor="middle" x="1321.08" y="-83.7" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">NEGFSolution(explicit failure status)</text>
+<text xml:space="preserve" text-anchor="middle" x="1321.08" y="-83.7" font-family="DejaVu Sans" font-size="11.00" fill="#17324d">NEGFSolution со статусом отказа</text>
 </g>
 <!-- final_ok&#45;&gt;failed -->
 <g id="edge32" class="edge">

@@ -1,10 +1,11 @@
 # QCLNEGF
 
-QCLNEGF 0.2.0 implements in-memory NEGF transport calculations in Julia 1.13.x.
-Start with the [model](@ref theory-model) and [small direct calculation](@ref implementation-plan).
-The [architecture](@ref developer-architecture) describes package ownership; the
-[API](api/public.md) and [operators](api/operators.md) document the numerical interface.
+QCLNEGF 0.2.0 рассчитывает перенос методом неравновесных функций Грина (NEGF)
+в памяти на Julia 1.13.x. Начните с [физической модели](@ref theory-model) и
+[небольшого прямого расчёта](@ref implementation-plan). Границы ответственности
+пакетов описаны в [архитектуре](@ref developer-architecture), численные
+интерфейсы — в справочниках [API](api/public.md) и [операторов](api/operators.md).
 
-Persistence, declarative studies, CLI execution and plots are documented in
+Сохранение результатов, описание исследований, командный интерфейс и графики
+описаны в документации
 [QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
-Scientific chapters are in Russian; setup and package ownership are in English.

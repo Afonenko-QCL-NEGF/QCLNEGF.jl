@@ -1,10 +1,13 @@
-"""Versioned backward-error budget for a PSD test in scaled solver units.
+"""
+Версия нормы допустимой обратной ошибки проверки положительной
+полуопределённости в единицах решателя.
 
-For an n×n Float64 Hermitian eigensolve, 64 n eps bounds the declared
-construction/evaluation roundoff allowance at max(block norm, construction
-scale). This is a numerical noise allowance, not a claim that all negative
-values are roundoff. `construction_scale=1` is one solver unit; callers testing
-a rescaled operator must transform it with the matrix. No clipping occurs.
+Для эрмитовой задачи на собственные значения размера n×n в Float64
+допуск округления при построении и оценке равен `64 n eps`,
+умноженному на максимум нормы блока и масштаба его построения.
+`construction_scale=1` означает одну единицу решателя.
+При масштабировании матрицы нужно масштабировать и эту величину.
+Обрезания собственных значений не выполняется.
 """
 const PSD_METRIC_VERSION = 3
 const _PSD_BACKWARD_ERROR_FACTOR = 64.0
@@ -27,11 +30,13 @@ function psd_error_budget(
     )
 end
 
-"""PSD gate witness; ratio is the remaining defect after a roundoff budget.
+"""
+Свидетельство проверки положительной полуопределённости. Отношение
+измеряет дефект сверх допуска округления.
 
-Acceptance r_PSD < τ is equivalent to absolute_defect < backward_error +
-τ block_norm. Physical dimensions are A/G: 1/E₀, broadening: E₀. Coordinates
-are indices in the owning solution's declared basis/discretization.
+Условие r_PSD < τ эквивалентно absolute_defect < backward_error +
+τ block_norm. Физические размерности: A/G — 1/E₀, уширение — E₀.
+Координаты заданы индексами базиса и сетки проверяемого решения.
 """
 struct _PositivityWitness
     matrix_kind::Symbol
@@ -48,22 +53,8 @@ struct _PositivityWitness
     construction_scale::Float64
 end
 
-# Legacy witness readers still accept the seven original fields.
-_PositivityWitness(kind, e, m, minimum_value, block_norm, floor, ratio) =
-    _PositivityWitness(
-        kind,
-        e,
-        m,
-        minimum_value,
-        block_norm,
-        floor,
-        ratio,
-        max(0.0, -minimum_value),
-        max(0.0, -minimum_value)/max(block_norm, floatmin(Float64)),
-        floor,
-        0.0,
-        1.0,
-    )
+_nonfinite_positivity_witness(kind, e, m, floor) =
+    _PositivityWitness(kind, e, m, NaN, Inf, floor, Inf, NaN, NaN, floor, 0.0, 1.0)
 _empty_positivity_witness() =
     _PositivityWitness(:none, 0, 0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
 
@@ -77,7 +68,7 @@ function _positivity_witness(
     construction_error = 0.0,
     hermiticity_defect = 0.0,
 )
-    all(isfinite, values) || return _PositivityWitness(kind, e, m, NaN, Inf, floor, Inf)
+    all(isfinite, values) || return _nonfinite_positivity_witness(kind, e, m, floor)
     minimum_eigenvalue = minimum(values)
     block_norm = maximum(abs, values)
     absolute = max(0.0, -minimum_eigenvalue)
@@ -101,10 +92,12 @@ function _positivity_witness(
     )
 end
 
-"""Worst PSD blocks on the complete grid, including raw Dyson/Keldysh products.
+"""
+Блоки с наибольшим дефектом положительности на полной сетке,
+включая сырые произведения Дайсона и Келдыша.
 
-Raw occupation and hole matrices are checked independently of any charge
-constraint update. This prevents normalization from hiding inadmissible input.
+Сырые матрицы занятых и пустых состояний проверяются отдельно от
+нормировки заряда. Это позволяет обнаружить недопустимый исходный блок.
 """
 function _green_positivity_witnesses(green::GreenState, total::SelfEnergyFamily)
     return _scan_positivity_witnesses(

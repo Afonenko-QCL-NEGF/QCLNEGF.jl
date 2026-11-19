@@ -554,7 +554,7 @@ L 557.961034 275.20863
    </g>
   </g>
   <g id="text_32">
-   <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="400.19976" y="16.5225" transform="rotate(-0 400.19976 16.5225)">Заданные заселения и ширина линии; это не расчёт усиления работающего reference design</text>
+   <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="400.19976" y="16.5225" transform="rotate(-0 400.19976 16.5225)">Отклик при заданных населённостях и ширине линии</text>
   </g>
  </g>
  <defs>

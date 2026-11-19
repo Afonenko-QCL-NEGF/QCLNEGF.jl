@@ -1,7 +1,7 @@
 # Production finite open-chain recursion. Each logical worker owns its scratch;
 # task migration cannot alias another worker's matrices. The reference oracle
 # in reference/periodicity.jl remains independent and unchanged.
-"""Owned LAPACK LU/inverse buffers, reused for independent small dense blocks."""
+"""Буферы LU-разложения и обращения LAPACK для независимых малых плотных блоков."""
 struct _ProductionInverseWorkspace
     pivots::Vector{LinearAlgebra.BlasInt}
     work::Vector{ComplexF64}
@@ -292,10 +292,11 @@ function _cavity_side!(
     return nothing
 end
 
-"""Immutable geometry/Hartree data scoped to a single SCBA solve.
+"""
+Неизменяемые геометрические данные и потенциал Хартри для одного решения SCBA.
 
-No self-energy or iteration output is retained. The original Hamiltonian is
-copied so accidental in-place changes fail closed instead of reusing stale data.
+Собственные энергии и результаты итераций не хранятся. Исходный
+гамильтониан копируется, чтобы обнаружить случайное изменение на месте.
 """
 function _cavity_production_plan(problem, h, options)
     periods = options.algorithms.embedding_periods
@@ -671,12 +672,12 @@ end
 """
     production_static_contraction(operator, G, wᵏ, qᴷ=1; energy_chunk=128)
 
-Memory-bounded BLAS evaluation of the *same* six-index contraction as
-`_static_contraction`.  The dense operator changes storage order only.  A
-momentum-independent kernel is reduced exactly before multiplication.
+Вычислить шестииндексную свёртку `_static_contraction` через BLAS
+с ограниченной памятью. У плотного оператора изменяется только порядок
+хранения. Независимое от импульса ядро точно сокращается до умножения.
 
-See [Microscopic kernels](@ref theory-kernels) and the
-[production BLAS contraction](@ref theory-production).
+См. [микроскопические ядра](@ref theory-kernels)
+и [свёртку BLAS](@ref theory-production).
 """
 function production_static_contraction(
     op::AbstractProductionKernel,
@@ -776,17 +777,18 @@ end
     fft_hilbert_transform(Γ, ε, wᴱ; column_chunk=32,
                           return_roundoff=false)
 
-`O(N_E log N_E)` zero-padded *linear* convolution for the exact discrete
-principal-value sum used by [`direct_hilbert_transform`](@ref QCLNEGF.QCLReferenceOperators.direct_hilbert_transform).  It is not a
-cyclic Hilbert transform and introduces no edge wrap.  The only extra
-difference from the direct formula is floating-point summation order.
+Линейная свёртка с дополнением нулями за `O(N_E log N_E)` вычисляет ту же
+дискретную сумму главного значения, что и
+[`direct_hilbert_transform`](@ref QCLNEGF.QCLReferenceOperators.direct_hilbert_transform).
+Края окна не замыкаются. От прямой схемы отличается порядок
+суммирования с плавающей точкой.
 
-With `return_roundoff=true`, a second valid transform with twice the padding
-length provides an empirical rounding-order residual.
+При `return_roundoff=true` второе преобразование с удвоенной длиной
+дополнения даёт оценку эффекта округления.
 
-See [the direct Hilbert relation](@ref eq-direct-hilbert),
-[Microscopic kernels](@ref theory-kernels), and
-[Production backend](@ref theory-production).
+См. [прямое преобразование Гильберта](@ref eq-direct-hilbert),
+[микроскопические ядра](@ref theory-kernels)
+и [оптимизированный решатель](@ref theory-production).
 """
 function fft_hilbert_transform(
     Γ::AbstractArray{<:Number,4},
@@ -807,11 +809,12 @@ function fft_hilbert_transform(
 end
 
 """
-Retarded self-energy reconstructed with the exact-discrete FFT Hilbert map.
+Восстановить запаздывающую собственную энергию дискретным преобразованием
+Гильберта через БПФ.
 
-See [the direct Hilbert relation](@ref eq-direct-hilbert),
-[Microscopic kernels](@ref theory-kernels), and
-[Production backend](@ref theory-production).
+См. [прямое преобразование Гильберта](@ref eq-direct-hilbert),
+[микроскопические ядра](@ref theory-kernels)
+и [оптимизированный решатель](@ref theory-production).
 """
 function retarded_self_energy_fft(
     Σˡ::AbstractArray{<:Number,4},
@@ -981,7 +984,7 @@ function _selected_energy_shift(
     return _selected_energy_shift!(destination, problem, cache, direction, X, options)
 end
 
-"""Apply the selected exact shift into independently owned output storage."""
+"""Применить выбранный точный сдвиг в отдельный выходной буфер."""
 function _selected_energy_shift!(
     destination::AbstractArray{<:Number,4},
     problem::NEGFProblem,

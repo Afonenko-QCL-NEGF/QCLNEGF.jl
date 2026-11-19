@@ -3,7 +3,7 @@
 # fixed physical rate or floor is introduced.
 const _LO_EVENT_ROUNDOFF_FACTOR = 64.0
 
-"""Apply a declared fixed thermodynamic screening closure before kernel assembly."""
+"""Применить выбранное термодинамическое замыкание экранирования до сборки ядер."""
 function resolve_physical_models(p::PhysicalParameters, models::PhysicalModelOptions)
     models.screening === :fixed && return p
     density = ionized_sheet_density(p)
@@ -23,7 +23,7 @@ function resolve_physical_models(p::PhysicalParameters, models::PhysicalModelOpt
     )
 end
 
-"""Local transverse Kane root; longitudinal confinement and all dk weights remain explicit."""
+"""Решение уравнения Кейна для поперечной кинетической энергии. Продольное ограничение и все веса импульса входят явно."""
 @inline function transverse_kinetic_energy(parabolic::Real, alpha_scaled::Real)
     isfinite(parabolic) && parabolic >= 0 && isfinite(alpha_scaled) && alpha_scaled >= 0 ||
         throw(
@@ -47,7 +47,7 @@ function _transverse_hamiltonian(problem::NEGFProblem, momentum::Real)
     return problem.basis.Φ'*Diagonal(local_energy)*problem.basis.Φ
 end
 
-"""Uniform LO population and energy-balance coefficients for the same raw map."""
+"""Однородная населённость LO-фононов и коэффициенты энергетического баланса для одного и того же сырого отображения."""
 struct LOKineticState
     occupation::Float64
     emission_per_second::Float64

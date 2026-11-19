@@ -1,21 +1,19 @@
 """
     OpticalResponse
 
-Frequency-domain, small-signal optical response of one converged stationary
-NEGF state.  `photon_energy` is in eV, `frequency` in Hz,
-`angular_frequency` in s^-1, `gain` in m^-1 and `susceptibility` and
-`refractive_index` are dimensionless.  Positive `gain` denotes amplification;
-negative `gain` denotes absorption.
+Малосигнальный оптический отклик одного стационарного состояния NEGF.
+`photon_energy` измеряется в эВ, `frequency` в Гц, `angular_frequency`
+в с⁻¹, `gain` в м⁻¹. `susceptibility` и `refractive_index` безразмерны.
+Положительный `gain` означает усиление, отрицательный — поглощение.
 
-The current implementation is the length-gauge *bare bubble*.  It retains
-the complete matrix Green functions and their SCBA broadening, but deliberately
-sets the optical variation of every self-energy to zero.  Consequently
-`vertex_corrections == false`; this fact is part of the returned data rather
-than an undocumented approximation.
+Реализован отклик голого пузыря в калибровке длины. В нём сохраняются
+полные матричные функции Грина и уширение SCBA, а оптические вариации
+самоэнергий положены равными нулю. Результат явно содержит
+`vertex_corrections == false`.
 
-See [Optical response](@ref theory-optical-response),
-[Production backend](@ref theory-production), and
-[debug/final visualization](@ref theory-visualization).
+См. [оптический отклик](@ref theory-optical-response),
+[расчётный решатель](@ref theory-production) и
+[визуализацию](@ref theory-visualization).
 """
 struct OpticalResponse
     photon_energy::Vector{EnergyQuantity}
@@ -44,12 +42,12 @@ end
 """
     _optical_shift_plan(ε, δ)
 
-Return `(left, fraction, valid)` for the non-periodic piecewise-linear
-evaluation `X(ε[e] + δ)`.  Every valid entry is represented as
-`(1-fraction[e])X[left[e]] + fraction[e]X[left[e]+1]`; values outside the
-energy interval are invalid and are never wrapped.  This O(N_E) plan is the
-optical analogue of [`build_shift_matrix`](@ref), without allocating a dense
-`N_E × N_E` matrix.
+Возвращает `(left, fraction, valid)` для непериодической кусочно-линейной
+интерполяции `X(ε[e] + δ)`. Допустимые элементы вычисляются как
+`(1-fraction[e])X[left[e]] + fraction[e]X[left[e]+1]`. Значения вне
+энергетического интервала помечаются недопустимыми. Периодический перенос
+отсутствует. Этот план сложности O(N_E) служит оптическим аналогом
+[`build_shift_matrix`](@ref) и обходится без плотной матрицы `N_E × N_E`.
 """
 function _optical_shift_plan(ε::AbstractVector{<:Real}, δ::Real)
     issorted(ε) || throw(ArgumentError("energy nodes must be sorted"))
@@ -113,9 +111,9 @@ end
 @doc raw"""
     _bare_bubble_sum(ε, wᴱ, wᵏ, Z, Gᴿ, Gˡ, δ)
 
-Evaluate the dimensionless Green-function part of the length-gauge bare
-bubble at positive dimensionless photon energy `δ`.  The returned tuple is
-`(S, valid)`, where
+Вычисляет безразмерную часть голого пузыря с функциями Грина в калибровке
+длины при положительной безразмерной энергии фотона `δ`. Возвращает
+`(S, valid)`, где
 
 ```math
 S(\delta)=\sum_{e,m}w^E_e w^k_m\operatorname{tr}\!\left\{
@@ -123,9 +121,9 @@ Z\left[G^R(E_e+\delta)ZG^<(E_e)
 +G^<(E_e+\delta)ZG^A(E_e)\right]\right\}.
 ```
 
-`valid[e]` records whether `E_e+δ` lies inside the stored energy interval.
-The routine performs no cyclic extrapolation and allocates only four
-`N_b × N_b` work matrices.
+`valid[e]` показывает, лежит ли `E_e+δ` в сохранённом энергетическом интервале.
+Циклическая экстраполяция отсутствует. Используются четыре рабочих матрицы
+`N_b × N_b`.
 """
 function _bare_bubble_sum(
     ε::AbstractVector{<:Real},
@@ -237,67 +235,68 @@ end
 
 @doc raw"""
     bare_bubble_optical_response(problem, green, photon_energies;
-        background_permittivity=problem.physical.ε_s,
-        edge_tolerance=1e-4, threaded=true)
+            background_permittivity=problem.physical.ε_s,
+            edge_tolerance=1e-4, threaded=true)
 
-Calculate the z-polarized small-signal material gain of a converged
-stationary state.  `photon_energies` must contain positive Unitful energies.
-The result uses the full matrix `Gᴿ(E,k)` and `Gˡ(E,k)` and the projected
-intracell position matrix `Z`; no subband-population or Lorentzian-linewidth
-ansatz is introduced.
+Рассчитывает малосигнальное усиление материала для поля с поляризацией вдоль z
+на стационарном состоянии. `photon_energies` задают положительными энергиями Unitful.
+В расчёт входят полные матрицы `Gᴿ(E,k)` и `Gˡ(E,k)` и спроецированная
+матрица координаты внутри ячейки `Z`. Модели заселённости подзон и
+лоренцевой ширины отдельно не вводятся.
 
-For a reference field `F_ref = 1 V/m`, the dimensionless perturbation is
+Для опорного поля `F_ref = 1 V/m` безразмерное возмущение равно
 
 ```math
 \delta \widehat U
 = \frac{eF_{ref}L_0}{E_0}\,Z,
 ```
 
-and the bare-bubble change is
+а поправка голого пузыря имеет вид
 
 ```math
 \delta G^<(E;\omega)=G^R(E+\hbar\omega)\delta\widehat U G^<(E)
 +G^<(E+\hbar\omega)\delta\widehat U G^A(E).
 ```
 
-The sheet density response is reconstructed with exactly the same
-`wᴱ`, `wᵏ` and spin convention as [`sheet_density_matrix`](@ref).  With
-electron charge `-e`, one-period polarization and susceptibility are
+Отклик поверхностной плотности восстанавливается с теми же весами
+`wᴱ`, `wᵏ` и спиновым соглашением, что и в [`sheet_density_matrix`](@ref).
+При заряде электрона `-e` поляризация на период и восприимчивость равны
 
 ```math
 \delta P_z=-\frac{e}{L_pL_0}\operatorname{tr}(Z\delta\bar\rho),
 \qquad \chi=\frac{\delta P_z}{\epsilon_0F_{ref}}.
 ```
 
-Finally, for the `exp(-iωt)` convention,
+При соглашении `exp(-iωt)`
 
 ```math
 \widetilde n=\sqrt{\epsilon_b+\chi},\qquad
 g(\omega)=-\frac{2\omega}{c}\operatorname{Im}\widetilde n.
 ```
 
-Thus positive `g` means gain and negative `g` means absorption.  The exact
-square-root expression is used rather than its weak-gain expansion.
+Положительное `g` означает усиление, отрицательное — поглощение.
+Используется полное выражение с квадратным корнем без разложения по
+малому усилению.
 
-This is **not** the gauge-invariant conserving response of the complete SCBA
-model: optical self-energy variations (ladder/vertex corrections),
-neighbor-period dipole blocks, photon-assisted changes of Poisson, and cavity
-mode confinement are omitted.  It is suitable for a reproducible diagnostic
-and for gain-frequency trends, but must not be presented as a quantitative
-reproduction of the QCL gain without convergence and experimental
-calibration.
+Приближение исключает оптические вариации самоэнергии (лестничные
+вершинные поправки), межпериодные дипольные блоки, фотонные поправки
+к уравнению Пуассона и локализацию моды резонатора. Калибровочно-инвариантный
+сохраняющий отклик полной модели SCBA требует этих вкладов. Полученный
+отклик пригоден для воспроизводимой диагностики и оценки частотной
+зависимости усиления. Количественное сопоставление с ККЛ требует
+проверки сходимости и экспериментальной калибровки.
 
-`trusted[q]` is true only if photon energy `q` is no larger than the configured
-Hilbert trust margin and a symmetric source/target spectral-weight proxy for
-out-of-window or Hilbert-edge-contaminated `(E,E+ℏω)` pairs is at most
-`edge_tolerance`.  This proxy samples both ``A(E)`` and ``A(E+\hbar\omega)``;
-it is deliberately conservative but is not a rigorous bound on the omitted
-optical integrand.  All points are returned so edge sensitivity cannot be
-silently hidden.
+`trusted[q]` устанавливается, когда энергия фотона в точке `q` укладывается
+в заданный запас доверенного окна Гильберта, а симметричная оценка спектрального
+веса пар `(E,E+ℏω)` вне окна или вблизи его краёв не превышает
+`edge_tolerance`. Оценка учитывает и ``A(E)``, и ``A(E+\hbar\omega)``.
+Она намеренно консервативна. Строгая граница для отброшенного оптического
+подынтегрального выражения не предполагается. Возвращаются все точки
+для контроля чувствительности к краям окна.
 
-See [Optical response](@ref theory-optical-response) for the response
-equations and limitations, and [Production backend](@ref theory-production)
-for its role in the reference design workflow.
+См. уравнения и ограничения в разделе [оптический отклик](@ref theory-optical-response)
+и применение в расчётах эталонной структуры в разделе
+[расчётный решатель](@ref theory-production).
 """
 function bare_bubble_optical_response(
     problem::NEGFProblem,
@@ -470,12 +469,12 @@ end
     bare_bubble_optical_response(solution, photon_energies;
                                  require_converged=true, kwargs...)
 
-Convenience overload for a closed Poisson--SCBA solution.  Production plots
-reject an unconverged or validation-failed state by default; set
-`require_converged=false` only for explicitly labelled diagnostics.
+Вычисляет отклик для решения замкнутого цикла Пуассона–SCBA. По умолчанию
+требуется сошедшееся проверенное решение. Для явно обозначенной диагностики
+можно задать `require_converged=false`.
 
-See [Optical response](@ref theory-optical-response) and
-[Production backend](@ref theory-production).
+См. [оптический отклик](@ref theory-optical-response) и
+[расчётный решатель](@ref theory-production).
 """
 function bare_bubble_optical_response(
     solution::NEGFSolution,
@@ -502,11 +501,11 @@ end
 """
     peak_gain(response; trusted_only=true)
 
-Return the largest material gain and its photon energy/frequency.  By default
-only points certified by `response.trusted` are eligible.
+Возвращает максимум усиления материала и соответствующие энергию фотона
+и частоту. По умолчанию учитываются только точки из `response.trusted`.
 
-See [Optical response](@ref theory-optical-response) and
-[production gain visualization](@ref theory-production).
+См. [оптический отклик](@ref theory-optical-response) и
+[визуализацию усиления](@ref theory-production).
 """
 function peak_gain(response::OpticalResponse; trusted_only::Bool = true)
     eligible = trusted_only ? findall(response.trusted) : collect(eachindex(response.gain))

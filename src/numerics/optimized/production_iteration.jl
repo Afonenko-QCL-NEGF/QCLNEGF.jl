@@ -1,4 +1,4 @@
-"""Measure the fresh raw fixed-point map before mixing, with reusable residual storage."""
+"""Измерить свежую сырую карту неподвижной точки до смешивания, используя повторно выделенную память невязок."""
 function _production_fixed_point_measurement(
     problem::NEGFProblem,
     h,
@@ -66,10 +66,10 @@ function _production_fixed_point_measurement(
     return (; rD, rA, rK, rΣ, rλ, rPSD, rcaus)
 end
 
-"""Exact block trace in O(N_b²), without materializing either matrix product.
-
-The educational observable remains the independent matrix-product oracle.
-Each diagonal dot product is accumulated separately before the trace sum.
+"""
+Вычислить точный след блока за O(N_b²) без выделения полных матричных
+произведений. Эталонная наблюдаемая независимо вычисляется матричным
+произведением. Диагональные скалярные произведения накапливаются отдельно.
 """
 function _production_current_trace(Σᵍ, Σˡ, Gˡ, Gᵍ, e, m)
     Nb = size(Gˡ, 3)
@@ -100,7 +100,7 @@ function _production_boundary_flux_bar(problem, family, green)
     return real(problem.physical.g_s * value / (2π))
 end
 
-"""Accumulate only the diagonal populations needed by the SCBA change gate."""
+"""Накопить диагональные населённости для проверки их изменения в SCBA."""
 function _production_state_populations(problem, Gˡ)
     populations = zeros(ComplexF64, size(Gˡ, 3))
     prefactor = -im * problem.physical.g_s / (2π)
@@ -114,7 +114,7 @@ function _production_state_populations(problem, Gˡ)
     return real.(populations) ./ target
 end
 
-"""Scientific observable changes of the current Green state, independent of mixing strength."""
+"""Измерить изменения наблюдаемых текущего состояния независимо от коэффициента смешивания."""
 function _production_observable_measurement(
     problem::NEGFProblem,
     green,
@@ -135,11 +135,12 @@ function _production_observable_measurement(
     return (; J, target, populations, rJchange, rpopulation)
 end
 
-"""Reconstruct one measured PSD witness from this iteration, never a later state.
-
-All blocks use dimensionless solver units. Raw direct Gp and the reconstructed
-A-Gn are deliberately both retained to separate input, subtraction and number-
-constraint errors. Per-channel in/out blocks support critical-vector projections.
+"""
+Восстановить матрицы измеренного нарушения положительности
+для текущей итерации. Блоки заданы в безразмерных единицах решателя.
+Прямая сырая Gp и восстановленная A-Gn сохраняются раздельно для анализа
+ошибок входа, вычитания и ограничения числа частиц. Блоки прихода и ухода
+по каналам позволяют выполнить проекции на критический вектор.
 """
 function _scba_physics_witness(witness, green, total, scattering, plus, minus)
     e, m = witness.energy_index, witness.momentum_index
@@ -199,7 +200,7 @@ function _scba_physics_witness(witness, green, total, scattering, plus, minus)
     )
 end
 
-"""Bound in-memory matrix payloads while retaining every scalar iteration witness."""
+"""Ограничить объём хранимых матриц и сохранить скалярные показатели всех итераций."""
 mutable struct _SCBAWitnessRetention
     first::Int
     worst::Int

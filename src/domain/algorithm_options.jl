@@ -1,22 +1,20 @@
 """
     AlgorithmOptions
 
-Immutable value object describing numerical realizations and explicitly
-labelled model switches.  It contains no registry, serialization, or
-orchestration dependencies, so numerical kernels can depend on this contract
-without depending on the outer composition layer.
+Неизменяемые настройки численной реализации и явно выбранных приближений.
+Численные ядра используют этот контракт без доступа к реестру, форматам
+хранения или управлению запуском.
 
-The first six fields select interchangeable numerical realizations of the
-same discrete equations, except that `contraction=:low_rank` is controlled
-numerical approximation whenever `low_rank_relative_tolerance > 0`, and
-`kernel_build=:tabulated` carries a measured interpolation error.
-`elastic_retarded=:direct_green` selects the direct static SCBA closure
-`SigmaR=K[GR]` instead of the finite-window Hilbert reconstruction; it is a
-distinct numerical variant, not a roundoff-equivalent optimization. The final
-three switches deliberately change the physical SCBA model.
+Первые шесть полей выбирают реализации одних и тех же дискретных уравнений.
+При `contraction=:low_rank` и `low_rank_relative_tolerance > 0` применяется
+контролируемая численная аппроксимация. Для `kernel_build=:tabulated` измеряется
+ошибка интерполяции. Режим `elastic_retarded=:direct_green` задаёт прямое замыкание
+упругого SCBA `SigmaR=K[GR]` вместо восстановления через преобразование Гильберта
+на конечном окне. Это самостоятельный численный вариант. Последние три переключателя
+явно меняют физическую модель SCBA.
 
-See [Optimization decision tree](@ref optimization-decision-tree) and
-[Physics-first equivalence tests](@ref theory-validation).
+См. [выбор метода оптимизации](@ref optimization-decision-tree) и
+[проверки физической эквивалентности](@ref theory-validation).
 """
 Base.@kwdef struct AlgorithmOptions
     solver_backend::Symbol = :production
@@ -40,7 +38,7 @@ Base.@kwdef struct AlgorithmOptions
     transverse_momentum::Symbol = :resolved
 end
 
-"""Validate the inner algorithm value object without consulting a registry."""
+"""Проверяет настройки численных алгоритмов без обращения к реестру."""
 function _check_algorithm_options(options::AlgorithmOptions)
     options.solver_backend in (:educational, :production) ||
         throw(ArgumentError("solver_backend must be :educational or :production"))
@@ -106,7 +104,7 @@ _restart_contract_value(value) = Dict{String,Any}(
     name in fieldnames(typeof(value))
 )
 
-"""Numerical identity for exact continuation; iteration ceilings are explicit remaining budgets."""
+"""Численная идентичность для точного продолжения. Пределы итераций задают оставшийся бюджет."""
 function _solver_restart_contract(options::SolverOptions, algorithms::AlgorithmOptions)
     return Dict{String,Any}(
         "schema"=>"qcl-negf-exact-restart-v1",
@@ -128,16 +126,7 @@ function _check_exact_restart_contract(
             "exact restart is unavailable: checkpoint has no numerical algorithm contract",
         ),
     )
-    # Historical v1 contracts predate this default-preserving option. A missing
-    # field means the original Hilbert closure, never the direct-green variant.
-    compared = contract
-    if contract isa AbstractDict &&
-       get(contract, "algorithms", nothing) isa AbstractDict &&
-       !haskey(contract["algorithms"], "elastic_retarded")
-        compared = deepcopy(contract)
-        compared["algorithms"]["elastic_retarded"] = "hilbert"
-    end
-    compared == _solver_restart_contract(options, algorithms) || throw(
+    contract == _solver_restart_contract(options, algorithms) || throw(
         ArgumentError(
             "exact restart numerical contract differs (algorithms, mixing or quality policy); start a new run",
         ),
@@ -145,7 +134,7 @@ function _check_exact_restart_contract(
     return nothing
 end
 
-"""Stable, dimension-explicit physical model identity for plans and exact restart."""
+"""Устойчивое описание физической модели с явными размерностями для планирования и точного восстановления."""
 function physical_model_identity(models::PhysicalModelOptions)
     result = Dict{String,Any}(
         String(name)=>_restart_contract_value(getfield(models, name)) for

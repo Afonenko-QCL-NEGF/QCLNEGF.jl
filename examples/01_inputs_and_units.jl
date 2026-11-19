@@ -10,5 +10,5 @@ profiles = build_profiles(p, n, s, g)
 
 println("Lₚ = ", sum(layer.d for layer in p.layers) |> x -> uconvert(u"nm", x))
 println("Eₚ = ", uconvert(u"meV", p.F_bias * sum(layer.d for layer in p.layers) * u"eV/V"))
-println("Σ wˣ Nᴰ = ", dot(g.wˣ, profiles.Nᴰ), " (dimensionless sheet density)")
-println("doped cell indices (Julia) = ", findall(!iszero, profiles.Nᴰ))
+println("Σ wˣ Nᴰ = ", dot(g.wˣ, profiles.Nᴰ), " (безразмерная поверхностная плотность)")
+println("Индексы легированных ячеек (Julia) = ", findall(!iszero, profiles.Nᴰ))

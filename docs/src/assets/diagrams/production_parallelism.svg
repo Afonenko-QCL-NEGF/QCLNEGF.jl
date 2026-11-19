@@ -8,11 +8,11 @@
  viewBox="0.00 0.00 1276.00 882.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(20.16 862.01)">
 <title>production_parallelism</title>
-<text xml:space="preserve" text-anchor="middle" x="617.65" y="-819.85" font-family="DejaVu Sans" font-size="20.00">Точная параллельная SCBA&#45;итерация production backend</text>
+<text xml:space="preserve" text-anchor="middle" x="617.65" y="-819.85" font-family="DejaVu Sans" font-size="20.00">Параллельная итерация SCBA</text>
 <g id="clust1" class="cluster">
 <title>cluster_iteration</title>
 <path fill="none" stroke="#7fa7c3" d="M144.54,-8C144.54,-8 929.54,-8 929.54,-8 935.54,-8 941.54,-14 941.54,-20 941.54,-20 941.54,-571.48 941.54,-571.48 941.54,-577.48 935.54,-583.48 929.54,-583.48 929.54,-583.48 144.54,-583.48 144.54,-583.48 138.54,-583.48 132.54,-577.48 132.54,-571.48 132.54,-571.48 132.54,-20 132.54,-20 132.54,-14 138.54,-8 144.54,-8"/>
-<text xml:space="preserve" text-anchor="middle" x="537.04" y="-568.68" font-family="DejaVu Sans" font-size="12.00">Одна фиксированная итерация ν: независимая работа распределяется по Julia threads</text>
+<text xml:space="preserve" text-anchor="middle" x="537.04" y="-568.68" font-family="DejaVu Sans" font-size="12.00">Одна фиксированная итерация ν: независимая работа распределяется по потокам Julia</text>
 </g>
 <!-- sweep -->
 <g id="node1" class="node">
@@ -26,7 +26,7 @@
 <title>outer</title>
 <path fill="#fce8d8" stroke="#b4672b" stroke-width="1.8" d="M207.07,-728.52C207.07,-728.52 12,-728.52 12,-728.52 6,-728.52 0,-722.52 0,-716.52 0,-716.52 0,-703.8 0,-703.8 0,-697.8 6,-691.8 12,-691.8 12,-691.8 207.07,-691.8 207.07,-691.8 213.07,-691.8 219.07,-697.8 219.07,-703.8 219.07,-703.8 219.07,-716.52 219.07,-716.52 219.07,-722.52 213.07,-728.52 207.07,-728.52"/>
 <text xml:space="preserve" text-anchor="middle" x="109.54" y="-713.31" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">solve_production(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="109.54" y="-700.71" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">Poisson&#45;итерации последовательно</text>
+<text xml:space="preserve" text-anchor="middle" x="109.54" y="-700.71" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">Итерации Пуассона подряд</text>
 </g>
 <!-- sweep&#45;&gt;outer -->
 <g id="edge14" class="edge">
@@ -64,7 +64,7 @@
 <title>dyson</title>
 <path fill="#f8fafc" stroke="#315b7d" stroke-width="1.3" d="M693.97,-480.08C693.97,-480.08 487.1,-480.08 487.1,-480.08 481.1,-480.08 475.1,-474.08 475.1,-468.08 475.1,-468.08 475.1,-455.36 475.1,-455.36 475.1,-449.36 481.1,-443.36 487.1,-443.36 487.1,-443.36 693.97,-443.36 693.97,-443.36 699.97,-443.36 705.97,-449.36 705.97,-455.36 705.97,-455.36 705.97,-468.08 705.97,-468.08 705.97,-474.08 699.97,-480.08 693.97,-480.08"/>
 <text xml:space="preserve" text-anchor="middle" x="590.54" y="-464.87" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">_retarded_green_production(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="590.54" y="-452.27" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">блоки (E,k): независимые inverse/cond</text>
+<text xml:space="preserve" text-anchor="middle" x="590.54" y="-452.27" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">блоки (E,k): обращение, κ_D</text>
 </g>
 <!-- green&#45;&gt;dyson -->
 <g id="edge1" class="edge">
@@ -77,7 +77,7 @@
 <title>number</title>
 <path fill="#f8fafc" stroke="#315b7d" stroke-width="1.3" d="M436.01,-480.08C436.01,-480.08 207.06,-480.08 207.06,-480.08 201.06,-480.08 195.06,-474.08 195.06,-468.08 195.06,-468.08 195.06,-455.36 195.06,-455.36 195.06,-449.36 201.06,-443.36 207.06,-443.36 207.06,-443.36 436.01,-443.36 436.01,-443.36 442.01,-443.36 448.01,-449.36 448.01,-455.36 448.01,-455.36 448.01,-468.08 448.01,-468.08 448.01,-474.08 442.01,-480.08 436.01,-480.08"/>
 <text xml:space="preserve" text-anchor="middle" x="321.54" y="-464.87" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">_number_functional_production(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="321.54" y="-452.27" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">параллельные trace; каноническая сумма</text>
+<text xml:space="preserve" text-anchor="middle" x="321.54" y="-452.27" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">следы параллельно, сумма по порядку</text>
 </g>
 <!-- green&#45;&gt;number -->
 <g id="edge2" class="edge">
@@ -108,8 +108,8 @@
 <title>contraction</title>
 <path fill="#f8fafc" stroke="#315b7d" stroke-width="1.3" d="M427.66,-333.36C427.66,-333.36 245.41,-333.36 245.41,-333.36 239.41,-333.36 233.41,-327.36 233.41,-321.36 233.41,-321.36 233.41,-296.04 233.41,-296.04 233.41,-290.04 239.41,-284.04 245.41,-284.04 245.41,-284.04 427.66,-284.04 427.66,-284.04 433.66,-284.04 439.66,-290.04 439.66,-296.04 439.66,-296.04 439.66,-321.36 439.66,-321.36 439.66,-327.36 433.66,-333.36 427.66,-333.36"/>
 <text xml:space="preserve" text-anchor="middle" x="336.54" y="-318.15" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">production_static_contraction(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="336.54" y="-305.55" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">непересекающиеся energy chunks</text>
-<text xml:space="preserve" text-anchor="middle" x="336.54" y="-292.95" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">X/Y&#45;буферы принадлежат worker</text>
+<text xml:space="preserve" text-anchor="middle" x="336.54" y="-305.55" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">раздельные блоки по энергии</text>
+<text xml:space="preserve" text-anchor="middle" x="336.54" y="-292.95" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">свои буферы X/Y у каждой задачи</text>
 </g>
 <!-- candidate&#45;&gt;contraction -->
 <g id="edge5" class="edge">
@@ -123,7 +123,7 @@
 <path fill="#f8fafc" stroke="#315b7d" stroke-width="1.3" d="M664.7,-333.36C664.7,-333.36 478.37,-333.36 478.37,-333.36 472.37,-333.36 466.37,-327.36 466.37,-321.36 466.37,-321.36 466.37,-296.04 466.37,-296.04 466.37,-290.04 472.37,-284.04 478.37,-284.04 478.37,-284.04 664.7,-284.04 664.7,-284.04 670.7,-284.04 676.7,-290.04 676.7,-296.04 676.7,-296.04 676.7,-321.36 676.7,-321.36 676.7,-327.36 670.7,-333.36 664.7,-333.36"/>
 <text xml:space="preserve" text-anchor="middle" x="571.54" y="-318.15" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">production_fft_hilbert_transform(...)</text>
 <text xml:space="preserve" text-anchor="middle" x="571.54" y="-305.55" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">ProductionFFTHilbertPlan</text>
-<text xml:space="preserve" text-anchor="middle" x="571.54" y="-292.95" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">столбцы (k,a,b), private FFTW plans</text>
+<text xml:space="preserve" text-anchor="middle" x="571.54" y="-292.95" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">столбцы (k,a,b), свои планы FFTW</text>
 </g>
 <!-- candidate&#45;&gt;fft -->
 <g id="edge6" class="edge">
@@ -150,7 +150,7 @@
 <path fill="#fff7da" stroke="#a27818" stroke-width="1.3" d="M686.69,-247.04C686.69,-247.04 456.38,-247.04 456.38,-247.04 450.38,-247.04 444.38,-241.04 444.38,-235.04 444.38,-235.04 444.38,-209.72 444.38,-209.72 444.38,-203.72 450.38,-197.72 456.38,-197.72 456.38,-197.72 686.69,-197.72 686.69,-197.72 692.69,-197.72 698.69,-203.72 698.69,-209.72 698.69,-209.72 698.69,-235.04 698.69,-235.04 698.69,-241.04 692.69,-247.04 686.69,-247.04"/>
 <text xml:space="preserve" text-anchor="middle" x="571.54" y="-231.83" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">production_residual_suite(...)</text>
 <text xml:space="preserve" text-anchor="middle" x="571.54" y="-219.23" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">production_selfenergy_residual(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="571.54" y="-206.63" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">параллельные блоки + canonical reduction</text>
+<text xml:space="preserve" text-anchor="middle" x="571.54" y="-206.63" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">блоки и упорядоченная сумма</text>
 </g>
 <!-- contraction&#45;&gt;residual -->
 <g id="edge8" class="edge">
@@ -189,7 +189,7 @@
 <text xml:space="preserve" text-anchor="middle" x="405.54" y="-62.71" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">_mix_mechanisms_production!(...)</text>
 <text xml:space="preserve" text-anchor="middle" x="405.54" y="-50.11" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">_mix_family_production!(...)</text>
 <text xml:space="preserve" text-anchor="middle" x="405.54" y="-37.51" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">_embedding_sum_production!(...)</text>
-<text xml:space="preserve" text-anchor="middle" x="405.54" y="-24.91" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">in&#45;place, disjoint elements</text>
+<text xml:space="preserve" text-anchor="middle" x="405.54" y="-24.91" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">на месте, раздельные элементы</text>
 </g>
 <!-- converged&#45;&gt;mixing -->
 <g id="edge12" class="edge">
@@ -202,7 +202,7 @@
 <g id="node15" class="node">
 <title>result</title>
 <path fill="#eaf3ec" stroke="#4f7c59" stroke-width="1.3" d="M1223.29,-64.96C1223.29,-64.96 961.78,-64.96 961.78,-64.96 955.78,-64.96 949.78,-58.96 949.78,-52.96 949.78,-52.96 949.78,-40.96 949.78,-40.96 949.78,-34.96 955.78,-28.96 961.78,-28.96 961.78,-28.96 1223.29,-28.96 1223.29,-28.96 1229.29,-28.96 1235.29,-34.96 1235.29,-40.96 1235.29,-40.96 1235.29,-52.96 1235.29,-52.96 1235.29,-58.96 1229.29,-64.96 1223.29,-64.96"/>
-<text xml:space="preserve" text-anchor="middle" x="1092.54" y="-43.81" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">SCBAResult → bordered Poisson → следующий Uᴴ</text>
+<text xml:space="preserve" text-anchor="middle" x="1092.54" y="-43.81" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">SCBAResult → Пуассон → следующий Uᴴ</text>
 </g>
 <!-- converged&#45;&gt;result -->
 <g id="edge17" class="edge">
@@ -222,7 +222,7 @@
 <g id="node14" class="node">
 <title>exact</title>
 <ellipse fill="#eaf3ec" stroke="#4f7c59" stroke-width="1.8" cx="533.54" cy="-710.16" rx="287.07" ry="25.96"/>
-<text xml:space="preserve" text-anchor="middle" x="533.54" y="-713.31" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">Не изменяются: сетки, ядра, Jacobi map, порядок SCBA/Poisson</text>
+<text xml:space="preserve" text-anchor="middle" x="533.54" y="-713.31" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">Сетки, ядра и порядок итераций Якоби сохраняются</text>
 <text xml:space="preserve" text-anchor="middle" x="533.54" y="-700.71" font-family="DejaVu Sans" font-size="10.50" fill="#17324d">Параллелизм не является физической аппроксимацией</text>
 </g>
 <!-- exact&#45;&gt;scba -->

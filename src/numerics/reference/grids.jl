@@ -1,13 +1,11 @@
 """
     build_grids(physical, numerical, scales=ScaleSystem())
 
-Build the cell-centred spatial grid, trapezoidal energy and longitudinal
-momentum quadratures, annular radial momentum weights, and periodic angular
-nodes.  Every stored value is dimensionless; the exact axis order is part of
-the [array contract](@ref array-contracts).
-
-The associated physical cutoffs and units are specified in
-[the complete input contract](@ref full-input-contract).
+Построить координатную сетку с узлами в центрах ячеек, трапециевидные
+квадратуры по энергии и продольному импульсу, кольцевые веса радиального
+импульса и периодическую угловую сетку. Все значения безразмерны.
+Порядок осей задаёт [контракт массивов](@ref array-contracts).
+См. [физические границы и единицы](@ref full-input-contract).
 """
 function build_grids(
     p::PhysicalParameters,
@@ -51,11 +49,11 @@ end
 """
     build_profiles(physical, numerical, scales, grids)
 
-Map the six epitaxial segments to the cell centres.  The donor profile is
-renormalized on the actual grid so that `dot(wˣ,Nᴰ) == Nᴰ²ᴰ` to roundoff.
-
-See [the reference design structure passport](@ref theory-reference2019) and
-[the array contract](@ref array-contracts).
+Сопоставить слои структуры с центрами ячеек. Донорный профиль
+перенормируется на фактической сетке так, что `dot(wˣ,Nᴰ) == Nᴰ²ᴰ`
+с точностью округления.
+См. [паспорт структуры](@ref theory-reference2019)
+и [контракт массивов](@ref array-contracts).
 """
 function build_profiles(
     p::PhysicalParameters,

@@ -23,7 +23,7 @@ function _algorithm_options_from_solution(solution::NEGFSolution)
     )
 end
 
-"""Construct the selected raw physical map for an independent final audit."""
+"""Построить выбранное сырое физическое отображение для независимого итогового аудита."""
 function _audit_candidate_for_solution(solution::NEGFSolution)
     algorithms = _algorithm_options_from_solution(solution)
     algorithms.solver_backend === :educational &&
@@ -53,11 +53,11 @@ end
 """
     certify_solution(solution; max_scba=2000, max_poisson=10, backend=:production)
 
-Explicit bounded certification attempt seeded from a published state. The
-extra iteration budget is independent of the original research budget.
-Approximate returns and early stagnation are disabled; all thresholds are at
-least as strict as the baseline. Failure returns data with scientific verdict.
-The selected physical model and discretization are unchanged.
+Запустить ограниченную проверку с сохранённого состояния. Дополнительный
+лимит итераций выделяется отдельно. Приближённое завершение и ранняя
+остановка по стагнации отключены. Пороги не слабее исходных. При неудаче
+возвращаются данные с результатом научной проверки. Физическая модель
+и дискретизация сохраняются.
 """
 function certify_solution(
     solution::NEGFSolution;

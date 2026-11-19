@@ -151,11 +151,12 @@ function _nodal_shift_support_and_mass(W, ε, δ)
     return support, mass
 end
 
-"""Measure the weighted opposite-shift defect for the actual matrices.
+"""
+Измерить взвешенный дефект сопряжённости матриц противоположных сдвигов.
 
-This is a discretization diagnostic for every shift pair. Nodal interpolation
-with zero exterior values is not quadrature adjoint at a finite-window edge;
-only the conservative discretization promises roundoff-level equality.
+Узловая интерполяция с нулевым продолжением нарушает взвешенную
+сопряжённость на границе конечного окна. Консервативная дискретизация
+сохраняет её с точностью округления.
 """
 function _shift_quadrature_adjoint(plus, minus, weights)
     defect_squared, scale_squared = 0.0, 0.0
@@ -168,12 +169,13 @@ function _shift_quadrature_adjoint(plus, minus, weights)
     return iszero(scale_squared) ? 0.0 : sqrt(defect_squared / scale_squared)
 end
 
-"""Validate the support and integral identities of one declared shift pair.
+"""
+Проверить носитель и интегральные тождества объявленной пары сдвигов.
 
-Finite-volume support is determined by cell intersections. A shifted centre
-outside the window does not imply an empty intersection. Both signs use the
-same intersection geometry so their quadrature-adjoint relation is checked
-without imposing the nodal interpolation boundary rule.
+Для конечных объёмов носитель задаётся пересечением ячеек. Ячейка
+может пересекать окно, даже если её сдвинутый центр находится снаружи.
+Оба знака используют одну геометрию пересечений. Благодаря этому
+проверка взвешенной сопряжённости использует фактические границы ячеек.
 """
 function _shift_pair_validation(plus, minus, ε, weights, δ, discretization::Symbol)
     invalid = (
@@ -370,17 +372,15 @@ const _KERNEL_SCALE_LIMIT = 16eps(Float64)
 """
     validate_problem(problem)
 
-Verify dimensions, donor sum, fixed-basis algebra, shift boundaries, projected
-Hermiticity, and full-kernel covariance properties before an SCBA iteration is
-allowed to start.  No clipping or silent repair is performed.
+Перед запуском SCBA проверить размеры, интеграл донорного профиля,
+базисные тождества, границы сдвига, эрмитовость спроецированных операторов
+и свойства ковариации полных ядер. Проверка не меняет массивы.
 
-The shift operators carry their discretization in `NEGFProblem`. Both field
-and LO pairs must be nonnegative and supported on their declared interpolation
-nodes or intersecting control volumes. Conservative pairs must also satisfy
-the quadrature-adjoint and cell-integral identities.
-
-See [Verification](@ref theory-validation) and
-[the array contract](@ref array-contracts).
+Тип дискретизации сдвигов задаётся в `NEGFProblem`. Обе пары сдвигов
+поля и LO должны быть неотрицательными и иметь носитель на объявленных
+узлах интерполяции либо в пересечениях конечных объёмов. Для консервативных
+пар дополнительно проверяются взвешенная сопряжённость и интегралы по ячейкам.
+См. [проверки](@ref theory-validation) и [контракт массивов](@ref array-contracts).
 """
 function validate_problem(problem::NEGFProblem)
     p, n, g = problem.physical, problem.numerical, problem.grids
@@ -500,18 +500,20 @@ end
 """
     validate(problem_or_solution)
 
-Run the non-mutating static or converged-state validation suite and return a
-[`ConvergenceReport`](@ref).  No matrix is symmetrized, clipped, or repaired.
+Проверить статические данные или сошедшееся состояние и вернуть
+[`ConvergenceReport`](@ref). Проверка не симметризует, не обрезает
+и не исправляет матрицы.
 
-See [Verification](@ref theory-validation).
+См. [проверки](@ref theory-validation).
 """
 validate(problem::NEGFProblem) = validate_problem(problem)
 
 """
-Run algebraic, conservation, current, power, and spectral checks.
+Выполнить алгебраические, спектральные проверки, проверки законов сохранения,
+тока и мощности.
 
-See [Verification](@ref theory-validation), including the complete list of
-acceptance residuals and their physical interpretation.
+Полный список невязок и их физический смысл приведены
+в [главе о проверках](@ref theory-validation).
 """
 function validate_solution(
     solution::NEGFSolution;
@@ -687,7 +689,7 @@ function validate_solution(
     return report
 end
 
-"""Declared final-state thresholds, shared by validation and light diagnostics."""
+"""Пороги для окончательной проверки состояния и компактной диагностики."""
 function _solution_validation_limits(t::SolverTolerances, metrics)
     limits = Dict(
         :r_D => t.r_D,
@@ -747,7 +749,7 @@ function _solution_validation_limits(t::SolverTolerances, metrics)
     return limits
 end
 
-"""Reassess the same final state; approximate acceptance never changes its SCBA label."""
+"""Перепроверить то же конечное состояние. Допуск приближённого решения сохраняет его статус SCBA."""
 function _validate_solution_metrics(
     solution::NEGFSolution,
     metrics;

@@ -14,10 +14,10 @@ const SpeedQuantity = typeof(1.0u"m/s")
 const VolumeQuantity = typeof(1.0u"m^3")
 
 """
-Dimensioned fundamental constants used by all model constructors.
+Размерные фундаментальные постоянные для всех конструкторов модели.
 
-See [the complete input contract](@ref full-input-contract) and
-[dimensionless scaling](@ref theory-scaling).
+См. [полный контракт входных данных](@ref full-input-contract) и
+[переход к безразмерным величинам](@ref theory-scaling).
 """
 struct FundamentalConstants
     e::typeof(1.0u"C")
@@ -31,13 +31,12 @@ struct FundamentalConstants
 end
 
 """
-`CODATA` is the immutable SI/eV constants table used by every conversion:
-exact `e` and `kᴮ`, the stated CODATA values of `ħ`, `m₀`, and `ε₀`.  The
-eV copies are derived with Unitful from the SI fields and are not independent
-rounded constants.
+`CODATA` — неизменяемая таблица постоянных в СИ и эВ для всех преобразований:
+точные `e` и `kᴮ`, справочные значения CODATA для `ħ`, `m₀` и `ε₀`.
+Значения в эВ вычисляются из полей в СИ средствами Unitful.
 
-See [Fundamental constants](@ref full-input-contract) for units and the role
-of every stored value.
+Единицы и назначение величин приведены в разделе
+[фундаментальных постоянных](@ref full-input-contract).
 """
 const CODATA = let
     electron_charge = 1.602176634e-19u"C"

@@ -4,26 +4,25 @@
                               worker_count=Threads.nthreads(),
                               verify_roundoff=false)
 
-Reusable, exact-discrete production plan for the zero-padded linear
-FFT--Hilbert transform.  Columns are split into fixed, contiguous ranges.
-Every logical worker owns a distinct buffer of at most
-`L × column_chunk` values and distinct
-forward/inverse FFTW plans, so execution has neither shared scratch storage nor
-write races.
+Многократно используемый план линейного преобразования Гильберта с БПФ
+и дополнением нулями. Он реализует исходную дискретную квадратуру.
+Столбцы разбиваются на фиксированные смежные диапазоны. У каждого
+логического исполнителя отдельный буфер не больше `L × column_chunk`
+элементов и свои прямой и обратный планы FFTW.
 
-All FFTW plans are created serially, before any threaded region, with
-`num_threads=1`.  FFTW.jl restores its process-wide planner setting after each
-plan is made; constructing this object therefore does not change
-`FFTW.get_num_threads()`.  The object may be reused by successive SCBA
-iterations, but one object must not be used by concurrent outer calls.
+Все планы FFTW создаются последовательно до многопоточной части
+с `num_threads=1`. FFTW.jl восстанавливает настройку планировщика процесса
+после создания плана, поэтому `FFTW.get_num_threads()` не меняется.
+Можно повторно использовать план на последовательных итерациях SCBA.
+Для одновременных внешних вызовов требуются разные планы.
 
-Set `verify_roundoff=true` to retain a second set of workers for the doubled
-padding length used by `return_roundoff=true`.  This changes only the FFT
-summation order and leaves the discrete principal-value map unchanged.
+`verify_roundoff=true` сохраняет второй набор исполнителей для удвоенной
+длины дополнения при `return_roundoff=true`. Это меняет порядок суммирования
+БПФ и сохраняет дискретное отображение главного значения.
 
-See [the direct Hilbert relation](@ref eq-direct-hilbert),
-[Microscopic kernels](@ref theory-kernels), and
-[Production backend](@ref theory-production).
+См. [прямое преобразование Гильберта](@ref eq-direct-hilbert),
+[микроскопические ядра](@ref theory-kernels)
+и [оптимизированный решатель](@ref theory-production).
 """
 struct ProductionFFTHilbertPlan{W}
     energy_count::Int
@@ -232,20 +231,18 @@ end
     production_fft_hilbert_transform(Γ, ε, wᴱ, plan;
         return_roundoff=false)
 
-Thread-parallel drop-in production equivalent of
-[`fft_hilbert_transform`](@ref).  It evaluates the same zero-padded *linear*
-convolution, including the same quadrature weights and omitted principal-value
-cell.  Parallelism is only across independent flattened `(k,a,b)` columns;
-no physical approximation or reassociation of a reduction is introduced.
+Многопоточный эквивалент [`fft_hilbert_transform`](@ref). Вычисляет ту же
+линейную свёртку с дополнением нулями, весами квадратуры и пропуском ячейки
+главного значения. Потоки обрабатывают только независимые развёрнутые
+столбцы `(k,a,b)`. Порядок операций отдельной редукции сохраняется.
 
-The first method constructs plans for a single call.  Production SCBA should
-construct one [`ProductionFFTHilbertPlan`](@ref) before its fixed-point loop
-and use the second method on every iteration.  A plan is intentionally not
-reentrant: concurrent calls require distinct plan objects.
+Первый метод создаёт план на один вызов. В цикле SCBA создайте один
+[`ProductionFFTHilbertPlan`](@ref) до итераций и используйте второй метод.
+Для одновременных вызовов требуются разные планы.
 
-See [the direct Hilbert relation](@ref eq-direct-hilbert),
-[the inner SCBA loop](@ref theory-scba), and
-[Production backend](@ref theory-production).
+См. [прямое преобразование Гильберта](@ref eq-direct-hilbert),
+[внутренний цикл SCBA](@ref theory-scba)
+и [оптимизированный решатель](@ref theory-production).
 """
 function production_fft_hilbert_transform(
     Γ::AbstractArray{<:Number,4},
@@ -400,12 +397,12 @@ end
 """
     production_fft_workspace_bytes(plan; verification=false)
 
-Exact byte count of explicitly allocated complex worker buffers and the
-frequency-domain kernel in `plan`.  FFTW's small opaque plan metadata and the
-returned Hilbert array are not included.
+Точное число байтов, занятое выделенными комплексными рабочими буферами
+и частотным ядром в `plan`. Служебные данные плана FFTW и выходной массив
+преобразования Гильберта в оценку не входят.
 
-See [numerical cost and memory](@ref theory-cost) and
-[Production backend](@ref theory-production).
+См. [численную стоимость и память](@ref theory-cost)
+и [оптимизированный решатель](@ref theory-production).
 """
 function production_fft_workspace_bytes(
     plan::Union{ProductionFFTHilbertPlan,_ProductionPIFFTHilbertPlan};

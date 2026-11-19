@@ -1,11 +1,11 @@
 """
     ScaleSystem(; E₀=0.1u"eV", L₀=10u"nm", m_ref=0.067CODATA.m₀)
 
-Construct the nondimensionalization used by every dense linear-algebra
-operation.  The Poisson coupling is computed with Unitful before units are
-stripped, so an inconsistent dimensional formula cannot silently pass.
+Строит систему безразмерных величин для операций плотной линейной алгебры.
+Коэффициент связи для уравнения Пуассона вычисляется средствами Unitful до снятия
+единиц. Это позволяет выявить несогласованность размерностей.
 
-See [Dimensionless scaling](@ref theory-scaling).
+См. [переход к безразмерным величинам](@ref theory-scaling).
 """
 function ScaleSystem(; E₀ = 0.1u"eV", L₀ = 10.0u"nm", m_ref = 0.067 * CODATA.m₀)
     E₀q = _energy(E₀)
@@ -26,11 +26,11 @@ end
 """
     scaled_value(value, scales, kind)
 
-Convert a Unitful value to the dimensionless internal representation.
-Supported `kind`s are `:energy`, `:length`, `:wavenumber`, `:field`,
-`:sheet_density`, and `:volume_density`.
+Преобразует величину Unitful во внутреннее безразмерное представление.
+Поддерживаемые значения `kind`: `:energy`, `:length`, `:wavenumber`, `:field`,
+`:sheet_density` и `:volume_density`.
 
-See [Unitful and the dimensionless core](@ref theory-scaling).
+См. [Unitful и безразмерное ядро](@ref theory-scaling).
 """
 function scaled_value(value, s::ScaleSystem, kind::Symbol)
     if kind === :energy
@@ -51,10 +51,10 @@ function scaled_value(value, s::ScaleSystem, kind::Symbol)
 end
 
 """
-Inverse of [`scaled_value`](@ref), returning a Unitful quantity.
+Обратное преобразование для [`scaled_value`](@ref), возвращает величину Unitful.
 
-See [Unitful and the dimensionless core](@ref theory-scaling) and the
-[result-unit contract](@ref full-input-contract).
+См. [Unitful и безразмерное ядро](@ref theory-scaling) и
+[единицы результатов](@ref full-input-contract).
 """
 function physical_value(value::Real, s::ScaleSystem, kind::Symbol)
     if kind === :energy
@@ -76,11 +76,10 @@ end
 """
     current_density_A_per_cm2(value_A_per_m2)
 
-Convert the solver's canonical current-density storage unit (A/m²) to the
-single human-presentation unit used by reports, terminal, HTML, and runtime
-views (A/cm²).
+Преобразует плотность тока из единиц хранения решателя (А/м²) в единицы
+представления (А/см²) для отчётов, терминала, HTML и вывода в ходе расчёта.
 
-See [Production observability](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+См. [наблюдение за расчётом](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
 """
 function current_density_A_per_cm2(value_A_per_m2::Real)
     value = Float64(value_A_per_m2)

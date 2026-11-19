@@ -5,11 +5,12 @@ function _fermi(ε::Real, μ::Real, kBT::Real)
     return inv(exp(x) + 1)
 end
 
-"""Requested and effective initial broadening, in both solver units and eV.
+"""
+Запрошенное и фактическое начальное уширение в единицах решателя и в эВ.
 
-The requested broadening is used exactly. The grid spacing is reported for
-resolution diagnostics and never silently changes the physical seed across
-a refinement study. It is not a scattering linewidth or a working eta.
+Запрошенное значение применяется точно. Шаг сетки сообщается
+для проверки разрешения. При уточнении сетки начальное уширение
+остаётся заданным. В ходе итераций оно не применяется.
 """
 function effective_seed_parameters(problem::NEGFProblem)
     return _effective_seed_parameters(
@@ -129,15 +130,14 @@ end
 """
     solve_scba(problem, Uᴴ; options=baseline_options(), initial=nothing)
 
-Solve the fixed-density contact-free Dyson–Keldysh–SCBA problem at a fixed
-dimensionless Hartree energy.  Candidate self-energies are built by a Jacobi
-map from one common `G_ν`; no mechanism is updated in-place before the others.
-The seed broadening is removed completely (`η_work=0`).
+Решить бесконтактную задачу Дайсона — Келдыша — SCBA при заданном числе
+частиц и фиксированной безразмерной энергии Хартри. Все кандидатные
+собственные энергии строятся отображением Якоби из одной общей
+`G_ν`. Начальное уширение полностью удаляется (`η_work=0`).
 
-Implements the full [inner SCBA cycle](@ref theory-scba).
-The Green-function conventions and microscopic candidates are defined in
-[Green functions and density](@ref theory-greens) and
-[Microscopic kernels](@ref theory-kernels), respectively.
+Реализует [внутренний цикл SCBA](@ref theory-scba).
+См. [функции Грина и плотность](@ref theory-greens)
+и [микроскопические ядра](@ref theory-kernels).
 """
 function solve_scba(
     problem::NEGFProblem,
@@ -353,7 +353,7 @@ function solve_scba(
     error("unreachable SCBA loop exit")
 end
 
-"""Retain the attempted iteration when its physical candidate is undefined."""
+"""Сохранить попытку итерации, если для неё не определён физический кандидат."""
 function _record_candidate_failure!(
     history,
     problem,

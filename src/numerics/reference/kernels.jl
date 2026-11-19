@@ -22,13 +22,14 @@ end
     adaptive_angular_average(evaluate, k, kprime; relative_tolerance=1e-5,
                              maximum_depth=14, initial_panels=8)
 
-Average a rotationally symmetric tensor `K(q)` over the in-plane angle.
-Symmetry reduces the integral to `[0,π]`; `φ=π*u²` resolves forward scattering
-near zero without changing the Coulomb model. Recursive Simpson integration
-uses positive quadrature weights, preserving covariance positivity. The
-fine/coarse difference gives an *estimated*, not certified, error. A failed
-depth limit is reported explicitly. Independent tolerance/angle refinement
-is still required for a production model.
+Усреднить вращательно-симметричный тензор `K(q)` по углу в плоскости.
+Симметрия сводит интеграл к `[0,π]`. Подстановка `φ=π*u²` разрешает
+рассеяние на малые углы при той же кулоновской модели. Рекурсивная
+квадратура Симпсона использует положительные веса и сохраняет
+положительность ковариации. Разность на мелкой и грубой сетках
+даёт оценку ошибки. При достижении предела глубины без выполнения
+допуска функция сообщает об этом. Для рабочего расчёта
+необходима отдельная проверка по допуску и числу узлов.
 """
 function adaptive_angular_average(
     evaluate,
@@ -92,14 +93,13 @@ end
 """
     impurity_kernel(physical, scales, grids, profiles, basis)
 
-Construct the complete screened ionized-donor covariance tensor.  Donor
-coordinates and electron vertices use the same representative-period
-cell-centred quadrature as Poisson.  The result is dimensionless and ordered
-`(m,m′,a,c,d,b)`.
+Построить полный тензор ковариации экранированных ионизованных доноров.
+Для координат доноров и электронных вершин используется квадратура
+по центрам ячеек представительного периода, как в задаче Пуассона.
+Безразмерный результат имеет порядок индексов `(m,m′,a,c,d,b)`.
 
-Implements [EQ-KIMP-001](@ref eq-impurity-kernel).
-See [Microscopic kernels](@ref theory-kernels) for screening, donor averaging,
-and the six-index ordering.
+Реализует [EQ-KIMP-001](@ref eq-impurity-kernel).
+См. экранирование и усреднение по донорам в [главе о ядрах](@ref theory-kernels).
 """
 function impurity_kernel(
     p::PhysicalParameters,
@@ -191,12 +191,11 @@ end
 """
     interface_roughness_kernel(physical, scales, grids, basis)
 
-Independent-interface Gaussian IFR tensor.  The periodic seam is counted once
-from the right, and donor-segment edges are excluded by construction.
+Тензор гауссовой шероховатости независимых границ раздела. Периодический
+стык учитывается один раз справа. Края легированного участка исключены.
 
-Implements [EQ-KIFR-001](@ref eq-ifr-kernel).
-See [Microscopic kernels](@ref theory-kernels) for the Gaussian interface
-spectrum and interface form factors.
+Реализует [EQ-KIFR-001](@ref eq-ifr-kernel).
+См. гауссов спектр и форм-факторы в [главе о ядрах](@ref theory-kernels).
 """
 function interface_roughness_kernel(
     p::PhysicalParameters,
@@ -228,14 +227,14 @@ function interface_roughness_kernel(
 end
 
 """
-    acoustic_kernel(physical, scales, grids, basis)
+    acoustic_kernel(physical, scales, grids, profiles, basis)
 
-Full four-index deformation-potential kernel in the elastic equipartition
-limit, copied over `(m,m′)` because it is momentum independent.
+Полное четырёхиндексное ядро деформационного потенциала в упругом
+пределе равнораспределения. Одна матрица используется для каждой пары
+`(m,m′)` в силу независимости от импульса.
 
-Implements [EQ-KAC-001](@ref eq-acoustic-kernel).
-See [Microscopic kernels](@ref theory-kernels) for the elastic
-equipartition approximation.
+Реализует [EQ-KAC-001](@ref eq-acoustic-kernel).
+См. [микроскопические ядра](@ref theory-kernels).
 """
 function acoustic_kernel(
     p::PhysicalParameters,
@@ -271,11 +270,9 @@ function acoustic_kernel(
 end
 
 """
-Full alloy-disorder tensor, or an exact zero tensor when the channel is
-disabled. Implements [EQ-KALLOY-001](@ref eq-alloy-kernel).
-
-See [Microscopic kernels](@ref theory-kernels) for the alloy covariance and
-material-profile dependence.
+Полный тензор рассеяния на беспорядке сплава. При выключенном канале
+тензор равен нулю. Реализует [EQ-KALLOY-001](@ref eq-alloy-kernel).
+См. ковариацию сплава и зависимость от материалов в [главе о ядрах](@ref theory-kernels).
 """
 function alloy_kernel(
     p::PhysicalParameters,
@@ -314,12 +311,12 @@ end
 """
     lo_phonon_kernel(physical, scales, grids, basis)
 
-Screened bulk-like Fröhlich kernel and longitudinal form factors.  The direct
-trapezoidal `q_z` rule from the theory is retained exactly.
+Экранированное объёмное ядро Фрёлиха и продольные форм-факторы.
+Для `q_z` используется описанная в теории прямая формула трапеций.
 
-Implements [EQ-KLO-001](@ref eq-lo-kernel).
-See [Microscopic kernels](@ref theory-kernels) for the Fröhlich coupling,
-phonon energy shifts, and longitudinal form factors.
+Реализует [EQ-KLO-001](@ref eq-lo-kernel).
+См. связь Фрёлиха, фононные сдвиги и форм-факторы
+в [главе о ядрах](@ref theory-kernels).
 """
 function lo_phonon_kernel(
     p::PhysicalParameters,
@@ -359,13 +356,13 @@ function lo_phonon_kernel(
 end
 
 """
-Build exactly the enabled microscopic kernel families and apply
-[EQ-KSCALE-001](@ref eq-kernel-rescale).  `KernelSet.K` contains normalized
-tensors; `KernelSet.qᴷ` contains the exact positive factors restored by every
-contraction.
+Собрать включённые семейства микроскопических ядер и применить
+[EQ-KSCALE-001](@ref eq-kernel-rescale). `KernelSet.K` хранит нормированные
+тензоры, а `KernelSet.qᴷ` — положительные множители, учитываемые при
+каждой свёртке.
 
-See [Microscopic kernels](@ref theory-kernels) and
-[dimensionless kernel scaling](@ref theory-scaling).
+См. [микроскопические ядра](@ref theory-kernels)
+и [безразмерное масштабирование](@ref theory-scaling).
 """
 function build_kernels(
     p::PhysicalParameters,
@@ -412,9 +409,8 @@ end
 """
     _static_contraction(K, G, wᵏ)
 
-Literal contraction
-`Σ[e,m,a,b]=Σ[m′,c,d] wᵏ[m′]K[m,m′,a,c,d,b]G[e,m′,c,d]`.
-No diagonal, local, or momentum-averaged approximation is introduced.
+Прямая свёртка `Σ[e,m,a,b]=Σ[m′,c,d] wᵏ[m′]K[m,m′,a,c,d,b]G[e,m′,c,d]`
+с полными матричными блоками и узлами импульса.
 """
 function _static_contraction(
     K::AbstractArray{<:Number,6},
@@ -487,15 +483,15 @@ end
 """
     direct_hilbert_transform(Γ, ε, wᴱ; return_roundoff=false)
 
-Direct `O(N_E²)` principal-value quadrature of every matrix element.  The
-diagonal energy cell is omitted; the energy grid is never treated as cyclic.
-Terms are accumulated in symmetric distance order around the omitted cell.
-With `return_roundoff=true`, also return the relative difference obtained by
-reversing that fixed order, as required by the Float64 cancellation contract.
+Прямая квадратура главного значения за `O(N_E²)` для каждого матричного
+элемента. Диагональная энергетическая ячейка пропускается. Сетка
+не замыкается циклически. Слагаемые накапливаются симметрично относительно
+пропущенной ячейки в порядке расстояния. При `return_roundoff=true`
+возвращается также относительная разность при обратном порядке суммирования
+для контроля сокращения значащих цифр в арифметике Float64.
 
-Implements [EQ-HILBERT-001](@ref eq-direct-hilbert).
-See [Microscopic kernels](@ref theory-kernels) for the causal
-principal-value relation.
+Реализует [EQ-HILBERT-001](@ref eq-direct-hilbert).
+См. причинное соотношение в [главе о ядрах](@ref theory-kernels).
 """
 function direct_hilbert_transform(
     Γ::AbstractArray{<:Number,4},
@@ -516,17 +512,17 @@ end
 """
     product_integration_hilbert_matrix(ε)
 
-Analytic product-integration operator for
-`PV ∫ Γ(x)/(2π*(E-x)) dx`. Γ is piecewise linear between energy nodes.
-Two explicit exterior zero nodes, one adjacent spacing beyond each end,
-define a linear edge taper, followed by zero continuation. This boundary
-model keeps the transform finite at the first/last sampled nodes; it does
-not extrapolate a physical spectral tail. Window convergence must still be
-checked away from the taper.
+Аналитический оператор интегрирования произведения для
+`PV ∫ Γ(x)/(2π*(E-x)) dx`. Между узлами энергии Γ интерполируется
+линейно. Два внешних нулевых узла, отстоящих на ближайший шаг от
+каждого конца, задают линейное затухание к краю с нулевым продолжением.
+Такое граничное условие сохраняет конечность преобразования на крайних
+узлах. Сходимость по окну проверяется вдали от краёв.
 
-Subtracting Γ(E) analytically cancels both sides of each local singularity.
-No diagonal cell is omitted. Works on nonuniform strictly increasing grids.
-The returned dense operator can be reused for all columns and SCBA steps.
+Аналитическое вычитание Γ(E) устраняет обе части локальной сингулярности.
+Диагональная ячейка сохраняется. Допускается неравномерная строго
+возрастающая сетка. Плотный оператор можно применять ко всем столбцам
+на каждом шаге SCBA.
 """
 function product_integration_hilbert_matrix(ε::AbstractVector{<:Real})
     N = length(ε)
@@ -561,12 +557,12 @@ end
 """
     product_integration_hilbert_transform(Γ, ε, wᴱ; return_roundoff=false, operator=nothing)
 
-Apply analytic piecewise-linear PV integration to every tensor column.
-`wᴱ` is checked for positive finite values but is not used as an additional
-factor: the product-integration matrix already contains the integration
-measure. `operator` permits reuse of `product_integration_hilbert_matrix(ε)`.
-The optional roundoff diagnostic compares opposite column summation orders;
-it measures arithmetic sensitivity, not continuum discretization error.
+Вычислить главное значение аналитическим интегрированием кусочно-линейной
+функции по каждому столбцу тензора. У `wᴱ` проверяются конечность и
+положительность. Мера интегрирования уже входит в матрицу.
+`operator` позволяет повторно использовать `product_integration_hilbert_matrix(ε)`.
+Дополнительная проверка округления сравнивает противоположные порядки
+суммирования, чтобы оценить чувствительность к арифметике.
 """
 function product_integration_hilbert_transform(
     Γ::AbstractArray{<:Number,4},
@@ -592,14 +588,14 @@ end
 """
     retarded_self_energy(Σˡ, Σᵍ, grids; return_roundoff=false)
 
-Build `Γ=i(Σᵍ-Σˡ)` and `Σᴿ=H[Γ]-iΓ/2` with the direct principal-value
-quadrature.  Returns `(Σᴿ,Γ)`. With `return_roundoff=true`, returns
-`(Σᴿ,Γ,r_roundoff)`, where the last value compares symmetric and reversed
-accumulation orders.
+Построить `Γ=i(Σᵍ-Σˡ)` и `Σᴿ=H[Γ]-iΓ/2` прямой квадратурой главного
+значения. Возвращает `(Σᴿ,Γ)`. При `return_roundoff=true` результат
+`(Σᴿ,Γ,r_roundoff)` включает разность между симметричным и обратным
+порядком суммирования.
 
-Implements [EQ-SELFENERGY-001](@ref eq-retarded-selfenergy).
-See [Microscopic kernels](@ref theory-kernels) and
-[the SCBA fixed point](@ref theory-scba).
+Реализует [EQ-SELFENERGY-001](@ref eq-retarded-selfenergy).
+См. [микроскопические ядра](@ref theory-kernels)
+и [неподвижную точку SCBA](@ref theory-scba).
 """
 function retarded_self_energy(
     Σˡ::AbstractArray{<:Number,4},

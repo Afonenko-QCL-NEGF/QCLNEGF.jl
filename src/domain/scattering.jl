@@ -1,4 +1,4 @@
-"""Uniform validation failure at the physical/numerical scattering boundary."""
+"""Единая ошибка проверки на границе физического описания и численной реализации рассеяния."""
 struct ScatteringValidationError <: Exception
     mechanism::Symbol
     field::String
@@ -23,13 +23,13 @@ _scattering_error(mechanism, field, message) =
 const _SCATTERING_MECHANISM_ORDER = (:LO, :acoustic, :impurity, :IFR, :alloy)
 
 """
-Physical-model abstraction for one microscopic scattering mechanism.
-Concrete models contain physical quantities only; grid choices, interpolation,
-contraction order, threading, and storage do not belong here.
+Абстракция физической модели одного микроскопического механизма рассеяния.
+Конкретные реализации содержат физические параметры. Сетки, интерполяция,
+порядок свёртки, потоки и хранение задаются отдельно.
 """
 abstract type AbstractScatteringPhysicalModel end
 
-"""Bulk-like screened Fröhlich LO-phonon physical parameters."""
+"""Физические параметры рассеяния на объёмных LO-фононах через экранированное взаимодействие Фрёлиха."""
 struct LOPhononModel <: AbstractScatteringPhysicalModel
     phonon_energy::EnergyQuantity
     temperature::TemperatureQuantity
@@ -39,7 +39,7 @@ struct LOPhononModel <: AbstractScatteringPhysicalModel
 end
 
 
-"""Elastic acoustic deformation-potential physical parameters."""
+"""Физические параметры упругого рассеяния на акустических фононах через деформационный потенциал."""
 struct AcousticPhononModel <: AbstractScatteringPhysicalModel
     deformation_potential::EnergyQuantity
     temperature::TemperatureQuantity
@@ -47,7 +47,7 @@ struct AcousticPhononModel <: AbstractScatteringPhysicalModel
     sound_velocity::SpeedQuantity
 end
 
-"""Screened ionized-donor physical parameters."""
+"""Физические параметры рассеяния на экранированных ионизованных донорах."""
 struct IonizedImpurityModel <: AbstractScatteringPhysicalModel
     donor_sheet_density::SheetDensityQuantity
     ionization_fraction::Float64
@@ -55,14 +55,14 @@ struct IonizedImpurityModel <: AbstractScatteringPhysicalModel
     screening_wavenumber::WaveNumberQuantity
 end
 
-"""Gaussian independent-interface roughness physical parameters."""
+"""Физические параметры гауссовой шероховатости независимых интерфейсов."""
 struct InterfaceRoughnessModel <: AbstractScatteringPhysicalModel
     rms_height::LengthQuantity
     correlation_length::LengthQuantity
     interfaces::Vector{LengthQuantity}
 end
 
-"""Short-range random-alloy physical parameters."""
+"""Физические параметры короткодействующего рассеяния на беспорядке сплава."""
 struct AlloyDisorderModel <: AbstractScatteringPhysicalModel
     alloy_potential::EnergyQuantity
     primitive_cell_volume::VolumeQuantity
@@ -174,7 +174,7 @@ function AlloyDisorderModel(; alloy_potential, primitive_cell_volume)
     return validate_scattering_model(model)
 end
 
-"""Stable configuration/provenance identifier for a scattering model."""
+"""Устойчивый идентификатор модели рассеяния для конфигурации и происхождения результатов."""
 scattering_id(::LOPhononModel) = :LO
 scattering_id(::AcousticPhononModel) = :acoustic
 scattering_id(::IonizedImpurityModel) = :impurity
@@ -182,11 +182,11 @@ scattering_id(::InterfaceRoughnessModel) = :IFR
 scattering_id(::AlloyDisorderModel) = :alloy
 
 """
-Any change to the enabled physical mechanism set is E3. This is distinct from
-the E0--E2 numerical implementation selected for a fixed mechanism set.
+Любое изменение набора включённых физических механизмов относится к классу E3.
+Классы E0–E2 относятся к численным реализациям при фиксированном наборе механизмов.
 """
 scattering_model_role(::AbstractScatteringPhysicalModel) = :physical_model
-"""Return `:E0` for identical physical models and `:E3` for any change."""
+"""Возвращает `:E0` при идентичных физических моделях и `:E3` при любом изменении."""
 function scattering_selection_evidence_class(left, right)
     allunique(scattering_id.(left)) || return :E3
     allunique(scattering_id.(right)) || return :E3
@@ -204,7 +204,7 @@ function _validate_positive_quantity(mechanism, field, value, zero)
     return value
 end
 
-"""Fail-closed validation shared by every scattering physical model."""
+"""Общая проверка физических моделей рассеяния с отклонением непригодных входных данных."""
 function validate_scattering_model(model::LOPhononModel)
     mechanism = scattering_id(model)
     _validate_positive_quantity(mechanism, "phonon_energy", model.phonon_energy, 0u"eV")
@@ -359,8 +359,8 @@ function _alloy_model(physical::PhysicalParameters)
     return AlloyDisorderModel(physical.ΔV_alloy, physical.Ω₀)
 end
 
-"""Build and uniformly validate the physical mechanism set selected by the
-public `ScatteringOptions` value object."""
+"""Строит и единообразно проверяет набор физических механизмов, выбранных
+публичными настройками `ScatteringOptions`."""
 function scattering_models(physical::PhysicalParameters, options::ScatteringOptions)
     models = AbstractScatteringPhysicalModel[]
     options.LO && push!(models, _lo_model(physical))
@@ -372,11 +372,10 @@ function scattering_models(physical::PhysicalParameters, options::ScatteringOpti
     return models
 end
 
-"""Project a validated physical-model collection to its mechanism selection.
+"""Преобразует проверенный набор физических моделей в набор включённых механизмов.
 
-`ScatteringOptions` is the stable selection value object shared by the direct
-API and resolved run configuration. Physical parameters remain in the typed
-models and are never reconstructed by this projection.
+`ScatteringOptions` задаёт набор механизмов для прямого API и разрешённой
+конфигурации запуска. Физические параметры хранятся в типизированных моделях.
 """
 function scattering_options(models::AbstractVector{<:AbstractScatteringPhysicalModel})
     identifiers = scattering_id.(models)

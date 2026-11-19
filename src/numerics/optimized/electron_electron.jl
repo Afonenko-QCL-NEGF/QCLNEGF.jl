@@ -32,9 +32,10 @@ function sppa_parameters(physical, options)
 end
 
 """
-Construct the full four-index quasi-2D subband form factor at a declared q.
-The two spatial quadratures use the existing basis normalization. Neither
-diagonal-state reduction nor empirical relaxation times are introduced.
+Построить полный четырёхиндексный форм-фактор квазидвумерных подзон
+при заданном q. Обе координатные квадратуры используют нормировку
+базиса. Сохраняются недиагональные элементы. Эмпирические времена
+релаксации не вводятся.
 """
 function sppa_form_factor(grids::ModelGrids, basis::BasisData, transfer_dimensionless::Real)
     transfer_dimensionless > 0 && isfinite(transfer_dimensionless) ||
@@ -57,9 +58,10 @@ function sppa_form_factor(grids::ModelGrids, basis::BasisData, transfer_dimensio
 end
 
 """
-Add the actual normalized six-axis SPPA kernel to KernelSet. The bare Coulomb
-factor remains quasi-2D for either screening closure, following Winge (5)–(9).
-The declared representative q replaces angular/momentum-transfer dependence.
+Добавить нормированное шестимерное ядро SPPA в `KernelSet`. Голый
+кулоновский множитель остаётся квазидвумерным при обоих способах
+экранирования, согласно формулам (5)–(9) Винге. Заданный характерный q
+заменяет зависимость от угла и передаваемого импульса.
 """
 function add_sppa_kernel(
     physical::PhysicalParameters,
@@ -119,7 +121,7 @@ function _sppa_local_contraction(problem::NEGFProblem, field::Array{ComplexF64,4
     return result
 end
 
-"""Bounded positive shift pair without dense NE×NE matrices or cyclic wrapping."""
+"""Положительная пара сдвигов с ограниченной памятью, без плотных матриц N_E×N_E и циклического замыкания."""
 function _sppa_shift_pair(
     grids::ModelGrids,
     displacement::Real,
@@ -161,9 +163,9 @@ function _sppa_shift_pair(
 end
 
 """
-Return dimensionless lesser, greater and exchange components for actual SCBA.
-The dynamic Hilbert transform is left to the caller's selected numerical
-backend. Exchange is the bare instantaneous Fock term and is added only to ΣR.
+Вернуть безразмерные меньшую, большую и обменную компоненты для SCBA.
+Динамическое преобразование Гильберта выполняется выбранной вызывающим
+кодом схемой. Мгновенный голый обменный член Фока добавляется только к ΣR.
 """
 function sppa_components(problem::NEGFProblem, green::GreenState)
     options = problem.models.electron_electron
@@ -211,7 +213,7 @@ function sppa_components(problem::NEGFProblem, green::GreenState)
     )
 end
 
-"""Reference Hilbert completion of the SPPA family, including the Fock term."""
+"""Эталонное восстановление семейства SPPA преобразованием Гильберта с обменным членом Фока."""
 function sppa_self_energy(
     problem::NEGFProblem,
     green::GreenState;
@@ -238,9 +240,10 @@ function sppa_self_energy(
 end
 
 """
-Measure charge and electronic-energy exchange of an e-e family. An equilibrium
-plasmon closure may exchange energy with that effective bath; a small SCBA
-residual does not certify this as conserving electronic GW transport.
+Измерить баланс заряда и электронной энергии для семейства e–e.
+Равновесная плазмонная модель может обмениваться энергией с эффективным
+термостатом. Малая невязка SCBA сама по себе не устанавливает сохранение
+электронной энергии, как в сохраняющем приближении GW.
 """
 function electron_electron_collision_diagnostics(
     problem::NEGFProblem,

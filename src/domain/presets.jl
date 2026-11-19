@@ -1,18 +1,17 @@
 """
     reference_parameters(; f_ion=1, F_bias=nothing, V_period=56u"mV",
-                       Tᴸ=200u"K", ΔV_alloy=nothing, Ω₀=nothing)
+                           Tᴸ=200u"K", ΔV_alloy=nothing, Ω₀=nothing)
 
-Published reference design layer sequence together with the explicitly chosen material
-and scattering parameters of the educational model.  All dimensional inputs
-are Unitful quantities; incompatible units raise `Unitful.DimensionError`.
-By default the exact `V_period=56 mV` is primary and `F_bias=V_period/Lp`.
-An explicit `F_bias` overrides `V_period`.
-The optional alloy parameters `ΔV_alloy` and `Ω₀` must either both be omitted
-or both be supplied with energy and volume dimensions, respectively.
+Опубликованная последовательность слоёв эталонной структуры с явно выбранными
+параметрами материалов и рассеяния учебной модели. Все размерные входы —
+величины Unitful. Несовместимые единицы вызывают `Unitful.DimensionError`.
+По умолчанию первично точное падение `V_period=56 mV` и `F_bias=V_period/Lp`.
+Явный `F_bias` имеет приоритет над `V_period`. Параметры сплава `ΔV_alloy` и
+`Ω₀` либо оба опускают, либо оба задают с размерностями энергии и объёма соответственно.
 
-See [the reference design structure passport](@ref theory-reference2019),
-[model conventions](@ref theory-model), and
-[the complete input contract](@ref full-input-contract).
+См. [паспорт эталонной структуры](@ref theory-reference2019),
+[соглашения модели](@ref theory-model) и
+[полный контракт входных данных](@ref full-input-contract).
 """
 function reference_parameters(;
     f_ion::Real = 1.0,
@@ -85,10 +84,10 @@ function reference_parameters(;
 end
 
 """
-Reference discretization from the mathematical specification.
+Эталонная дискретизация из математической постановки.
 
-See [Indices, grids, and array shapes](@ref array-contracts) and
-[the numerical input contract](@ref full-input-contract).
+См. [индексы, сетки и размеры массивов](@ref array-contracts) и
+[контракт численных входных данных](@ref full-input-contract).
 """
 baseline_numerics() = NumericalParameters(
     N_z = 198,
@@ -107,15 +106,16 @@ baseline_numerics() = NumericalParameters(
 )
 
 """
-Production reference design discretization.  It keeps the reference spatial, energy,
-momentum and basis sizes, but reserves an `80 meV` non-periodic shift/trust
-margin so the default I--V sweep through `64 mV` per period remains inside
-the stored energy window.  The margin changes validation masks only; it does
-not change the energy nodes or claim grid convergence.
+Расчётная дискретизация эталонной структуры. Сохраняются исходные параметры
+пространственной, энергетической и импульсной сеток и размер базиса.
+Запас `80 meV` для непериодического сдвига и доверенного окна позволяет
+проводить штатный расчёт ВАХ до `64 mV` на период внутри сохранённого
+энергетического окна. Запас меняет маски валидации. Узлы энергии сохраняются,
+а достаточность сетки проверяется отдельно.
 
-See [Production backend](@ref theory-production),
-[indices, grids, and array shapes](@ref array-contracts), and
-[numerical scales and cost](@ref theory-cost).
+См. [расчётный решатель](@ref theory-production),
+[индексы, сетки и размеры массивов](@ref array-contracts) и
+[численные масштабы и стоимость](@ref theory-cost).
 """
 reference_production_numerics() = NumericalParameters(
     N_z = 198,
@@ -134,11 +134,12 @@ reference_production_numerics() = NumericalParameters(
 )
 
 """
-Small deterministic grid for examples and automated tests.  It changes the discretization,
-not the equations, and must never be used for quantitative reference design conclusions.
+Малая детерминированная сетка для примеров и автоматических проверок. Уравнения
+сохраняются, меняется дискретизация. Количественные выводы об эталонной структуре
+требуют полноценной сетки.
 
-See [Indices, grids, and array shapes](@ref array-contracts) and the required
-[verification and grid-convergence checks](@ref theory-validation).
+См. [индексы, сетки и размеры массивов](@ref array-contracts) и обязательные
+[проверки и оценку сходимости по сетке](@ref theory-validation).
 """
 tutorial_numerics() = NumericalParameters(
     N_z = 48,
@@ -157,22 +158,22 @@ tutorial_numerics() = NumericalParameters(
 )
 
 """
-Final acceptance thresholds, direct updates, and normative safety limits.
+Итоговые пороги приёмки, прямые обновления и установленные защитные пределы.
 
-See [Verification](@ref theory-validation) and
-[the fixed-point input contract](@ref full-input-contract).
+См. [проверку решения](@ref theory-validation) и
+[контракт входных данных неподвижной точки](@ref full-input-contract).
 """
 baseline_options() = SolverOptions()
 
 """
-Damped, strict-tolerance starting point for the production reference design fixed points.
-The damping factors are numerical controls, not material parameters, and must
-be varied in a convergence study.  No tolerance is relaxed relative to
-[`baseline_options`](@ref).
+Начальные настройки с демпфированием и строгими допусками для расчёта
+неподвижных точек эталонной структуры. Коэффициенты демпфирования —
+численные параметры, которые варьируют при исследовании сходимости.
+Допуски совпадают с [`baseline_options`](@ref).
 
-See [the SCBA fixed point](@ref theory-scba),
-[the outer Poisson loop](@ref theory-outer-loop), and
-[Production backend](@ref theory-production).
+См. [неподвижную точку SCBA](@ref theory-scba),
+[внешний цикл Пуассона](@ref theory-outer-loop) и
+[расчётный решатель](@ref theory-production).
 """
 reference_production_solver_options() = SolverOptions(
     α_Σ = 0.10,
@@ -184,11 +185,11 @@ reference_production_solver_options() = SolverOptions(
 )
 
 """
-Relaxed mixing and thresholds for algorithmic smoke runs only.
+Мягкие параметры смешивания и пороги для коротких проверочных запусков алгоритма.
 
-See [the SCBA fixed point](@ref theory-scba) and
-[Verification](@ref theory-validation); these relaxed gates are not the
-quantitative acceptance contract.
+См. [неподвижную точку SCBA](@ref theory-scba) и
+[проверку решения](@ref theory-validation). Для количественной приёмки
+используются строгие допуски.
 """
 tutorial_options() = SolverOptions(
     α_Σ = 0.35,
@@ -227,9 +228,11 @@ tutorial_options() = SolverOptions(
 )
 
 """
-Baseline enabled channels: LO, acoustic, impurity and IFR; alloy off.
+По умолчанию включено рассеяние на LO-фононах, акустических фононах,
+ионизованных примесях и шероховатости интерфейсов (IFR).
+Рассеяние на сплаве выключено.
 
-See [Microscopic kernels](@ref theory-kernels).
+См. [микроскопические ядра](@ref theory-kernels).
 """
 default_scattering() = ScatteringOptions()
 

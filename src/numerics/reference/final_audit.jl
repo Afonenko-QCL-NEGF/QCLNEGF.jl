@@ -1,4 +1,4 @@
-"""Evaluate the reference raw map; no optimized kernel is used as its oracle."""
+"""Вычислить эталонное отображение напрямую, независимо от оптимизированного ядра."""
 function _reference_audit_candidate(
     problem::NEGFProblem, scba::SCBAResult; elastic_retarded::Symbol = :hilbert,
 )
@@ -30,12 +30,13 @@ function charge_constraint_diagnostics(
     )
 end
 
-"""Fresh coupled kinetic residuals, evaluated before any normalization of a candidate.
+"""
+Вычислить сырые невязки совместного кинетического решения до нормировки кандидата.
 
-The selected physical map supplies candidate self-energies. Residual matrix
-algebra is evaluated independently of the production residual pass. In
-particular r_K compares published G< to GR Σ_candidate< GA, without dividing
-the latter by a fitted particle-number eigenvalue.
+Кандидатные собственные энергии даёт выбранное физическое отображение.
+Матричные операции выполняются независимо от производственного расчёта
+невязок. В частности, `r_K` сравнивает сохранённую `G<` с
+`GR Σ_candidate< GA` без деления на подгоночный коэффициент числа частиц.
 """
 function fresh_fixed_point_metrics(
     problem::NEGFProblem,
@@ -96,7 +97,7 @@ function fresh_fixed_point_metrics(
     )
 end
 
-"""Store exact final constraint values, independent of the neutralized Poisson source."""
+"""Записать точные ограничения финального состояния независимо от нейтрализованного источника Пуассона."""
 function _publish_charge_diagnostics!(observables, report)
     observables[:charge_constraint] = Dict(
         String(name)=>get(report.metrics, name, NaN) for name in (
@@ -130,12 +131,13 @@ const _NONLINEAR_ACCEPTANCE_METRICS = Set((
     :r_population,
 ))
 
-"""Separate fixed-point progress, physical gates and certified acceptance.
+"""
+Оценить прогресс к неподвижной точке, физические проверки и научную приёмку
+раздельно.
 
-Thresholds come from the same evaluator used by `validate_solution`, never an
-API/UI replica. Missing measurements are explicit and cannot become zero or
-pass. All numeric thresholds are project acceptance policy; these numbers are
-not attributed to universal NEGF identities or borrowed literature tolerances.
+Пороги берутся из того же вычислителя, что и в `validate_solution`.
+Отсутствующее измерение отмечается явно. Численные пороги задаёт политика
+приёмки проекта.
 """
 function solution_scientific_assessment(solution::NEGFSolution)
     limits =
@@ -286,7 +288,7 @@ function _final_quality_report(
     return (; report = strict_report, converged = false, approximate = false)
 end
 
-"""Propagate final scientific acceptance to the sweep, report and queue warnings."""
+"""Передать результат окончательной научной приёмки в серию расчётов, отчёт и список предупреждений."""
 function _final_validation_warning(provisional::NEGFSolution, assessment)
     assessment.converged && return nothing
     # Failed/incomplete states remain failed. This warning only makes the
@@ -313,7 +315,7 @@ function _final_validation_warning(provisional::NEGFSolution, assessment)
     )
 end
 
-"""Independent hot-LO power check: phonon event counts versus stored electron collision energy."""
+"""Независимо проверить мощность горячих LO-фононов по числу переходов и сохранённой энергии электронных столкновений."""
 function _lo_balance_diagnostics(problem::NEGFProblem, scba::SCBAResult)
     kernel = problem.kernels.K[:LO]
     scale = problem.kernels.qᴷ[:LO]

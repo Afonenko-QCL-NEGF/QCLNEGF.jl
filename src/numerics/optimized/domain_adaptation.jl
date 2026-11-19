@@ -1,4 +1,4 @@
-"""Select wider physical energy bounds without changing the original ΔE."""
+"""Выбрать более широкие границы энергетического окна с тем же шагом ΔE."""
 function _adapted_energy_parameters(
     problem::NEGFProblem,
     coverage::RepresentationCoverage,
@@ -30,12 +30,13 @@ end
 """
     solve_adaptive_production(problem; domain_adaptation, kernel_options, ...)
 
-Execute a declared bounded energy-window expansion at preserved energy step.
-Every changed domain builds fresh basis projections, kernels and a fresh cache,
-then starts with a cold seed. It is never described as checkpoint continuation.
-Stored states are sent to `state_observer` before deciding whether to expand.
-The latest result contains every domain's metrics, identities and actual cost.
-Unmet momentum/basis resolution is reported; this policy adapts energy only.
+Выполнить ограниченное расширение энергетического окна при том же шаге.
+Для каждой новой области заново строятся проекции базиса, ядра и кэш.
+Расчёт на расширенной области начинается с нового начального состояния.
+Перед решением о расширении сохранённые состояния передаются в
+`state_observer`. Итог включает метрики, идентификаторы и фактические затраты
+для каждой области. Политика меняет только энергию. О недостаточном
+разрешении по импульсу или базису сообщается отдельно.
 """
 function solve_adaptive_production(
     problem::NEGFProblem;

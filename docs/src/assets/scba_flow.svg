@@ -4,8 +4,8 @@
   <g font-family="DejaVu Sans, sans-serif" font-size="17" text-anchor="middle" fill="#17324d" stroke="#315b7d" stroke-width="2">
     <g fill="#e9f1f7"><rect x="205" y="30" width="350" height="60" rx="9"/><rect x="205" y="125" width="350" height="60" rx="9"/><rect x="205" y="220" width="350" height="60" rx="9"/><rect x="205" y="315" width="350" height="60" rx="9"/><rect x="205" y="535" width="350" height="60" rx="9"/></g>
     <polygon points="380,405 520,455 380,505 240,455" fill="#fff5d6"/>
-    <g stroke="none"><text x="380" y="66">old Σᴿ, Σ&lt;, Σ&gt;</text><text x="380" y="161">direct Dyson inversion → Gᴿ</text><text x="380" y="256">Keldysh + λ normalization → G&lt;, G&gt;</text><text x="380" y="346">scattering + embedding candidates</text><text x="380" y="367">full contractions + direct Hilbert</text><text x="380" y="451">all residuals pass?</text><text x="380" y="571">consistent fixed-Uᴴ SCBA result</text></g>
+    <g stroke="none"><text x="380" y="66">Входные Σᴿ, Σ&lt;, Σ&gt;</text><text x="380" y="161">Решение уравнения Дайсона → Gᴿ</text><text x="380" y="256">Келдыш и нормировка → G&lt;, G&gt;</text><text x="380" y="346">Кандидаты рассеяния и вложения</text><text x="380" y="367">Свёртки и восстановление Σᴿ</text><text x="380" y="451">Невязки в допуске?</text><text x="380" y="571">Решение SCBA при заданном Uᴴ</text></g>
   </g>
   <g fill="none" stroke="#315b7d" stroke-width="2.5" marker-end="url(#a)"><path d="M380,90 V120"/><path d="M380,185 V215"/><path d="M380,280 V310"/><path d="M380,375 V405"/><path d="M380,505 V530"/><path d="M240,455 H95 V60 H200"/></g>
-  <g font-family="DejaVu Sans, sans-serif" font-size="15" fill="#315b7d"><text x="395" y="523">yes</text><text x="110" y="445">no: one common αΣ</text></g>
+  <g font-family="DejaVu Sans, sans-serif" font-size="15" fill="#315b7d"><text x="395" y="523">да</text><text x="110" y="445">нет, общий αΣ</text></g>
 </svg>

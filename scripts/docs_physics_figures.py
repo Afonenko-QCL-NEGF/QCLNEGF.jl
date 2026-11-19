@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Render the scientific atlas from Julia-exported CSV; no solver duplication.
+"""Построение научного атласа по таблицам CSV, записанным Julia.
 
-Run examples/10_physics_atlas.jl first. Analytic teaching illustrations are
-explicitly labelled in every corresponding figure and in the atlas chapter.
-Requires Python 3, numpy and matplotlib; no HDF5 or server environment.
+Сначала выполните examples/10_physics_atlas.jl. Аналитические учебные примеры
+помечены на графиках и в главе атласа. Нужны Python 3, NumPy и Matplotlib.
 """
 from __future__ import annotations
 
@@ -56,7 +55,7 @@ def main():
     fig, axes = plt.subplots(3,1,figsize=(10,8),sharex=True,layout="constrained")
     axes[0].step(z,ec,where="mid",label="Край зоны без поля")
     axes[0].step(z,ec+structure["bias_meV"],where="mid",label="С заданным полем")
-    axes[0].set(ylabel="Энергия, мэВ", title="Реальная геометрия reference design: один период 29,61 нм")
+    axes[0].set(ylabel="Энергия, мэВ", title="Эталонная структура: один период 29,61 нм")
     axes[0].legend(loc="upper right",fontsize=9)
     axes[1].step(z,structure["mass_ratio"],where="mid",color=COLORS[2])
     axes[1].set_ylabel(r"Эффективная масса $m_z/m_0$")
@@ -206,7 +205,7 @@ def main():
     axes[1].annotate("",xy=(.5,0),xytext=(.5,transition),arrowprops={"arrowstyle":"->","color":COLORS[2],"lw":2})
     axes[1].text(.8,transition/2,f"ΔE = {transition:.2f} мэВ\n|z₁₂| = {float(optical['dipole_nm']):.2f} нм",va="center")
     axes[1].set(xlim=(0,1.5),xticks=[],ylabel="Энергия относительно уровня 1, мэВ",title="Параметры из реального H одной ячейки")
-    fig.suptitle("Заданные заселения и ширина линии; это не расчёт усиления работающего reference design")
+    fig.suptitle("Отклик при заданных населённостях и ширине линии")
     save(fig,"optical_response")
 
     fig,axes=plt.subplots(1,2,figsize=(11,4.5),layout="constrained")

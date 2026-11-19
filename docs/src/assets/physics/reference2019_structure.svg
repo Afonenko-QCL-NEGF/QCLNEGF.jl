@@ -421,7 +421,7 @@ L 721.19952 184.374103
 " style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
    <g id="text_9">
-    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="388.852885" y="16.318125" transform="rotate(-0 388.852885 16.318125)">Реальная геометрия reference design: один период 29,61 нм</text>
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle" x="388.852885" y="16.318125" transform="rotate(-0 388.852885 16.318125)">Эталонная структура: один период 29,61 нм</text>
    </g>
    <g id="legend_1">
     <g id="patch_8">

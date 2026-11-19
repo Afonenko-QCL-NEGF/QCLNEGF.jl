@@ -2,13 +2,13 @@
     build_problem(; physical=reference_parameters(), numerical=baseline_numerics(),
                     scattering=default_scattering(), scales=ScaleSystem())
 
-Build all immutable data: grids, exactly normalized profiles, fixed localized
-basis, complete kernels, and four dense non-periodic shift matrices.  This is
-the expensive static stage of the direct reference algorithm.
+Подготовить неизменяемые данные прямого эталонного расчёта: сетки,
+точно нормированные профили, фиксированный локализованный базис,
+полные ядра и четыре плотные непериодические матрицы сдвига.
 
-See [the implementation plan](@ref implementation-plan),
-[the array contract](@ref array-contracts), and
-[static verification](@ref theory-validation).
+См. [план реализации](@ref implementation-plan),
+[контракт массивов](@ref array-contracts)
+и [статическую проверку](@ref theory-validation).
 """
 function build_problem(;
     physical::PhysicalParameters = reference_parameters(),
@@ -29,6 +29,14 @@ function build_problem(;
     W₋ᴱᵖ = build_shift_matrix(grids.ε, -sp.Eᵖ)
     W₊ᴸᴼ = build_shift_matrix(grids.ε, +sp.ħωᴸᴼ)
     W₋ᴸᴼ = build_shift_matrix(grids.ε, -sp.ħωᴸᴼ)
+    augmented_kernels = add_sppa_kernel(
+        physical,
+        scales,
+        grids,
+        basis,
+        kernels,
+        physical_models.electron_electron,
+    )
     problem = NEGFProblem(
         physical,
         numerical,
@@ -37,34 +45,12 @@ function build_problem(;
         grids,
         profiles,
         basis,
-        kernels,
+        augmented_kernels,
         W₊ᴱᵖ,
         W₋ᴱᵖ,
         W₊ᴸᴼ,
         W₋ᴸᴼ,
-    )
-    augmented_kernels = add_sppa_kernel(
-        problem.physical,
-        problem.scales,
-        problem.grids,
-        problem.basis,
-        problem.kernels,
-        physical_models.electron_electron,
-    )
-    problem = NEGFProblem(
-        problem.physical,
-        problem.numerical,
-        problem.scattering,
-        problem.scales,
-        problem.grids,
-        problem.profiles,
-        problem.basis,
-        augmented_kernels,
-        problem.W₊ᴱᵖ,
-        problem.W₋ᴱᵖ,
-        problem.W₊ᴸᴼ,
-        problem.W₋ᴸᴼ,
-        problem.energy_shift_discretization,
+        :nodal_linear,
         physical_models,
     )
 
@@ -110,16 +96,14 @@ end
 """
     solve(problem; options=baseline_options())
 
-Run the nested fixed-density SCBA and periodic Hartree–Poisson loops.  The
-returned `NEGFSolution` always carries an explicit status; reaching an
-iteration limit is never reported as convergence. The last complete SCBA state
-is published with its own accepted `Uᴴ`; a fresh candidate audit certifies the
-same operator/state without an implicit unbudgeted extra solve.
+Выполнить вложенные циклы SCBA с заданным числом частиц и периодического
+уравнения Хартри — Пуассона. Возвращаемое `NEGFSolution` содержит явный
+статус, в том числе при исчерпании лимита итераций. Последнее полное
+состояние SCBA возвращается с соответствующим принятым `Uᴴ`.
+Итоговый аудит применяет одну свежую карту к этому оператору и состоянию.
 
-Implements the [closed Poisson–SCBA algorithm](@ref theory-outer-loop).
-Its inner map and final acceptance gates are detailed in
-[the SCBA chapter](@ref theory-scba) and
-[Verification](@ref theory-validation).
+Реализует [замкнутый алгоритм Пуассона — SCBA](@ref theory-outer-loop).
+См. [главу о SCBA](@ref theory-scba) и [проверки](@ref theory-validation).
 """
 function solve(
     problem::NEGFProblem;
