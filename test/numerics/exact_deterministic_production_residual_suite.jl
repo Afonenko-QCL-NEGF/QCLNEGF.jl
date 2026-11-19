@@ -80,42 +80,6 @@ include("../support/production_residuals.jl")
     suite_bytes =
         @allocated production_residual_suite(ε, h, green, total, candidate; workspace)
     @test suite_bytes < 256_000
-
-    # The convenience projections have the same exact result contract.
-    @test QCLNEGF._dyson_residual_production(ε, h, green, total, candidate; workspace) ==
-          result.r_D
-    @test QCLNEGF._spectral_residual_production(
-        ε,
-        h,
-        green,
-        total,
-        candidate;
-        workspace,
-    ) == result.r_A
-    @test QCLNEGF._keldysh_residual_production(
-        ε,
-        h,
-        green,
-        total,
-        candidate;
-        workspace,
-    ) == result.r_K
-    @test QCLNEGF._green_positivity_production(
-        ε,
-        h,
-        green,
-        total,
-        candidate;
-        workspace,
-    ) == result.r_PSD
-    @test QCLNEGF._causality_residual_production(
-        ε,
-        h,
-        green,
-        total,
-        candidate;
-        workspace,
-    ) == result.r_caus
 end
 
 end # independent suite

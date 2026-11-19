@@ -65,7 +65,5 @@ Start with the [model](docs/src/theory/01_model.md),
 are in Russian. Build the browsable documentation with `deno task docs`.
 
 [QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl) consumes this API.
-[qcl-negf-research](https://github.com/Afonenko-QCL-NEGF/qcl-negf-research) owns study definitions;
-[qcl-negf-aiida](https://github.com/Afonenko-QCL-NEGF/qcl-negf-aiida) and Slurm schedule them.
 
 License: MIT.

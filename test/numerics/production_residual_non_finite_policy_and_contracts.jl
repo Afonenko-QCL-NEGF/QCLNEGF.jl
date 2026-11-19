@@ -24,6 +24,28 @@ include("../support/production_residuals.jl")
     @test isinf(total_result.r_PSD)
     @test isfinite(total_result.r_D)
     @test isfinite(total_result.r_caus)
+    production_witness = QCLNEGF._production_positivity_witness(workspace)
+    reference_witness = QCLNEGF._positivity_witness(:broadening, 1, 2, [NaN])
+    for witness in (production_witness, reference_witness)
+        @test (witness.matrix_kind, witness.energy_index, witness.momentum_index) ==
+              (:broadening, 1, 2)
+        @test isequal(
+            (
+                witness.minimum_eigenvalue,
+                witness.block_norm,
+                witness.ratio,
+                witness.absolute_defect,
+                witness.relative_defect,
+            ),
+            (NaN, Inf, Inf, NaN, NaN),
+        )
+        @test (
+            witness.floor,
+            witness.backward_error,
+            witness.hermiticity_defect,
+            witness.construction_scale,
+        ) == (1e-14, 1e-14, 0.0, 1.0)
+    end
 
     bad_retarded = SelfEnergyFamily(copy(total.Σᴿ), copy(total.Σˡ), copy(total.Σᵍ))
     bad_retarded.Σᴿ[4, 3, 2, 1] = NaN + 0im

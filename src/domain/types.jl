@@ -506,7 +506,7 @@ end
 All quadrature nodes, weights, and the trusted-energy mask in dimensionless
 variables.
 
-This is an internal unchecked array representation, exposed for compatibility.
+This is an internal unchecked array representation.
 Use the grid builder to construct axes and quadrature together; direct assembly
 does not certify correspondence to a `NumericalParameters` value.
 

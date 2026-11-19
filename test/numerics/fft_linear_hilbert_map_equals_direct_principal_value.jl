@@ -22,7 +22,7 @@ include("../support/production_backend.jl")
     ΣRdirect, Γdirect = retarded_self_energy(
         Σˡ,
         Σᵍ,
-        ModelGrids(
+        QCLNEGF.QCLDomain.ModelGrids(
             Float64[],
             Float64[],
             ε,
@@ -38,7 +38,7 @@ include("../support/production_backend.jl")
     ΣRfft, Γfft = retarded_self_energy_fft(
         Σˡ,
         Σᵍ,
-        ModelGrids(
+        QCLNEGF.QCLDomain.ModelGrids(
             Float64[],
             Float64[],
             ε,

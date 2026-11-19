@@ -22,9 +22,8 @@ Thread width and algorithm options are explicit numerical inputs. Resource disco
 and process admission are Runner responsibilities.
 
 YAML, HDF5, checkpoints, result directories, reports and CairoMakie integration are
-owned by Runner. AiiDA owns durable distributed workflow state; Slurm owns CPU and
-memory allocation. The mathematical acceptance criteria are independent of those
-execution choices.
+owned by Runner. The mathematical acceptance criteria apply independently of
+how an execution allocates CPU and memory.
 
 See [operator contracts](@ref physics-operators), [traceability](@ref traceability),
 and [convergence policy](@ref convergence-policy).

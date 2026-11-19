@@ -48,22 +48,8 @@ struct _PositivityWitness
     construction_scale::Float64
 end
 
-# Legacy witness readers still accept the seven original fields.
-_PositivityWitness(kind, e, m, minimum_value, block_norm, floor, ratio) =
-    _PositivityWitness(
-        kind,
-        e,
-        m,
-        minimum_value,
-        block_norm,
-        floor,
-        ratio,
-        max(0.0, -minimum_value),
-        max(0.0, -minimum_value)/max(block_norm, floatmin(Float64)),
-        floor,
-        0.0,
-        1.0,
-    )
+_nonfinite_positivity_witness(kind, e, m, floor) =
+    _PositivityWitness(kind, e, m, NaN, Inf, floor, Inf, NaN, NaN, floor, 0.0, 1.0)
 _empty_positivity_witness() =
     _PositivityWitness(:none, 0, 0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
 
@@ -77,7 +63,7 @@ function _positivity_witness(
     construction_error = 0.0,
     hermiticity_defect = 0.0,
 )
-    all(isfinite, values) || return _PositivityWitness(kind, e, m, NaN, Inf, floor, Inf)
+    all(isfinite, values) || return _nonfinite_positivity_witness(kind, e, m, floor)
     minimum_eigenvalue = minimum(values)
     block_norm = maximum(abs, values)
     absolute = max(0.0, -minimum_eigenvalue)

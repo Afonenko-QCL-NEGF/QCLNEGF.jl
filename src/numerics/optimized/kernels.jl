@@ -49,34 +49,6 @@ struct KernelInterpolationDiagnostic
     angular_quadrature_relative_error::Union{Nothing,Float64}
 end
 
-# Older constructors only measured table/algebra residuals. In particular a
-# zero interpolation residual never certifies angular continuum convergence.
-KernelInterpolationDiagnostic(
-    mechanism,
-    construction,
-    lookup_nodes,
-    direct_q_evaluations,
-    global_residual,
-    pointwise_residual,
-    angular_residual,
-    node_history,
-    residual_history,
-    accepted,
-) = KernelInterpolationDiagnostic(
-    mechanism,
-    construction,
-    lookup_nodes,
-    direct_q_evaluations,
-    global_residual,
-    pointwise_residual,
-    angular_residual,
-    node_history,
-    residual_history,
-    accepted,
-    false,
-    nothing,
-)
-
 """
 Diagnostics returned together with a production [`KernelSet`](@ref).
 
@@ -435,6 +407,8 @@ function _tabulated_angular_kernel(
         node_history,
         residual_history,
         accepted,
+        false,
+        nothing,
     )
     if !accepted && options.strict
         throw(
@@ -521,6 +495,8 @@ function _exact_kernel_diagnostic(mechanism::Symbol, construction::Symbol)
         Int[],
         Float64[],
         true,
+        false,
+        nothing,
     )
 end
 

@@ -19,7 +19,7 @@ function cache_fixture()
     weights = vcat(diff(energy)[1]/2, (energy[3:end] - energy[1:end-2])/2,
                    diff(energy)[end]/2)
     g = uniform.grids
-    grids = ModelGrids(g.x, g.wˣ, energy, weights, trues(5), g.κ, g.wᵏ,
+    grids = QCLNEGF.QCLDomain.ModelGrids(g.x, g.wˣ, energy, weights, trues(5), g.κ, g.wᵏ,
                        g.qᶻ, g.wᑫᶻ, g.φ)
     sp = QCLNEGF._scaled_physics(uniform.physical, uniform.scales)
     shifts = map(δ -> build_shift_plan(energy, δ),

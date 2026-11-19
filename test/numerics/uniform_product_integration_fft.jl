@@ -119,7 +119,7 @@ function nonuniform_fixture(problem)
     weights = vcat((energy[2]-energy[1])/2, (energy[3:end]-energy[1:end-2])/2,
                    (energy[end]-energy[end-1])/2)
     g = problem.grids
-    grids = ModelGrids(g.x, g.wˣ, energy, weights, g.trusted_energy,
+    grids = QCLNEGF.QCLDomain.ModelGrids(g.x, g.wˣ, energy, weights, g.trusted_energy,
                        g.κ, g.wᵏ, g.qᶻ, g.wᑫᶻ, g.φ)
     sp = QCLNEGF._scaled_physics(problem.physical, problem.scales)
     shifts = map(δ -> build_shift_plan(energy, δ),

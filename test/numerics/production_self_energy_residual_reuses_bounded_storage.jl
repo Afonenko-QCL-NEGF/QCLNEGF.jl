@@ -9,7 +9,6 @@ include("../support/production_residuals.jl")
     result = production_selfenergy_residual(old, candidate; workspace)
     reference = QCLNEGF._selfenergy_residual(old, candidate)
     @test result ≈ reference rtol=2e-14 atol=2e-14
-    @test QCLNEGF._selfenergy_residual_production(old, candidate; workspace) == result
     @test production_selfenergy_residual(candidate, candidate; workspace) == 0.0
     @test production_selfenergy_residual(old, candidate; workspace) == result
 

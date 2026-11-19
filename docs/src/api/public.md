@@ -11,7 +11,6 @@ FundamentalConstants
 Layer
 PhysicalParameters
 NumericalParameters
-ModelGrids
 MaterialProfiles
 BasisData
 KernelSet

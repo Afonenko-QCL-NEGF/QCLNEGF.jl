@@ -696,7 +696,7 @@ function production_residual_suite(
                             )
                         if !isfinite(defect) && isfinite(ws.positivity_witness[c].ratio)
                             ws.positivity_witness[c] =
-                                _PositivityWitness(kind, e, m, NaN, Inf, 1e-14, Inf)
+                                _nonfinite_positivity_witness(kind, e, m, 1e-14)
                         end
                         rPSD = max(rPSD, defect)
                     end
@@ -865,25 +865,3 @@ function production_selfenergy_residual(
     end
     return result
 end
-
-# Internal aliases keep the naming parallel to validation.jl and make the
-# production call site explicit without adding private helpers to the public
-# API documentation inventory.  The five projections deliberately share the
-# same full signature: normal production code evaluates the suite once and
-# destructures it, rather than traversing the arrays five times.
-_production_residual_workspace(args...; kwargs...) =
-    ProductionResidualWorkspace(args...; kwargs...)
-_production_residual_suite(args...; kwargs...) =
-    production_residual_suite(args...; kwargs...)
-_dyson_residual_production(args...; kwargs...) =
-    production_residual_suite(args...; kwargs...).r_D
-_spectral_residual_production(args...; kwargs...) =
-    production_residual_suite(args...; kwargs...).r_A
-_keldysh_residual_production(args...; kwargs...) =
-    production_residual_suite(args...; kwargs...).r_K
-_green_positivity_production(args...; kwargs...) =
-    production_residual_suite(args...; kwargs...).r_PSD
-_causality_residual_production(args...; kwargs...) =
-    production_residual_suite(args...; kwargs...).r_caus
-_selfenergy_residual_production(args...; kwargs...) =
-    production_selfenergy_residual(args...; kwargs...)
