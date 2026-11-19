@@ -62,6 +62,8 @@ include("../support/common.jl")
         WminusEp,
         WplusLO,
         WminusLO,
+        :nodal_linear,
+        PhysicalModelOptions(),
     )
     shape = (n.N_E, n.N_k, n.N_b, n.N_b)
     Gless = zeros(ComplexF64, shape)

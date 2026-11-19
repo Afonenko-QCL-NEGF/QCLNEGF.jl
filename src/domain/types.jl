@@ -673,10 +673,10 @@ end
 """
 Complete dimensionless problem after Unitful validation and scaling.
 
-This positional container is an internal unchecked assembled representation,
-retained in the facade for existing numerical extensions. Public configured
-builders assemble matching axes, units and basis. A hand-built container must
-pass static validation before it is treated as a physical problem.
+This positional container holds unchecked assembled data for numerical
+extensions. Public configured builders assemble matching axes, units and basis.
+A hand-built container must pass static validation before it is treated as a
+physical problem.
 
 Its construction order is given in [the implementation plan](@ref implementation-plan),
 with fields and dimensions in [the input contract](@ref full-input-contract).
@@ -698,72 +698,6 @@ struct NEGFProblem{S<:AbstractMatrix{Float64}}
     # algorithm used to apply them (dense multiplication or a sparse plan).
     energy_shift_discretization::Symbol
     models::PhysicalModelOptions
-end
-
-function NEGFProblem(
-    physical,
-    numerical,
-    scattering,
-    scales,
-    grids,
-    profiles,
-    basis,
-    kernels,
-    W₊ᴱᵖ,
-    W₋ᴱᵖ,
-    W₊ᴸᴼ,
-    W₋ᴸᴼ,
-    discretization::Symbol,
-)
-    return NEGFProblem(
-        physical,
-        numerical,
-        scattering,
-        scales,
-        grids,
-        profiles,
-        basis,
-        kernels,
-        W₊ᴱᵖ,
-        W₋ᴱᵖ,
-        W₊ᴸᴼ,
-        W₋ᴸᴼ,
-        discretization,
-        PhysicalModelOptions(),
-    )
-end
-
-# The direct/reference construction contract predates conservative remapping.
-# Existing callers supplying the four nodal matrices retain that meaning.
-function NEGFProblem(
-    physical,
-    numerical,
-    scattering,
-    scales,
-    grids,
-    profiles,
-    basis,
-    kernels,
-    W₊ᴱᵖ,
-    W₋ᴱᵖ,
-    W₊ᴸᴼ,
-    W₋ᴸᴼ,
-)
-    return NEGFProblem(
-        physical,
-        numerical,
-        scattering,
-        scales,
-        grids,
-        profiles,
-        basis,
-        kernels,
-        W₊ᴱᵖ,
-        W₋ᴱᵖ,
-        W₊ᴸᴼ,
-        W₋ᴸᴼ,
-        :nodal_linear,
-    )
 end
 
 """

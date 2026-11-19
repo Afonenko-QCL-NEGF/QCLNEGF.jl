@@ -801,6 +801,14 @@ function build_problem_production(;
     W₋ᴱᵖ = shift_builder(grids.ε, -sp.Eᵖ)
     W₊ᴸᴼ = shift_builder(grids.ε, +sp.ħωᴸᴼ)
     W₋ᴸᴼ = shift_builder(grids.ε, -sp.ħωᴸᴼ)
+    augmented_kernels = add_sppa_kernel(
+        physical,
+        scales,
+        grids,
+        basis,
+        kernels,
+        physical_models.electron_electron,
+    )
     problem = NEGFProblem(
         physical,
         numerical,
@@ -809,34 +817,12 @@ function build_problem_production(;
         grids,
         profiles,
         basis,
-        kernels,
+        augmented_kernels,
         W₊ᴱᵖ,
         W₋ᴱᵖ,
         W₊ᴸᴼ,
         W₋ᴸᴼ,
-    )
-    augmented_kernels = add_sppa_kernel(
-        problem.physical,
-        problem.scales,
-        problem.grids,
-        problem.basis,
-        problem.kernels,
-        physical_models.electron_electron,
-    )
-    problem = NEGFProblem(
-        problem.physical,
-        problem.numerical,
-        problem.scattering,
-        problem.scales,
-        problem.grids,
-        problem.profiles,
-        problem.basis,
-        augmented_kernels,
-        problem.W₊ᴱᵖ,
-        problem.W₋ᴱᵖ,
-        problem.W₊ᴸᴼ,
-        problem.W₋ᴸᴼ,
-        problem.energy_shift_discretization,
+        :nodal_linear,
         physical_models,
     )
 
