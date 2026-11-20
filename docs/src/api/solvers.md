@@ -31,6 +31,7 @@ scba_approximate_acceptance
 estimate_production_memory
 build_production_cache
 solve_scba_production
+fresh_scba_map
 solve_production
 optimization_catalog
 algorithm_impact
@@ -45,4 +46,15 @@ solution_scientific_assessment
 bare_bubble_optical_response
 peak_gain
 current_density_A_per_cm2
+```
+
+## Связанные периоды
+
+```@docs
+LinkedTransport
+LinkedTransport.LinkedProblem
+LinkedTransport.LocalCollisionKernels
+LinkedTransport.linked_fresh_map
+LinkedTransport.project_linked
+LinkedTransport.project_linked_economical
 ```

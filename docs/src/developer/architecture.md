@@ -1,7 +1,7 @@
 # [Архитектура](@id developer-architecture)
 
 QCLNEGF отвечает за научную модель и расчёты в памяти. От него зависит
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/runner).
 
 ## [Разделы исходного кода](@id developer-source-map)
 

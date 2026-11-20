@@ -196,6 +196,35 @@ end
         ),
     )
     @test saved[] !== nothing
+    quiet = QCLNEGF.with_production_options(
+        production; event_sink = nothing, phase_timing = false, phase_request = nothing,
+    )
+    silent = solve_scba_production(fixture.problem, fixture.Uᴴ; options, production_options = quiet)
+    @test silent.status === uninterrupted.status
+    @test silent.green.Gˡ == uninterrupted.green.Gˡ
+    @test last(silent.history).raw_charge == last(uninterrupted.history).raw_charge
+    @test bond_current(fixture.problem, silent.green.Gˡ) ==
+          bond_current(fixture.problem, uninterrupted.green.Gˡ)
+    candidate = fresh_scba_map(fixture.problem, fixture.Uᴴ, silent; production_options = quiet)
+    audited = fresh_fixed_point_metrics(fixture.problem, silent, fixture.Uᴴ, candidate)
+    @test audited[:r_K] ≈ last(silent.history).r_K rtol=2e-13
+    @test audited[:r_Σ] ≈ last(silent.history).r_Σ rtol=2e-13
+    @test audited[:raw_charge] ≈ last(silent.history).raw_charge rtol=2e-13
+    refused_events = N.SolverEvent[]
+    refused = QCLNEGF.with_production_options(
+        production;
+        event_sink = event -> (push!(refused_events, event); true),
+        phase_request = request -> request.name === :candidate_embedding ?
+            error("embedding resource refused") : 1,
+    )
+    @test_throws ErrorException solve_scba_production(
+        fixture.problem, fixture.Uᴴ; options, production_options = refused,
+    )
+    scattering_phase = filter(e -> e.label == "candidate_scattering", refused_events)
+    @test [(e.action, e.status) for e in scattering_phase] ==
+          [(:phase_begin, :running), (:phase_end, :completed)]
+    @test !any(e -> e.label == "candidate_embedding", refused_events)
+
     @test all(request.elastic for request in requests if request.name === :residuals)
     widths = [
         only(m.value for m in event.metrics if m.name===:task_width) for

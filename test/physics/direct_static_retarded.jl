@@ -219,7 +219,7 @@ end
     end
 end
 
-@testset "Variant identity, validation and legacy Hilbert restart" begin
+@testset "Variant identity and exact restart contract" begin
     options = SolverOptions()
     defaults = AlgorithmOptions()
     direct = AlgorithmOptions(elastic_retarded=:direct_green,kernel_build=:direct)
@@ -250,7 +250,7 @@ end
     old = BN._solver_restart_contract(options,defaults)
     delete!(old["algorithms"],"elastic_retarded")
     original = deepcopy(old)
-    @test BN._check_exact_restart_contract(old,options,defaults) === nothing
+    @test_throws ArgumentError BN._check_exact_restart_contract(old,options,defaults)
     @test old == original
     @test_throws ArgumentError BN._check_exact_restart_contract(old,options,direct)
     @test BN._check_exact_restart_contract(BN._solver_restart_contract(options,direct),options,direct) === nothing

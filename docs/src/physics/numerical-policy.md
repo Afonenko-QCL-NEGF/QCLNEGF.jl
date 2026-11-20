@@ -87,7 +87,7 @@ A, −iG< и iG> проверяют по собственным значения
 число использованных итераций. Лимит итераций ограничивает вычислительный бюджет,
 а физическую сходимость определяют по критериям приёмки. Файлы контрольных точек
 и сроки задания обслуживает
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/results.md).
 
 См. [физические модели](models.md) и определения исследований в
 [qcl-negf-research](https://github.com/Afonenko-QCL-NEGF/qcl-negf-research).

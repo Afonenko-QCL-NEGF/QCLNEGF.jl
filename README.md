@@ -11,7 +11,7 @@
 Библиотека решает явно заданную задачу в памяти. Исследования на основе YAML,
 сохранение результатов и контрольных точек, отчёты, графики и командный интерфейс
 предоставляет
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/runner).
 
 ## Использование
 
@@ -56,8 +56,8 @@ deno task docs
 Окружение разработки задают проверенный манифест зависимостей и точная версия
 Julia. Численные тесты проверяют границы массивов, независимые аналитические
 примеры, законы сохранения и согласие прямых и оптимизированных операторов.
-Проверки CI выполняются через GitHub Actions на локальных исполнителях проекта
-[qcl-negf-platform](https://github.com/Afonenko-QCL-NEGF/qcl-negf-platform).
+Руководство по настройке лаборатории находится в
+[qcl-negf/lab](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/lab).
 
 Документацию для браузера собирает `deno task docs`. Начните с описания
 [физической модели](docs/src/theory/01_model.md),

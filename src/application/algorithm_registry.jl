@@ -297,7 +297,7 @@ end
 Возвращает плоский словарь для хранения происхождения данных в YAML/HDF5
 и отчётов по сравнению. Значения представлены явными строками.
 
-См. [конфигурации запуска YAML](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/configuration.md) и
+См. [конфигурации запуска YAML](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/configuration.md) и
 [выбор метода оптимизации](@ref optimization-decision-tree).
 """
 function algorithm_manifest(options::AlgorithmOptions)

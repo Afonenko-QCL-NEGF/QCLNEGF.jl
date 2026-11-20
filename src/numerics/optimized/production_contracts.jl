@@ -84,6 +84,8 @@ const CHECKPOINT_STATE_AND_MARKERS = :state_and_markers
 Julia, положительное значение ограничивает число логических исполнителей.
 `residual_chunk` задаёт размер блока независимых задач по невязкам,
 а `phase_timing=true` включает хронометраж этапов каждой итерации.
+`capture_psd_witness=false` сохраняет скалярные измерения положительности
+и отключает сбор матриц и собственного вектора для свидетеля.
 
 `checkpoint_request` задаёт решение о сохранении при наличии приёмника.
 Функция получает `(; stage, iteration, outer_iteration)` и возвращает один
@@ -97,7 +99,7 @@ Julia, положительное значение ограничивает чи
 
 См. [оптимизированный решатель](@ref theory-production),
 [численную стоимость и память](@ref theory-cost)
-и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/results.md).
 """
 Base.@kwdef struct ProductionOptions
     # The application resource planner replaces this sentinel before every
@@ -120,7 +122,10 @@ Base.@kwdef struct ProductionOptions
     checkpoint_request::Union{Nothing,Function} = nothing
     phase_request::Union{Nothing,Function} = nothing
     outer_iteration::Int = 0
+    capture_psd_witness::Bool = true
 end
+
+ProductionOptions(args::Vararg{Any,18}) = ProductionOptions(args..., true)
 
 """
 Вернуть копию `options` с явно указанными изменениями полей.
@@ -147,6 +152,7 @@ function with_production_options(
     checkpoint_request = options.checkpoint_request,
     phase_request = options.phase_request,
     outer_iteration = options.outer_iteration,
+    capture_psd_witness = options.capture_psd_witness,
 )
     return ProductionOptions(;
         memory_budget_bytes,
@@ -167,6 +173,7 @@ function with_production_options(
         checkpoint_request,
         phase_request,
         outer_iteration,
+        capture_psd_witness,
     )
 end
 
@@ -409,7 +416,7 @@ end
 всех точек одновременно в памяти не хранятся.
 
 См. [серии расчётов и возобновление](@ref theory-production)
-и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/results.md).
 """
 struct ProductionSweepResult
     records::Vector{ProductionSweepRecord}

@@ -41,7 +41,7 @@ FTIR-спектр лазера, контактное падение напряж
 действуют интервалы, заданные в `ProductionOptions`.
 
 Планирование серий, выбор ресурса и сохранение результата документированы в
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/tree/main/docs/src).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/runner/docs/src).
 
 ## Две реализации без изменения учебного эталона
 

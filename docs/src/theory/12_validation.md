@@ -140,7 +140,7 @@ r_{sum}=\max_m\frac{\|M(k_m)-I\|_F}{\sqrt{N_b}}.
 при решённом нелинейном уравнении на выбранной сетке. Совпадение прямой и
 оптимизированной реализаций подтверждает их согласие на этой дискретизации.
 Разрешение спектральных пиков требует независимого уточнения сетки. Для проверки
-вычисления и записи диагностик используйте малый [пример Runner](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/examples/config/stationary-smoke.yaml).
+вычисления и записи диагностик используйте малый [пример Runner](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/examples/config/stationary-smoke.yaml).
 
 Для локализации причины сохраняют конечный потенциал Хартри и независимо
 сравнивают две последовательности внутренних решений: сгущение узлов при
@@ -242,5 +242,5 @@ r_{PSD}(E_e,k_m;X)=
 визуального контроля — в [атласе](@ref physical-atlas).
 
 Вывод описанных диагностик в файлы и графики предоставляет
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl);
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/runner);
 ядро возвращает состояния и метрики в памяти.

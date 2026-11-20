@@ -642,7 +642,7 @@ include("numerics/optimized/production_contracts.jl")
 include("numerics/optimized/production_cache.jl")
 include("numerics/optimized/production_operators.jl")
 include("numerics/optimized/production_mixing.jl")
-include("numerics/optimized/production_telemetry.jl")
+include("application/production_telemetry.jl")
 include("numerics/optimized/physics_markers.jl")
 include("numerics/optimized/production_state.jl")
 include("numerics/optimized/production_iteration.jl")
@@ -700,6 +700,7 @@ export AbstractProductionKernel,
     expand_energy_window,
     fft_hilbert_transform,
     fresh_fixed_point_metrics,
+    fresh_scba_map,
     lorentzian_window_weight,
     measured_representation_coverage,
     production_fft_hilbert_transform,
@@ -930,6 +931,7 @@ import .QCLNumerics:
     expand_energy_window,
     fft_hilbert_transform,
     fresh_fixed_point_metrics,
+    fresh_scba_map,
     lorentzian_window_weight,
     measured_representation_coverage,
     production_fft_hilbert_transform,
@@ -1089,6 +1091,7 @@ export AbstractProductionKernel,
     expand_energy_window,
     fft_hilbert_transform,
     fresh_fixed_point_metrics,
+    fresh_scba_map,
     greater_green,
     impurity_kernel,
     inner_working_policy,
@@ -1162,4 +1165,5 @@ export AbstractProductionKernel,
     validate_solution
 
 include("composition/precompile_workload.jl")
+include("numerics/linked/LinkedTransport.jl")
 end # module QCLNEGF

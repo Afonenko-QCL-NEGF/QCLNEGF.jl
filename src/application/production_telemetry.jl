@@ -1,105 +1,78 @@
 function _emit_scba_progress(
     options::ProductionOptions,
-    iteration::Int,
-    total::Int;
-    rD::Real,
-    rA::Real,
-    rK::Real,
-    rΣ::Real,
-    rλ::Real,
-    rPSD::Real,
-    rcaus::Real,
-    rround::Real,
-    rJchange::Real,
-    rpopulation::Real,
-    current::Real,
-    assessment::ConvergenceAssessment,
-    convergence_streak::Integer,
-    diagnostic::ConvergenceAssessment,
-    diagnostic_quality_streak::Integer,
+    row::SCBAIteration,
+    total::Int,
+    assessments,
+    timings,
     quality::Symbol,
-    dyson_seconds::Real,
-    candidate_seconds::Real,
-    candidate_scattering_seconds::Real = NaN,
-    candidate_embedding_seconds::Real = NaN,
-    candidate_assembly_seconds::Real = NaN,
-    physics_markers_seconds::Real = 0.0,
-    residual_seconds::Real,
-    observables_seconds::Real,
-    mixing_seconds::Real,
-    total_seconds::Real,
-    fixed_point::ConvergenceAssessment,
-    positivity_witness::_PositivityWitness,
 )
-    metrics = SolverMetric[
-        SolverMetric(:J, _solver_current_density(current), "A/cm^2"),
-        SolverMetric(:r_D, rD),
-        SolverMetric(:r_A, rA),
-        SolverMetric(:r_K, rK),
-        SolverMetric(:r_Σ, rΣ),
-        SolverMetric(:r_λ, rλ),
-        SolverMetric(:r_PSD, rPSD),
-        SolverMetric(:fixed_point_limiting_gate, String(fixed_point.limiting_metric)),
-        SolverMetric(:fixed_point_limiting_ratio, fixed_point.limiting_ratio),
-        SolverMetric(:fixed_point_passed, fixed_point.passed),
-        SolverMetric(:psd_matrix_kind, String(positivity_witness.matrix_kind)),
-        SolverMetric(:psd_energy_index, positivity_witness.energy_index),
-        SolverMetric(:psd_momentum_index, positivity_witness.momentum_index),
-        SolverMetric(:psd_minimum_eigenvalue_scaled, positivity_witness.minimum_eigenvalue),
-        SolverMetric(:psd_block_norm_scaled, positivity_witness.block_norm),
-        SolverMetric(:psd_floor_scaled, positivity_witness.floor),
-        SolverMetric(:psd_metric_version, PSD_METRIC_VERSION),
-        SolverMetric(:psd_absolute_defect, positivity_witness.absolute_defect),
-        SolverMetric(:psd_relative_defect, positivity_witness.relative_defect),
-        SolverMetric(:psd_backward_error, positivity_witness.backward_error),
-        SolverMetric(:psd_hermiticity_defect, positivity_witness.hermiticity_defect),
-        SolverMetric(:r_caus, rcaus),
-        SolverMetric(:r_roundoff, rround),
-        SolverMetric(:r_Jchange, rJchange),
-        SolverMetric(:r_population, rpopulation),
-        SolverMetric(:limiting_gate, String(assessment.limiting_metric)),
-        SolverMetric(:limiting_ratio, assessment.limiting_ratio),
-        SolverMetric(:failed_gate_count, length(assessment.failed_metrics)),
-        SolverMetric(:convergence_streak, convergence_streak),
-        SolverMetric(:diagnostic_quality, String(quality)),
-        SolverMetric(:outer_iteration, options.outer_iteration),
-        SolverMetric(
-            :diagnostic_quality_enabled,
-            diagnostic.eligible ||
-                diagnostic.limiting_metric !== :diagnostic_quality_disabled,
-        ),
-        SolverMetric(:diagnostic_quality_streak, diagnostic_quality_streak),
-        SolverMetric(:diagnostic_limiting_gate, String(diagnostic.limiting_metric)),
-        SolverMetric(:diagnostic_limiting_ratio, diagnostic.limiting_ratio),
-        SolverMetric(:t_total, total_seconds, "s"),
-    ]
-    if options.phase_timing
-        append!(
-            metrics,
-            SolverMetric[
-                SolverMetric(:t_candidate, candidate_seconds, "s"),
-                SolverMetric(:t_candidate_scattering, candidate_scattering_seconds, "s"),
-                SolverMetric(:t_candidate_embedding, candidate_embedding_seconds, "s"),
-                SolverMetric(:t_candidate_assembly, candidate_assembly_seconds, "s"),
-                SolverMetric(:t_physics_markers, physics_markers_seconds, "s"),
-                SolverMetric(:t_dyson, dyson_seconds, "s"),
-                SolverMetric(:t_mixing, mixing_seconds, "s"),
-                SolverMetric(:t_observables, observables_seconds, "s"),
-                SolverMetric(:t_residuals, residual_seconds, "s"),
-            ],
-        )
+    iteration = row.ν
+    (; assessment, convergence_streak, diagnostic, diagnostic_quality_streak,
+       fixed_point, positivity_witness) = assessments
+    if options.event_sink !== nothing
+        metrics = SolverMetric[
+            SolverMetric(:J, _solver_current_density(row.J), "A/cm^2"),
+            SolverMetric(:r_D, row.r_D),
+            SolverMetric(:r_A, row.r_A),
+            SolverMetric(:r_K, row.r_K),
+            SolverMetric(:r_Σ, row.r_Σ),
+            SolverMetric(:r_λ, row.r_λ),
+            SolverMetric(:r_PSD, row.r_PSD),
+            SolverMetric(:fixed_point_limiting_gate, String(fixed_point.limiting_metric)),
+            SolverMetric(:fixed_point_limiting_ratio, fixed_point.limiting_ratio),
+            SolverMetric(:fixed_point_passed, fixed_point.passed),
+            SolverMetric(:psd_matrix_kind, String(positivity_witness.matrix_kind)),
+            SolverMetric(:psd_energy_index, positivity_witness.energy_index),
+            SolverMetric(:psd_momentum_index, positivity_witness.momentum_index),
+            SolverMetric(:psd_minimum_eigenvalue_scaled, positivity_witness.minimum_eigenvalue),
+            SolverMetric(:psd_block_norm_scaled, positivity_witness.block_norm),
+            SolverMetric(:psd_floor_scaled, positivity_witness.floor),
+            SolverMetric(:psd_metric_version, PSD_METRIC_VERSION),
+            SolverMetric(:psd_absolute_defect, positivity_witness.absolute_defect),
+            SolverMetric(:psd_relative_defect, positivity_witness.relative_defect),
+            SolverMetric(:psd_backward_error, positivity_witness.backward_error),
+            SolverMetric(:psd_hermiticity_defect, positivity_witness.hermiticity_defect),
+            SolverMetric(:r_caus, row.r_caus),
+            SolverMetric(:r_roundoff, row.r_roundoff),
+            SolverMetric(:r_Jchange, row.r_Jchange),
+            SolverMetric(:r_population, row.r_population),
+            SolverMetric(:limiting_gate, String(assessment.limiting_metric)),
+            SolverMetric(:limiting_ratio, assessment.limiting_ratio),
+            SolverMetric(:failed_gate_count, length(assessment.failed_metrics)),
+            SolverMetric(:convergence_streak, convergence_streak),
+            SolverMetric(:diagnostic_quality, String(quality)),
+            SolverMetric(:outer_iteration, options.outer_iteration),
+            SolverMetric(
+                :diagnostic_quality_enabled,
+                diagnostic.eligible ||
+                    diagnostic.limiting_metric !== :diagnostic_quality_disabled,
+            ),
+            SolverMetric(:diagnostic_quality_streak, diagnostic_quality_streak),
+            SolverMetric(:diagnostic_limiting_gate, String(diagnostic.limiting_metric)),
+            SolverMetric(:diagnostic_limiting_ratio, diagnostic.limiting_ratio),
+            SolverMetric(:t_total, timings.total, "s"),
+        ]
+        if options.phase_timing
+            append!(
+                metrics,
+                SolverMetric[
+                    SolverMetric(:t_candidate, timings.candidate, "s"),
+                    SolverMetric(:t_candidate_scattering, timings.candidate_scattering, "s"),
+                    SolverMetric(:t_candidate_embedding, timings.candidate_embedding, "s"),
+                    SolverMetric(:t_candidate_assembly, timings.candidate_assembly, "s"),
+                    SolverMetric(:t_physics_markers, timings.physics_markers, "s"),
+                    SolverMetric(:t_dyson, timings.dyson, "s"),
+                    SolverMetric(:t_mixing, timings.mixing, "s"),
+                    SolverMetric(:t_observables, timings.observables, "s"),
+                    SolverMetric(:t_residuals, timings.residual, "s"),
+                ],
+            )
+        end
+        _update_solver_stage(options, :scba; iteration, total, metrics) && return nothing
     end
-    emitted = _update_solver_stage(options, :scba; iteration, total, metrics)
-    if !emitted &&
-       options.progress_every_scba > 0 &&
-       (
-           iteration == 1 ||
-           iteration % options.progress_every_scba == 0 ||
-           iteration == total
-       )
-        @info "SCBA progress" iteration total rD rK rΣ rλ current_A_per_cm2=_solver_current_density(
-            current,
-        ) total_seconds
+    every = options.progress_every_scba
+    if every > 0 && (iteration == 1 || iteration % every == 0 || iteration == total)
+        @info "SCBA progress" iteration total rD=row.r_D rK=row.r_K rΣ=row.r_Σ rλ=row.r_λ current_A_per_cm2=_solver_current_density(row.J) total_seconds=timings.total
     end
     return nothing
 end
@@ -148,7 +121,7 @@ function _production_phase_begin(
     end
     phase_options = with_production_options(options; worker_count = task_width)
     recording = options.phase_timing && options.event_sink !== nothing
-    sample = _production_counter_sample()
+    sample = recording ? _production_counter_sample() : nothing
     recording || return (;
         name,
         iteration,

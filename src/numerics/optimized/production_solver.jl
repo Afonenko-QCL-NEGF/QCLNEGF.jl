@@ -54,6 +54,9 @@ function solve_scba_production(
     field_bytes = sizeof(ComplexF64)*prod(shape)
     history =
         resume_iterations && initial !== nothing ? copy(initial.history) : SCBAIteration[]
+    if !production_options.capture_psd_witness
+        map!(_strip_scba_witness_payload, history, history)
+    end
     completed_iterations = isempty(history) ? 0 : last(history).ν
     if !isempty(history)
         for previous in history
@@ -466,58 +469,21 @@ function solve_scba_production(
         end
         _production_phase_end(production_options, phase)
         dyson_seconds = (time_ns() - dyson_started) * 1e-9
-        phase = _production_phase_begin(
-            production_options,
-            :candidate_scattering,
-            ν;
-            task_width = _production_worker_count(
-                production_options,
-                cld(n.N_E, production_options.energy_chunk),
-            ),
-            work_units = n.N_E*n.N_k*n.N_b^2,
-            memory_burst_bytes = (3length(problem.kernels.enabled)+6)*field_bytes,
-        )
-        candidate_started = time_ns()
         local candidate_sc, candidate_embedding, candidate_plus, candidate_minus, rround
-        local candidate_scattering_seconds, candidate_embedding_seconds
+        local candidate_started, candidate_scattering_seconds, candidate_embedding_seconds
         try
-            candidate_sc, rround = _scattering_candidate_production(
-                problem,
-                green,
-                cache,
-                phase.options;
-                return_roundoff = true,
+            candidate = _production_scba_candidate(
+                problem, h, green, cache, cavity_plan, production_options, ν, field_bytes,
             )
-            _production_phase_end(production_options, phase)
-            candidate_scattering_seconds = (time_ns()-candidate_started)*1e-9
-            phase = _production_phase_begin(
-                production_options,
-                :candidate_embedding,
-                ν;
-                task_width = _production_worker_count(production_options, n.N_E*n.N_k),
-                work_units = n.N_E*n.N_k,
-                memory_burst_bytes = 12field_bytes,
-                workspace_bytes = (
-                    8n.N_b^2*sizeof(ComplexF64)+64n.N_b*sizeof(ComplexF64)+(n.N_b+1)*sizeof(
-                        LinearAlgebra.BlasInt,
-                    )
-                )*_production_worker_count(production_options, n.N_E*n.N_k),
-            )
-            embedding_started = time_ns()
-            candidate_embedding, candidate_plus, candidate_minus =
-                _embedding_self_energy_selected(
-                    problem,
-                    green,
-                    cache,
-                    phase.options;
-                    scattering = candidate_sc,
-                    h,
-                    cavity_plan,
-                )
-            _production_phase_end(production_options, phase)
-            candidate_embedding_seconds = (time_ns()-embedding_started)*1e-9
+            candidate_sc = candidate.scattering
+            candidate_embedding = candidate.embedding
+            candidate_plus = candidate.plus
+            candidate_minus = candidate.minus
+            rround = candidate.rround
+            candidate_started = candidate.started
+            candidate_scattering_seconds = candidate.scattering_seconds
+            candidate_embedding_seconds = candidate.embedding_seconds
         catch error
-            _production_phase_end(production_options, phase; status = :failed)
             error isa DomainError || rethrow()
             _end_solver_stage(
                 production_options,
@@ -648,7 +614,8 @@ function solve_scba_production(
                     total,
                     scattering,
                     plus,
-                    minus,
+                    minus;
+                    capture_payload = production_options.capture_psd_witness,
                 ),
                 nothing,
             ),
@@ -760,39 +727,22 @@ function solve_scba_production(
             )
             iteration_callback(aligned)
         end
+        assessments = (; assessment, convergence_streak, diagnostic,
+                         diagnostic_quality_streak, fixed_point, positivity_witness)
+        timings = (; dyson = dyson_seconds, candidate = candidate_seconds,
+                    candidate_scattering = candidate_scattering_seconds,
+                    candidate_embedding = candidate_embedding_seconds,
+                    candidate_assembly = candidate_assembly_seconds,
+                    physics_markers = physics_markers_seconds,
+                    residual = residual_seconds, observables = observables_seconds)
         if decision.terminal
             _emit_scba_progress(
                 production_options,
-                ν,
-                options.max_scba;
-                rD,
-                rA,
-                rK,
-                rΣ,
-                rλ,
-                rPSD,
-                fixed_point,
-                positivity_witness,
-                rcaus,
-                rround,
-                rJchange,
-                rpopulation,
-                current = J,
-                assessment,
-                convergence_streak,
-                diagnostic,
-                diagnostic_quality_streak,
-                quality = decision.quality,
-                dyson_seconds,
-                candidate_seconds,
-                candidate_scattering_seconds,
-                candidate_embedding_seconds,
-                candidate_assembly_seconds,
-                physics_markers_seconds,
-                residual_seconds,
-                observables_seconds,
-                mixing_seconds = 0.0,
-                total_seconds = (time_ns()-iteration_started)*1e-9,
+                last(history),
+                options.max_scba,
+                assessments,
+                (; timings..., mixing = 0.0, total = (time_ns()-iteration_started)*1e-9),
+                decision.quality,
             )
             _end_solver_stage(
                 production_options,
@@ -885,36 +835,11 @@ function solve_scba_production(
         total_seconds = (time_ns() - iteration_started) * 1e-9
         _emit_scba_progress(
             production_options,
-            ν,
-            options.max_scba;
-            rD,
-            rA,
-            rK,
-            rΣ,
-            rλ,
-            rPSD,
-            fixed_point,
-            positivity_witness,
-            rcaus,
-            rround,
-            rJchange,
-            rpopulation,
-            current = J,
-            assessment,
-            convergence_streak,
-            diagnostic,
-            diagnostic_quality_streak,
+            last(history),
+            options.max_scba,
+            assessments,
+            (; timings..., mixing = mixing_seconds, total = total_seconds),
             quality,
-            dyson_seconds,
-            candidate_seconds,
-            candidate_scattering_seconds,
-            candidate_embedding_seconds,
-            candidate_assembly_seconds,
-            physics_markers_seconds,
-            residual_seconds,
-            observables_seconds,
-            mixing_seconds,
-            total_seconds,
         )
     end
     error("unreachable production SCBA loop exit")
@@ -932,7 +857,7 @@ end
 
 См. [замкнутый цикл Пуассона и SCBA](@ref theory-outer-loop),
 [оптимизированный решатель](@ref theory-production)
-и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+и [контракт сохранения состояния](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/results.md).
 """
 function _solve_production(
     problem::NEGFProblem;

@@ -79,7 +79,7 @@ end
 Преобразует плотность тока из единиц хранения решателя (А/м²) в единицы
 представления (А/см²) для отчётов, терминала, HTML и вывода в ходе расчёта.
 
-См. [наблюдение за расчётом](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+См. [наблюдение за расчётом](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/results.md).
 """
 function current_density_A_per_cm2(value_A_per_m2::Real)
     value = Float64(value_A_per_m2)

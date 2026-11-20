@@ -8,4 +8,4 @@ QCLNEGF 0.2.0 рассчитывает перенос методом нерав�
 
 Сохранение результатов, описание исследований, командный интерфейс и графики
 описаны в документации
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl).
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/runner).

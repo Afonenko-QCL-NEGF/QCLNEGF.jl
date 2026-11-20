@@ -1,3 +1,103 @@
+function _production_scba_candidate(
+    problem, h, green, cache, cavity_plan, production_options, ν, field_bytes,
+)
+    n = problem.numerical
+    phase = _production_phase_begin(
+        production_options,
+        :candidate_scattering,
+        ν;
+        task_width = _production_worker_count(
+            production_options,
+            cld(n.N_E, production_options.energy_chunk),
+        ),
+        work_units = n.N_E*n.N_k*n.N_b^2,
+        memory_burst_bytes = (3length(problem.kernels.enabled)+6)*field_bytes,
+    )
+    candidate_started = time_ns()
+    local candidate_sc, rround
+    try
+        candidate_sc, rround = _scattering_candidate_production(
+            problem, green, cache, phase.options; return_roundoff = true,
+        )
+    catch
+        _production_phase_end(production_options, phase; status = :failed)
+        rethrow()
+    end
+    _production_phase_end(production_options, phase)
+    candidate_scattering_seconds = (time_ns()-candidate_started)*1e-9
+
+    phase = _production_phase_begin(
+        production_options,
+        :candidate_embedding,
+        ν;
+        task_width = _production_worker_count(production_options, n.N_E*n.N_k),
+        work_units = n.N_E*n.N_k,
+        memory_burst_bytes = 12field_bytes,
+        workspace_bytes = (
+            8n.N_b^2*sizeof(ComplexF64)+64n.N_b*sizeof(ComplexF64)+(n.N_b+1)*sizeof(
+                LinearAlgebra.BlasInt,
+            )
+        )*_production_worker_count(production_options, n.N_E*n.N_k),
+    )
+    embedding_started = time_ns()
+    local candidate_embedding, candidate_plus, candidate_minus
+    try
+        candidate_embedding, candidate_plus, candidate_minus =
+            _embedding_self_energy_selected(
+                problem, green, cache, phase.options; scattering = candidate_sc, h, cavity_plan,
+            )
+    catch
+        _production_phase_end(production_options, phase; status = :failed)
+        rethrow()
+    end
+    _production_phase_end(production_options, phase)
+    candidate_embedding_seconds = (time_ns()-embedding_started)*1e-9
+    return (;
+        scattering = candidate_sc,
+        embedding = candidate_embedding,
+        plus = candidate_plus,
+        minus = candidate_minus,
+        rround,
+        started = candidate_started,
+        scattering_seconds = candidate_scattering_seconds,
+        embedding_seconds = candidate_embedding_seconds,
+    )
+end
+
+"""
+    fresh_scba_map(problem, Uᴴ, state; production_options=ProductionOptions(), cache=nothing)
+
+Вычислить новые собственные энергии каналов и двух границ из `state.green`
+при фиксированном потенциале Хартри `Uᴴ`. Состояние должно быть согласовано
+с задачей и её базисом. Входные поля остаются доступны в памяти, смешивание
+и запись состояния не выполняются. Возвращает `FixedPointAuditCandidate`,
+который можно передать в [`fresh_fixed_point_metrics`](@ref).
+"""
+function fresh_scba_map(
+    problem::NEGFProblem,
+    Uᴴ::AbstractVector{<:Real},
+    state::SCBAResult;
+    production_options::ProductionOptions = ProductionOptions(),
+    cache::Union{Nothing,ProductionCache} = nothing,
+)
+    _check_production_options(production_options)
+    n = problem.numerical
+    expected = (n.N_E, n.N_k, n.N_b, n.N_b)
+    all(size(getfield(state.green, component)) == expected for component in (:Gᴿ, :Gˡ, :Gᵍ, :A)) ||
+        throw(DimensionMismatch("SCBA Green arrays do not match the assembled problem"))
+    cache === nothing && (cache = build_production_cache(problem; options = production_options))
+    cache = _validated_production_cache(cache, problem, production_options)
+    h = project_hamiltonians(problem, Uᴴ)
+    cavity_plan = production_options.algorithms.embedding === :finite_chain ?
+        _cavity_production_plan(problem, h, production_options) : nothing
+    ν = isempty(state.history) ? 1 : last(state.history).ν
+    map = _production_scba_candidate(
+        problem, h, state.green, cache, cavity_plan, production_options, ν,
+        sizeof(ComplexF64)*prod(expected),
+    )
+    return FixedPointAuditCandidate(map.scattering, map.embedding, map.plus, map.minus, map.rround)
+end
+
 """Измерить свежую сырую карту неподвижной точки до смешивания, используя повторно выделенную память невязок."""
 function _production_fixed_point_measurement(
     problem::NEGFProblem,
@@ -142,9 +242,7 @@ end
 ошибок входа, вычитания и ограничения числа частиц. Блоки прихода и ухода
 по каналам позволяют выполнить проекции на критический вектор.
 """
-function _scba_physics_witness(witness, green, total, scattering, plus, minus)
-    e, m = witness.energy_index, witness.momentum_index
-    e > 0 && m > 0 || return nothing
+function _scba_witness_matrices(witness, green, total, scattering, plus, minus, e, m)
     GR = _matrix_block(green.Gᴿ, e, m)
     sigmaL = _matrix_block(total.Σˡ, e, m)
     sigmaG = _matrix_block(total.Σᵍ, e, m)
@@ -184,6 +282,15 @@ function _scba_physics_witness(witness, green, total, scattering, plus, minus)
         all(isfinite, critical) ?
         Vector{ComplexF64}(eigen(Hermitian((critical+critical')/2)).vectors[:, 1]) :
         ComplexF64[]
+    return matrices, vector
+end
+
+function _scba_physics_witness(witness, green, total, scattering, plus, minus; capture_payload = true)
+    e, m = witness.energy_index, witness.momentum_index
+    e > 0 && m > 0 || return nothing
+    matrices, vector = capture_payload ?
+        _scba_witness_matrices(witness, green, total, scattering, plus, minus, e, m) :
+        (Dict{String,Matrix{ComplexF64}}(), ComplexF64[])
     return SCBAPhysicsWitness(
         witness.matrix_kind,
         e,

@@ -150,7 +150,7 @@ solver:
 21 и осталось 60, а не новые 80. Другой этап Хартри начинает собственный
 внутренний бюджет. Восстановление истории Андерсона внутри незавершённого
 этапа недоступно, если сама история не сохранена. Графики или CSV не
-заменяют полное численное состояние для точного возобновления; см. [контракт качества](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/results.md).
+заменяют полное численное состояние для точного возобновления; см. [контракт качества](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/results.md).
 
 ## Диагностический порядок действий
 
@@ -160,7 +160,7 @@ solver:
 Затем отдельно меняйте энергетическое окно, шаг энергии, угловую квадратуру,
 базис и физические каналы. Смена нескольких причин одновременно лишает
 сравнение объяснительной силы. Полный протокол приведён в
-[исследовании методов](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/comparison.md).
+[исследовании методов](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/comparison.md).
 
 ## Локализация нарушения положительности
 
@@ -181,8 +181,8 @@ solver:
 проверить, относится ли большое относительное нарушение к почти пустому
 хвосту окна или к физически значимой области. Отчёт не обнуляет
 отрицательные значения и не исправляет матрицу автоматически. Подробные
-контролируемые исследования собраны в [больших сериях](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl/blob/main/docs/src/user/configuration.md).
+контролируемые исследования собраны в [больших сериях](https://github.com/Afonenko-QCL-NEGF/qcl-negf/blob/main/runner/docs/src/user/configuration.md).
 
 Вывод описанных диагностик в файлы и графики предоставляет
-[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/QCLNEGFRunner.jl);
+[QCLNEGFRunner.jl](https://github.com/Afonenko-QCL-NEGF/qcl-negf/tree/main/runner);
 ядро возвращает состояния и метрики в памяти.
