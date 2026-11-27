@@ -291,6 +291,7 @@ import ..QCLDomain:
 include("numerics/reference/grids.jl")
 include("numerics/reference/hamiltonian.jl")
 include("numerics/reference/basis.jl")
+include("numerics/reference/projected_spectrum.jl")
 include("numerics/reference/periodicity.jl")
 include("numerics/reference/greens.jl")
 include("numerics/reference/model_operators.jl")
@@ -396,6 +397,7 @@ import .QCLReferenceOperators:
     product_integration_hilbert_transform,
     project_hamiltonians,
     project_reference_operator,
+    projected_spectrum,
     resolve_physical_models,
     retarded_green,
     retarded_self_energy,
@@ -1116,6 +1118,7 @@ export AbstractProductionKernel,
     production_selfenergy_residual,
     production_static_contraction,
     project_hamiltonians,
+    projected_spectrum,
     psd_error_budget,
     reference_parameters,
     reference_production_numerics,
