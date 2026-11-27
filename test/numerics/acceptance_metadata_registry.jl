@@ -109,7 +109,7 @@ end
     @test assessment["metrics"]["r_K"]["status"]=="not_measured"
     @test assessment["metrics"]["r_edge_gamma"]["status"]=="not_applicable"
     @test assessment["metrics"]["r_roundoff"]["status"]=="not_applicable"
-    @test !assessment["scientific_accepted"]
+    @test !haskey(assessment, "scientific_accepted")
     @test assessment["quadrature"]["energy"]["weights"]==problem.grids.wᴱ
     @test assessment["scales"]["E0_eV"]==problem.scales.E₀_eV
 

@@ -86,7 +86,7 @@ include("../support/common.jl")
     )
     assessment=solution_scientific_assessment(partial)
     @test !assessment["iterative_converged"]
-    @test !assessment["scientific_accepted"]
+    @test !haskey(assessment, "scientific_accepted")
     @test assessment["discretization_verified"]=="not_measured"
     @test assessment["metrics"]["r_sum"]["status"]=="fail"
     @test assessment["metrics"]["r_U"]["status"]=="error"

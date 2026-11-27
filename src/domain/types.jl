@@ -704,6 +704,23 @@ struct NEGFProblem{S<:AbstractMatrix{Float64}}
     models::PhysicalModelOptions
 end
 
+"""Координаты компактной истории решателя. Массивы принадлежат получателю."""
+struct SolverHistoryGrid
+    energy_eV::Vector{Float64}
+    momentum_per_nm::Vector{Float64}
+    spatial_nodes::Int
+    energy_scale_eV::Float64
+    length_scale_m::Float64
+end
+
+SolverHistoryGrid(problem::NEGFProblem) = SolverHistoryGrid(
+    problem.grids.ε .* problem.scales.E₀_eV .+ _electronvolts(problem.physical.E_ref),
+    problem.grids.κ ./ problem.scales.L₀_m .* 1e-9,
+    problem.numerical.N_z,
+    problem.scales.E₀_eV,
+    problem.scales.L₀_m,
+)
+
 """
 Безразмерные массивы функций Грина размера `(N_E,N_k,N_b,N_b)`.
 

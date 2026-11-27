@@ -243,8 +243,6 @@ function solution_scientific_assessment(solution::NEGFSolution)
         "physical_gates_passed"=>physical_pass,
         "stationary_candidate_accepted"=>solution.converged && iterative && physical_pass,
         "discretization_verified"=>"not_measured",
-        "scientific_accepted"=>false,
-        "scientific_acceptance_reason"=>"campaign-level independent discretization evidence is required",
         "outer_confirmation_count"=>streak,
         "metrics"=>records,
         "evaluator"=>"Julia validate_solution / SolverTolerances",
