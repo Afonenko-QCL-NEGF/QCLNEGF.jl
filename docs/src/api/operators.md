@@ -26,6 +26,8 @@ build_grids
 build_profiles
 build_bdd_hamiltonian
 build_localized_basis
+localized_cell_spectrum
+projected_spectrum
 build_basis
 project_hamiltonians
 ```

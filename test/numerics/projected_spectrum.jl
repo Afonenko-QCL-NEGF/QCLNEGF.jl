@@ -1,5 +1,6 @@
 using LinearAlgebra
 using QCLNEGF
+using SparseArrays
 using Test
 
 @testset "Projected spectrum uses an explicit solve and observation domain" begin
@@ -12,6 +13,7 @@ using Test
     cropped = projected_spectrum(H, W, metric; observation_rows = [2])
     @test full.energies_eV ≈ [3 - sqrt(2), 3 + sqrt(2)] atol = 1e-12 rtol = 0
     @test full.amplitudes' * Diagonal(metric) * full.amplitudes ≈ Matrix{Float64}(I, 2, 2)
+    @test projected_spectrum(sparse(H), sparse(W), metric).energies_eV ≈ full.energies_eV
     @test cropped.energies_eV == full.energies_eV
     @test abs2.(cropped.amplitudes) ≈ abs2.(full.amplitudes[2:2, :])
     @test sum(cropped.metric .* abs2.(cropped.amplitudes[:, 1])) < 1
@@ -28,5 +30,6 @@ using Test
     @test_throws ArgumentError projected_spectrum(H, [1.0 1.0; 0.0 0.0], metric)
     @test_throws ArgumentError projected_spectrum(H, one_mode, metric;
         solve_rows = [1], observation_rows = [2])
+    @test_throws ArgumentError projected_spectrum(H, one_mode, metric; observation_rows = [true])
     @test_throws DimensionMismatch projected_spectrum(H, W, ones(3))
 end
