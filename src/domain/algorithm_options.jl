@@ -107,7 +107,7 @@ _restart_contract_value(value) = Dict{String,Any}(
 """Численная идентичность для точного продолжения. Пределы итераций задают оставшийся бюджет."""
 function _solver_restart_contract(options::SolverOptions, algorithms::AlgorithmOptions)
     return Dict{String,Any}(
-        "schema"=>"qcl-negf-exact-restart-v1",
+        "schema"=>"qcl-negf-exact-restart-v2",
         "algorithms"=>_restart_contract_value(algorithms),
         "solver"=>Dict{String,Any}(
             String(name)=>_restart_contract_value(getfield(options, name)) for

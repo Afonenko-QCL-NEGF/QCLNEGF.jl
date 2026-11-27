@@ -128,6 +128,7 @@ function solve(
     outer_converged = false
     status = :max_poisson_iterations
     convergence_streak = 0
+    history_grid = history_observer === nothing ? nothing : SolverHistoryGrid(problem)
 
     for μ = 1:options.max_poisson
         inner_policy = inner_working_policy(options, outer_history)
@@ -138,7 +139,7 @@ function solve(
             initial = previous_scba,
             elastic_retarded,
             history_observer = history_observer===nothing ? nothing :
-                               (row->history_observer(:scba, μ, row, problem)),
+                               (row->history_observer(:scba, μ, row, deepcopy(history_grid))),
         )
         published_U = copy(Uᴴ)
         if options.convergence.mode === :research_continue && !scba.converged
@@ -190,7 +191,7 @@ function solve(
             ),
         )
         history_observer===nothing ||
-            history_observer(:outer, μ, last(outer_history), problem)
+            history_observer(:outer, μ, deepcopy(last(outer_history)), deepcopy(history_grid))
         Uᴴ = Unew
         nprevious = n̄
         previous_scba = scba

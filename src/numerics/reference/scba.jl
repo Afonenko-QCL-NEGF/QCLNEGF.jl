@@ -293,7 +293,7 @@ function solve_scba(
             ),
         )
 
-        history_observer===nothing || history_observer(last(history))
+        history_observer===nothing || history_observer(deepcopy(last(history)))
         if !all(isfinite, (rD, rA, rK, rΣ, rλ, rPSD, rcaus, rround, J, λ))
             return SCBAResult(
                 green,

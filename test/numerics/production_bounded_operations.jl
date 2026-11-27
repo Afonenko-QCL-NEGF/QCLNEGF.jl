@@ -97,7 +97,10 @@ end
             ),
             history_observer = row -> push!(observed, row),
             iteration_callback = state -> begin
-                @test last(state.history) === last(observed)
+                @test all(
+                    field -> isequal(getfield(last(state.history), field), getfield(last(observed), field)),
+                    fieldnames(SCBAIteration),
+                )
                 checkpoints[last(state.history).ν] = deepcopy(state)
             end,
         )

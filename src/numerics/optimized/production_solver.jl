@@ -509,7 +509,7 @@ function solve_scba_production(
                 seed_number_ratio,
                 terminal = true,
             )
-            history_observer === nothing || history_observer(last(history))
+            history_observer === nothing || history_observer(deepcopy(last(history)))
             return SCBAResult(
                 green,
                 scattering,
@@ -632,7 +632,7 @@ function solve_scba_production(
                 seed_number_ratio,
                 terminal = true,
             )
-            history_observer === nothing || history_observer(last(history))
+            history_observer === nothing || history_observer(deepcopy(last(history)))
             _end_solver_stage(
                 production_options,
                 :scba,
@@ -710,7 +710,7 @@ function solve_scba_production(
             fresh_total = candidate_total,
         )
         _production_phase_end(production_options, phase)
-        history_observer === nothing || history_observer(last(history))
+        history_observer === nothing || history_observer(deepcopy(last(history)))
         if checkpoint_request !== CHECKPOINT_NONE
             aligned = SCBAResult(
                 green,
@@ -871,7 +871,9 @@ function _solve_production(
     initial_outer_history::Vector{OuterIteration} = OuterIteration[],
     initial_warnings::Vector{Dict{String,Any}} = Dict{String,Any}[],
     resume_scba::Bool = false,
-    state_observer::Union{Nothing,Function} = nothing,
+    resume_outer::Bool = false,
+    initial_poisson_streak::Union{Nothing,Int} = nothing,
+    observation_sink::Union{Nothing,Function} = nothing,
     history_observer::Union{Nothing,Function} = nothing,
 )
     _check_options(options)
@@ -892,6 +894,19 @@ function _solve_production(
     completed_outer = isempty(outer_history) ? 0 : last(outer_history).μ
     completed_outer <= options.max_poisson ||
         throw(ArgumentError("checkpoint exceeds the configured Poisson budget"))
+    resume_outer && (resume_scba || completed_outer == 0 || previous_scba === nothing ||
+                     initial_Uᴴ === nothing) &&
+        throw(ArgumentError("outer restart requires an accepted Hartree/SCBA pair and completed outer history"))
+    if resume_outer
+        scba_accepted(previous_scba) || throw(ArgumentError("outer restart lacks an accepted SCBA state"))
+        _check_exact_restart_contract(previous_scba.restart_contract, options, production_options.algorithms)
+    end
+    if initial_poisson_streak !== nothing
+        0 <= initial_poisson_streak <= completed_outer ||
+            throw(ArgumentError("checkpoint Poisson streak is outside the completed history"))
+    elseif (resume_outer || resume_scba) && completed_outer > 0
+        throw(ArgumentError("checkpoint lacks the completed Poisson convergence streak"))
+    end
     if !isempty(outer_history)
         nprevious = copy(last(outer_history).density)
         Jprevious = last(outer_history).J
@@ -901,16 +916,26 @@ function _solve_production(
     inner_policy_history = Dict{String,Any}[]
     restart_contract = _solver_restart_contract(options, production_options.algorithms)
     outer_tolerances = options.tolerances
-    convergence_streak = _trailing_pass_count(
+    history_grid = history_observer === nothing ? nothing : SolverHistoryGrid(problem)
+    convergence_streak = initial_poisson_streak === nothing ? _trailing_pass_count(
         outer_history,
         row ->
             poisson_convergence_assessment(row, outer_tolerances, options.convergence).passed,
-    )
+    ) : initial_poisson_streak
     outer_converged =
         convergence_streak >= options.convergence.required_consecutive_poisson_passes &&
         previous_scba !== nothing &&
         previous_scba.converged
     status = outer_converged ? :converged : :max_poisson_iterations
+    if resume_outer && !outer_converged && completed_outer < options.max_poisson
+        # A completed outer snapshot stores the Green state at the *accepted*
+        # potential; only the next solve uses the mixed Poisson image.
+        candidate, _, _, _ = solve_periodic_poisson(
+            problem,
+            _electron_density_bar(problem, previous_scba.green.Gˡ),
+        )
+        Uᴴ = (1 - options.α_P) .* Uᴴ .+ options.α_P .* candidate
+    end
     owns_poisson_stage = _begin_solver_stage(
         production_options,
         :poisson;
@@ -944,6 +969,7 @@ function _solve_production(
                 Dict{Symbol,Any}(
                     :warnings=>deepcopy(warnings),
                     :restart_contract=>deepcopy(restart_contract),
+                    :poisson_convergence_streak=>convergence_streak,
                 ),
                 dummy,
                 false,
@@ -956,7 +982,7 @@ function _solve_production(
                 stage = :checkpoint,
             )
             try
-                checkpoint_sink(running)
+                checkpoint_sink(running, false)
             finally
                 _production_phase_end(production_options, publish_phase)
             end
@@ -1000,7 +1026,7 @@ function _solve_production(
             consume_initial = consume_initial && μ == completed_outer+1,
             iteration_callback = inner_checkpoint_callback(Uaccepted),
             history_observer = history_observer===nothing ? nothing :
-                               (row->history_observer(:scba, μ, row, problem)),
+                               (row->history_observer(:scba, μ, row, deepcopy(history_grid))),
             resume_iterations = resume_scba && μ == completed_outer + 1,
         )
         published_U = copy(Uaccepted)
@@ -1053,7 +1079,7 @@ function _solve_production(
             ),
         )
         history_observer===nothing ||
-            history_observer(:outer, μ, last(outer_history), problem)
+            history_observer(:outer, μ, deepcopy(last(outer_history)), deepcopy(history_grid))
         assessment = poisson_convergence_assessment(
             last(outer_history),
             outer_tolerances,
@@ -1087,8 +1113,9 @@ function _solve_production(
             )
         end
 
-        if checkpoint_sink !== nothing &&
-           _production_checkpoint_request(production_options, :outer, μ) !== CHECKPOINT_NONE
+        checkpoint_request = checkpoint_sink === nothing ? CHECKPOINT_NONE :
+                             _production_checkpoint_request(production_options, :outer, μ; outer_iteration = μ)
+        if checkpoint_request !== CHECKPOINT_NONE
             dummy = ConvergenceReport(false, Dict{Symbol,Float64}(), String[])
             checkpoint_solution = NEGFSolution(
                 problem,
@@ -1100,29 +1127,17 @@ function _solve_production(
                 Dict{Symbol,Any}(
                     :warnings=>deepcopy(warnings),
                     :restart_contract=>deepcopy(restart_contract),
+                    :poisson_convergence_streak=>convergence_streak,
                 ),
                 dummy,
                 false,
                 :running,
             )
-            checkpoint_sink(checkpoint_solution)
+            checkpoint_sink(checkpoint_solution, checkpoint_request === CHECKPOINT_STATE_AND_ANALYSIS)
         end
-        if state_observer !== nothing
-            state_observer(
-                NEGFSolution(
-                    problem,
-                    options,
-                    copy(Uaccepted),
-                    n̄,
-                    scba,
-                    copy(outer_history),
-                    Dict{Symbol,Any}(:warnings=>copy(warnings)),
-                    ConvergenceReport(false, Dict{Symbol,Float64}(), String[]),
-                    false,
-                    :snapshot,
-                ),
-            )
-        end
+        observation_sink === nothing || observation_sink(
+            _production_observation(problem, :outer, :running, μ, scba, J, Uaccepted, n̄),
+        )
         Uᴴ = Unew
         nprevious = n̄
         previous_scba = scba
@@ -1158,6 +1173,7 @@ function _solve_production(
         "forcing_rule"=>"min declared coarse band and 0.1 * best finite max(raw r_U, raw r_n); strict within 10 outer tolerances",
     )
     observables[:restart_contract] = restart_contract
+    observables[:poisson_convergence_streak] = convergence_streak
     dummy = ConvergenceReport(false, Dict{Symbol,Float64}(), String[])
     provisional = NEGFSolution(
         problem,
@@ -1256,8 +1272,8 @@ function _solve_production(
     )
     observables[:quality] = solution_quality(result)
     observables[:termination_reason] = String(final_status)
-    state_observer === nothing || state_observer(result)
-    checkpoint_sink === nothing || checkpoint_sink(result)
+    observation_sink === nothing || observation_sink(ProductionObservation(result))
+    checkpoint_sink === nothing || checkpoint_sink(result, true)
     _end_solver_stage(
         production_options,
         :poisson,

@@ -49,6 +49,7 @@ export AbstractScatteringPhysicalModel,
     NEGFSolution,
     NumericalParameters,
     OuterIteration,
+    SolverHistoryGrid,
     PhysicalModelOptions,
     PhysicalParameters,
     ResearchContinuationDecision,
@@ -132,6 +133,7 @@ import .QCLDomain:
     NEGFSolution,
     NumericalParameters,
     OuterIteration,
+    SolverHistoryGrid,
     PhysicalModelOptions,
     PhysicalParameters,
     ResearchContinuationDecision,
@@ -291,6 +293,7 @@ import ..QCLDomain:
 include("numerics/reference/grids.jl")
 include("numerics/reference/hamiltonian.jl")
 include("numerics/reference/basis.jl")
+include("numerics/reference/projected_spectrum.jl")
 include("numerics/reference/periodicity.jl")
 include("numerics/reference/greens.jl")
 include("numerics/reference/model_operators.jl")
@@ -396,6 +399,8 @@ import .QCLReferenceOperators:
     product_integration_hilbert_transform,
     project_hamiltonians,
     project_reference_operator,
+    projected_spectrum,
+    localized_cell_spectrum,
     resolve_physical_models,
     retarded_green,
     retarded_self_energy,
@@ -509,6 +514,7 @@ import ..QCLDomain:
     NEGFSolution,
     NumericalParameters,
     OuterIteration,
+    SolverHistoryGrid,
     PhysicalModelOptions,
     PhysicalParameters,
     SCBAIteration,
@@ -672,6 +678,7 @@ export AbstractProductionKernel,
     ProductionKernelOptions,
     ProductionMemoryEstimate,
     ProductionOptions,
+    ProductionObservation,
     ProductionResidualWorkspace,
     ProductionSweepRecord,
     ProductionSweepResult,
@@ -744,6 +751,7 @@ import .QCLNumerics:
     ProductionKernelOptions,
     ProductionMemoryEstimate,
     ProductionOptions,
+    ProductionObservation,
     ProductionResidualWorkspace,
     ProductionSweepRecord,
     ProductionSweepResult,
@@ -963,10 +971,13 @@ export retarget_problem, retarget_production_cache
 include("application/algorithm_registry.jl")
 include("application/model_capabilities.jl")
 """
-    solve_production(problem; checkpoint_sink=nothing, kwargs...)
+    solve_production(problem; observation_sink=nothing, checkpoint_sink=nothing, kwargs...)
 
-Решает одну транспортную задачу в памяти. Обработчик `checkpoint_sink` получает
-состояния в точках сохранения. За запись и выбор путей отвечает QCLNEGFRunner.
+Решает одну транспортную задачу в памяти. `observation_sink` получает собственные
+компактные профили и скалярные метрики. Обработчик `checkpoint_sink(state, analysis)`
+синхронно заимствует тяжёлое принятое состояние только для чтения. Для хранения
+после вызова сделайте собственную копию. `analysis` указывает на запрос
+аналитического артефакта. За запись и выбор путей отвечает QCLNEGFRunner.
 """
 solve_production(problem::NEGFProblem; checkpoint_sink::Union{Nothing,Function}=nothing, kwargs...) =
     _solve_production(problem; checkpoint_sink, kwargs...)
@@ -1010,6 +1021,7 @@ export AbstractProductionKernel,
     OpticalResponse,
     OptimizationDescriptor,
     OuterIteration,
+    SolverHistoryGrid,
     PSD_METRIC_VERSION,
     PhysicalModelExtensions,
     PhysicalModelOptions,
@@ -1020,6 +1032,7 @@ export AbstractProductionKernel,
     ProductionKernelOptions,
     ProductionMemoryEstimate,
     ProductionOptions,
+    ProductionObservation,
     ProductionResidualWorkspace,
     ProductionSweepRecord,
     ProductionSweepResult,
@@ -1116,6 +1129,8 @@ export AbstractProductionKernel,
     production_selfenergy_residual,
     production_static_contraction,
     project_hamiltonians,
+    projected_spectrum,
+    localized_cell_spectrum,
     psd_error_budget,
     reference_parameters,
     reference_production_numerics,

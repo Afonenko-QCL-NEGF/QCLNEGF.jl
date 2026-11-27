@@ -34,7 +34,7 @@ end
 Для каждой новой области заново строятся проекции базиса, ядра и кэш.
 Расчёт на расширенной области начинается с нового начального состояния.
 Перед решением о расширении сохранённые состояния передаются в
-`state_observer`. Итог включает метрики, идентификаторы и фактические затраты
+`observation_sink`. Итог включает метрики, идентификаторы и фактические затраты
 для каждой области. Политика меняет только энергию. О недостаточном
 разрешении по импульсу или базису сообщается отдельно.
 """
@@ -44,7 +44,7 @@ function solve_adaptive_production(
     options::SolverOptions = reference_production_solver_options(),
     production_options::ProductionOptions = ProductionOptions(),
     kernel_options::ProductionKernelOptions = ProductionKernelOptions(),
-    state_observer::Union{Nothing,Function} = nothing,
+    observation_sink::Union{Nothing,Function} = nothing,
     checkpoint_sink::Union{Nothing,Function} = nothing,
     history_observer::Union{Nothing,Function} = nothing,
     cache::Union{Nothing,ProductionCache} = nothing,
@@ -54,13 +54,15 @@ function solve_adaptive_production(
     initial_outer_history::Vector{OuterIteration} = OuterIteration[],
     initial_warnings::Vector{Dict{String,Any}} = Dict{String,Any}[],
     resume_scba::Bool = false,
+    resume_outer::Bool = false,
+    initial_poisson_streak::Union{Nothing,Int} = nothing,
     initial_adaptation = nothing,
 )
     domain_adaptation.mode === :none && return _solve_production(
         problem;
         options,
         production_options,
-        state_observer,
+        observation_sink,
         checkpoint_sink,
         cache,
         initial_Uᴴ,
@@ -72,6 +74,8 @@ function solve_adaptive_production(
         initial_outer_history,
         initial_warnings,
         resume_scba,
+        resume_outer,
+        initial_poisson_streak,
         history_observer,
     )
     revisions =
@@ -82,13 +86,13 @@ function solve_adaptive_production(
     first_resumed_domain = expansions
     function annotated_sink(sink)
         sink===nothing && return nothing
-        return function (state)
+        return function (state, analysis)
             state.observables[:adaptation_checkpoint]=Dict(
                 "expansions"=>expansions,
                 "revisions"=>deepcopy(revisions),
                 "policy"=>_restart_contract_value(domain_adaptation),
             )
-            return sink(state)
+            return sink(state, analysis)
         end
     end
     latest = nothing
@@ -127,7 +131,7 @@ function solve_adaptive_production(
                 options,
                 production_options,
                 history_observer,
-                state_observer = annotated_sink(state_observer),
+                observation_sink,
                 checkpoint_sink = annotated_sink(checkpoint_sink),
                 cache = expansions==first_resumed_domain ? cache : nothing,
                 initial_Uᴴ = expansions==first_resumed_domain ? initial_Uᴴ : nothing,
@@ -142,6 +146,9 @@ function solve_adaptive_production(
                 initial_warnings = expansions==first_resumed_domain ? initial_warnings :
                                    Dict{String,Any}[],
                 resume_scba = expansions==first_resumed_domain && resume_scba,
+                resume_outer = expansions==first_resumed_domain && resume_outer,
+                initial_poisson_streak = expansions==first_resumed_domain ?
+                                         initial_poisson_streak : nothing,
             )
             initial_scba = nothing
             measured = measured_representation_coverage(current, latest.scba, latest.Uᴴ)

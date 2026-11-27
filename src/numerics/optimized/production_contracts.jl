@@ -61,6 +61,42 @@ struct SolverEvent
     message::String
 end
 
+"""Наблюдение принятой точки без доступа к решателю. Профили принадлежат получателю."""
+struct ProductionObservation
+    stage::Symbol
+    status::Symbol
+    outer_iteration::Int
+    scba_iteration::Int
+    current_density_A_per_m2::Float64
+    z_nm::Vector{Float64}
+    hartree_eV::Vector{Float64}
+    density_per_m3::Vector{Float64}
+end
+
+function _production_observation(problem, stage, status, outer, scba, current, hartree, density)
+    return ProductionObservation(
+        stage,
+        status,
+        outer,
+        isempty(scba.history) ? 0 : last(scba.history).ν,
+        current,
+        problem.grids.x .* (problem.scales.L₀_m * 1e9),
+        hartree .* problem.scales.E₀_eV,
+        density ./ problem.scales.L₀_m^3,
+    )
+end
+
+ProductionObservation(solution::NEGFSolution) = _production_observation(
+    solution.problem,
+    :terminal,
+    solution.status,
+    length(solution.outer_history),
+    solution.scba,
+    Float64(ustrip(u"A/m^2", solution.observables[:electron_flow_current])),
+    solution.Uᴴ,
+    solution.n,
+)
+
 _solver_metrics(::Nothing) = SolverMetric[]
 _solver_metrics(metric::SolverMetric) = SolverMetric[metric]
 _solver_metrics(metrics) = SolverMetric[metric for metric in metrics]
@@ -68,6 +104,7 @@ _solver_metrics(metrics) = SolverMetric[metric for metric in metrics]
 const CHECKPOINT_NONE = :none
 const CHECKPOINT_STATE_ONLY = :state_only
 const CHECKPOINT_STATE_AND_MARKERS = :state_and_markers
+const CHECKPOINT_STATE_AND_ANALYSIS = :state_and_analysis
 
 """
     ProductionOptions
@@ -89,11 +126,13 @@ Julia, положительное значение ограничивает чи
 
 `checkpoint_request` задаёт решение о сохранении при наличии приёмника.
 Функция получает `(; stage, iteration, outer_iteration)` и возвращает один
-из трёх символов: `:none` пропускает сохранение, `:state_only` сохраняет
+из следующих символов: `:none` пропускает сохранение, `:state_only` сохраняет
 согласованное состояние с обычной периодичностью физических маркеров,
 `:state_and_markers` сохраняет состояние и запрашивает маркеры SCBA на этой карте.
+`:state_and_analysis` запрашивает сохранение и аналитический артефакт на внешней границе.
 Соответствующие константы: `QCLNumerics.CHECKPOINT_NONE`,
-`QCLNumerics.CHECKPOINT_STATE_ONLY` и `QCLNumerics.CHECKPOINT_STATE_AND_MARKERS`.
+`QCLNumerics.CHECKPOINT_STATE_ONLY`, `QCLNumerics.CHECKPOINT_STATE_AND_MARKERS`
+и `QCLNumerics.CHECKPOINT_STATE_AND_ANALYSIS`.
 Без отдельной функции заданная периодичность контрольных точек
 запрашивает состояние вместе с маркерами.
 
@@ -454,15 +493,18 @@ end
 function _production_checkpoint_request(
     options::ProductionOptions,
     stage::Symbol,
-    iteration::Int,
+    iteration::Int;
+    outer_iteration::Int = options.outer_iteration,
 )
     request = options.checkpoint_request
     if request !== nothing
-        requested = request((; stage, iteration, outer_iteration = options.outer_iteration))
-        requested isa Symbol &&
+        requested = request((; stage, iteration, outer_iteration))
+        requested isa Symbol && (
             requested in (CHECKPOINT_NONE, CHECKPOINT_STATE_ONLY, CHECKPOINT_STATE_AND_MARKERS) ||
+            (stage === :outer && requested === CHECKPOINT_STATE_AND_ANALYSIS)
+        ) ||
             throw(ArgumentError(
-                "checkpoint_request must return :none, :state_only, or :state_and_markers",
+                "unsupported checkpoint request for stage $(stage)",
             ))
         return requested
     end
